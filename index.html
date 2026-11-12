@@ -401,6 +401,14 @@ body.portrait .hubtop .tbtn span { display: none; } body.portrait .hubtop .tbtn 
 /* the badge is a slim tab on the left edge, mid-height: the one place no button uses on any screen */
 #testBadge { top: 42%; left: 0; transform: translateY(-50%); writing-mode: vertical-rl; border-radius: 0 0.7rem 0.7rem 0; border-left: 0; padding: 0.6rem 0.12rem 0.3rem; gap: 0.4rem; }
 #testBadge button { padding: 0.5rem 0.05rem; }
+
+/* ---------- Boti on the question card and the win screen; friends on the map ---------- */
+.qboti { width: clamp(2.7rem, 12vmin, 4rem); height: clamp(2.7rem, 12vmin, 4rem); flex: none; background: #e8f4ff; border: 0.2rem solid var(--ink); border-radius: 50%; }
+.winrow { display: flex; align-items: center; justify-content: center; gap: 0.6rem; direction: rtl; }
+.winboti { height: clamp(4rem, 21vmin, 6.6rem); aspect-ratio: 100 / 110; flex: none; }
+.map .node { overflow: visible; }
+.nfr { position: absolute; bottom: -0.62rem; left: 50%; transform: translateX(-50%); display: flex; gap: 0.14rem; direction: ltr; }
+.nfr i { width: 0.6rem; height: 0.6rem; border-radius: 50%; background: #d9deee; border: 0.1rem solid var(--ink); } .nfr i.on { background: #ff8fb3; }
 </style>
 </head>
 <body>
@@ -471,6 +479,7 @@ body.portrait .hubtop .tbtn span { display: none; } body.portrait .hubtop .tbtn 
   <section id="scCard" class="screen dim" hidden>
     <div class="panel card">
       <div class="qrow">
+        <canvas id="qBoti" class="qboti"></canvas>
         <button class="ibtn" id="btnReplay" aria-label="שמע שוב"><svg viewBox="0 0 24 24"><path d="M3 9h4l5-4v14l-5-4H3z"/><path d="M15 8.5a5 5 0 0 1 0 7M17.5 6a8.5 8.5 0 0 1 0 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button>
         <h2 id="qText"></h2>
         <button class="ibtn micb" id="btnMicAns" hidden aria-label="לענות בקול"><svg viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M6 11a6 6 0 0 0 12 0M12 17v4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button>
@@ -501,8 +510,8 @@ body.portrait .hubtop .tbtn span { display: none; } body.portrait .hubtop .tbtn 
   <section id="scWin" class="screen dim" hidden>
     <div class="panel win">
       <h2 class="wintitle" id="winTitle">כל הכבוד!</h2>
-      <div class="bigstars" id="winStars"></div>
-      <p class="winline"><i class="cico"></i> <b id="winCoins">0</b> מטבעות בשלב · בארנק: <b id="winWallet">0</b></p>
+      <div class="winrow"><canvas id="winBoti" class="winboti"></canvas><div class="bigstars" id="winStars"></div></div>
+      <p class="winline"><i class="cico"></i> <b id="winCoins">0</b> מטבעות בשלב · בארנק: <b id="winWallet">0</b><span id="winFriends"></span></p>
       <button class="big go pulse" id="btnGift" hidden>יש לך מתנה!</button>
       <div class="sayrow" id="winBtns">
         <button class="big go" id="btnNext">השלב הבא</button>
@@ -577,8 +586,8 @@ body.portrait .hubtop .tbtn span { display: none; } body.portrait .hubtop .tbtn 
   </section>
 </div>
 
-<script>/* build 202611120617 */
-const BUILD = '202611120617';
+<script>/* build 202611120640 */
+const BUILD = '202611120640';
 'use strict';
 /* בוטי והכוכבים האבודים – platformer + learning stations for a 3-year-old gamer.
    File order (see build.py): core → audio/voice → data → art → engine → stations → ui → parent → boot. */
@@ -620,7 +629,7 @@ const Store = {
   exitTest() { this.frozen = true; try { localStorage.removeItem(this.modeKey); localStorage.removeItem(this.testKey); } catch (e) { /* storage blocked */ } location.replace(location.pathname); },
   d: {
     sessions: {}, stars: {}, wallet: 0, owned: ['col_blue'], wear: { col: 'col_blue', hat: null, cape: null, trail: null, skin: null },
-    powers: {}, pets: [], pet: null, boost: { skills: [], words: [] }, speech: { lv: 1, words: {} }, opp: {}, setup: false,
+    powers: {}, pets: [], pet: null, boost: { skills: [], words: [] }, speech: { lv: 1, words: {} }, opp: {}, friends: {}, setup: false,
     skill: {}, unlocked: 0, tut: {}, updatedAt: 0,
     set: { sound: true, music: true, voice: 'auto', mic: true, limit: 15, focus: { num: true, lang: true, think: true }, ease: 0, name: '', robot: false, strict: true },
   },
@@ -1656,6 +1665,8 @@ function drawCoin(c, x, y, r, t) {
   c.beginPath(); c.arc(0, 0, r * 0.62, 0, 7); c.fillStyle = '#ffb300'; c.fill();
   c.fillStyle = '#fff3c4'; rrect(c, -r * 0.16, -r * 0.42, r * 0.32, r * 0.84, r * 0.16); c.fill();
   c.restore();
+  const gl = (t * 0.55 + x * 0.0131) % 1;                            // a glint now and then, when the coin faces us
+  if (sx > 0.8 && gl < 0.16) { const k = Math.sin(gl / 0.16 * Math.PI), gx = x + r * 0.5, gy = y - r * 0.5; c.fillStyle = `rgba(255,255,255,${0.95 * k})`; c.beginPath(); c.moveTo(gx, gy - r * 0.7 * k); c.lineTo(gx + r * 0.16, gy - r * 0.16); c.lineTo(gx + r * 0.7 * k, gy); c.lineTo(gx + r * 0.16, gy + r * 0.16); c.lineTo(gx, gy + r * 0.7 * k); c.lineTo(gx - r * 0.16, gy + r * 0.16); c.lineTo(gx - r * 0.7 * k, gy); c.lineTo(gx - r * 0.16, gy - r * 0.16); c.closePath(); c.fill(); }
 }
 function drawGem(c, x, y, r, t, color) {
   const b = Math.sin(t * 3 + x * 0.01) * 2.5;
@@ -1717,8 +1728,12 @@ function drawGate(c, st, groundY, t) {
     c.restore();
   }
   for (const px of [x - 4, x + 44]) { rrect(c, px, groundY - 196, 14, 196, 6); fillStroke(c, '#ff7a59', 2.2); c.fillStyle = '#ffc83d'; rrect(c, px - 2, groundY - 200, 18, 12, 5); c.fill(); c.strokeStyle = INK; c.lineWidth = 2; c.stroke(); }
+  // the arch over the gate, with a string of lights that blink while the gate is still closed
+  c.lineCap = 'round';
+  c.beginPath(); c.moveTo(x + 3, groundY - 194); c.quadraticCurveTo(x + 27, groundY - 236, x + 51, groundY - 194); c.lineWidth = 13; c.strokeStyle = INK; c.stroke(); c.lineWidth = 8.5; c.strokeStyle = st.done ? '#7ed957' : '#ff7a59'; c.stroke();
+  for (let i = 0; i < 5; i++) { const u = (i + 0.5) / 5, bx = x + 3 + u * 48, by2 = groundY - 194 - Math.sin(u * Math.PI) * 21; c.beginPath(); c.arc(bx, by2, 3.3, 0, 7); c.fillStyle = st.done ? '#fff59d' : (Math.floor(t * 3) + i) % 2 ? '#fff59d' : '#7ee0ff'; c.fill(); c.lineWidth = 1.2; c.strokeStyle = INK; c.stroke(); }
   if (!st.done) {
-    const by = groundY - 232 + Math.sin(t * 2.4) * 5;
+    const by = groundY - 254 + Math.sin(t * 2.4) * 5;
     glow(c, x + 27, by, 60, 'rgba(255,236,150,0.6)', 0.6 + Math.sin(t * 4) * 0.2);
     drawStar(c, x + 27, by, 20, t, { noGlow: true });
     c.beginPath(); c.arc(x + 27, by, 30, 0, 7); c.fillStyle = 'rgba(190,235,255,0.25)'; c.fill(); c.lineWidth = 2; c.strokeStyle = 'rgba(255,255,255,0.85)'; c.stroke();
@@ -2234,6 +2249,28 @@ function drawMapPath(c, pts, upTo) {
   c.setLineDash([]);
 }
 
+// a little friend stuck in a bubble (two in every level, off the main path). Freed, it floats away with a heart.
+const FRIEND_COLS = ['#ff8fb3', '#7ee0ff', '#ffd54f', '#a5f58c', '#c9a6ff', '#ffab76'];
+function drawFriend(c, x, y, t, hue, caged) {
+  const col = FRIEND_COLS[hue % 6], r = 13;
+  c.save(); c.translate(x, y + Math.sin(t * 3) * 3); c.lineJoin = 'round';
+  if (caged) glow(c, 0, 0, 42, 'rgba(255,255,255,0.6)', 0.45 + Math.sin(t * 4) * 0.2);
+  for (const sx of [-1, 1]) { c.beginPath(); c.moveTo(sx * 9, -7); c.lineTo(sx * 12, -17); c.lineTo(sx * 3.5, -10); c.closePath(); fillStroke(c, col, 2); }
+  c.beginPath(); c.arc(0, 2, r, 0, 7); fillStroke(c, col, 2.2);
+  c.fillStyle = 'rgba(255,255,255,0.35)'; c.beginPath(); c.arc(-4, -4, 5, 0, 7); c.fill();
+  c.fillStyle = '#fff'; c.beginPath(); c.arc(-4.5, 1, 4, 0, 7); c.arc(4.5, 1, 4, 0, 7); c.fill();
+  c.fillStyle = INK;
+  if ((t * 0.6) % 1 > 0.94) { c.fillRect(-7, 0.4, 5, 1.6); c.fillRect(2, 0.4, 5, 1.6); } else { c.beginPath(); c.arc(-4, 1.5, 2, 0, 7); c.arc(5, 1.5, 2, 0, 7); c.fill(); }
+  c.strokeStyle = INK; c.lineWidth = 1.6; c.beginPath(); if (caged) c.arc(0, 9, 2.2, 0, 7); else c.arc(0, 7, 4, 0.15, Math.PI - 0.15); c.stroke();
+  c.fillStyle = INK; c.beginPath(); c.ellipse(-5, r + 2.5, 3.4, 2, 0, 0, 7); c.ellipse(5, r + 2.5, 3.4, 2, 0, 0, 7); c.fill();
+  if (caged) {
+    c.beginPath(); c.arc(0, 2, 25, 0, 7); c.fillStyle = 'rgba(200,235,255,0.26)'; c.fill(); c.lineWidth = 2.4; c.strokeStyle = 'rgba(255,255,255,0.95)'; c.stroke();
+    c.beginPath(); c.arc(-8, -8, 11, Math.PI * 1.05, Math.PI * 1.5); c.lineWidth = 3; c.lineCap = 'round'; c.stroke();
+    if (Math.sin(t * 5) > -0.3) { c.fillStyle = '#ff5a36'; c.strokeStyle = '#fff'; c.lineWidth = 3; c.font = 'bold 20px "Secular One", Arial'; c.textAlign = 'center'; c.textBaseline = 'alphabetic'; c.strokeText('!', 0, -30); c.fillText('!', 0, -30); }
+  } else emoji(c, '💕', 15, -20, 15);
+  c.restore();
+}
+
 // ------------------------------------------------------------------ pictures for the opposites (drawn on the 220 x 190 scene canvas).
 // One picture shows ONE pole on one thing: hot soup, a wet dog, an open box, a balloon up on the tree.
 function drawOppPic(c, o, t) {
@@ -2643,7 +2680,7 @@ function genLevel(idx) {
 
 // ------------------------------------------------------------------ game state
 const G = {
-  mode: 'menu', L: null, idx: 0, t: 0, cam: { x: 0, y: 0 }, parts: [], pops: [], flies: [], shake: 0, coins: 0, stars: 0, stats: null, bot: false, speed: 1,
+  mode: 'menu', L: null, idx: 0, t: 0, cam: { x: 0, y: 0 }, parts: [], pops: [], flies: [], cfly: [], freed: [], shake: 0, coins: 0, stars: 0, stats: null, bot: false, speed: 1,
   hinted: {}, groupCount: {}, idleT: 0, winT: 0, levelStart: 0, hold: false, freeze: 0, zoom: 1,
   input: { l: false, r: false, j: false, jp: false },
   p: { x: 0, y: 0, vx: 0, vy: 0, dir: 1, onGround: true, ground: null, coy: 0, buf: 0, dbl: 0, inv: 0, hurtT: 0, land: 0, jetT: 0, jumping: false, ice: false, conv: 0, carry: 0, water: false, wind: false,
@@ -2664,7 +2701,10 @@ function startLevel(idx) {
       for (let i = Math.floor(step / 2); i < cs.length && spots.length < 8; i += step) { const cn = cs[i]; if (cn.x > 12 * T && far(cn.x)) { cn.got = true; const gm = { x: cn.x, y: cn.y, got: false }; L.gems.push(gm); spots.push(gm); } }
       spots.sort((p, q) => p.x - q.x).forEach((gm, i) => { const w = ws[i % ws.length]; gm.word = w[0]; gm.e = w[1]; });
     } }
-  Object.assign(G, { L, idx, mode: 'run', t: 0, coins: 0, stars: 0, parts: [], pops: [], flies: [], hinted: {}, groupCount: {}, idleT: 0, winT: 0, shake: 0, levelStart: now(), hold: false, freeze: 0, zoom: 1 });
+  // two little friends wait in bubbles at the hardest-to-reach gems of every level; freeing one is remembered for good
+  { const have = (Store.d.friends || {})[idx] || 0, free = L.gems.filter(g => !g.word).sort((p, q) => p.y - q.y);
+    for (let i = 0; i < 2 && i < free.length; i++) if (!(have & (1 << i))) { free[i].friend = i; free[i].hue = (idx * 2 + i) % 6; } }
+  Object.assign(G, { L, idx, mode: 'run', t: 0, coins: 0, stars: 0, parts: [], pops: [], flies: [], cfly: [], freed: [], hinted: {}, groupCount: {}, idleT: 0, winT: 0, shake: 0, levelStart: now(), hold: false, freeze: 0, zoom: 1 });
   Object.assign(G.p, { x: 3 * T, y: GR * T, vx: 0, vy: 0, dir: 1, onGround: true, ground: null, coy: 0, buf: 0, dbl: 0, inv: 0, hurtT: 0, land: 0, jetT: 0, jumping: false, ice: false, conv: 0, carry: 0, water: false, wind: false,
     safe: { x: 3 * T, y: GR * T }, bub: null, falls: {}, blockT: 0, lock: 0, hover: 0, fallFrom: GR * T, pow: { giant: 0, magnet: 0, shield: 0, rocket: 0 }, turnT: 0 });
   Object.assign(G.pet, { x: 2 * T, y: GR * T - 60, vx: 0, vy: 0, t: 0, cd: 3, used: false });
@@ -2709,6 +2749,8 @@ function updateParts(dt) {
   for (const q of G.pops) q.t += dt;
   G.pops = G.pops.filter(q => q.t < 1);
   for (const f of G.flies) f.t += dt;
+  for (const f of G.cfly) f.t += dt; if (G.cfly.length) G.cfly = G.cfly.filter(f => f.t < 0.45);
+  for (const f of G.freed) f.t += dt; if (G.freed.length) G.freed = G.freed.filter(f => f.t < 1.7);
   const done = G.flies.filter(f => f.t >= 0.9);
   if (done.length) { G.flies = G.flies.filter(f => f.t < 0.9); UI.setStars(G.stars); Snd.sfx.star(); }
   if (G.shake > 0) G.shake = Math.max(0, G.shake - dt * 3);
@@ -2719,8 +2761,16 @@ function collect(c) {
   c.got = true; G.coins++; G.stats.coins++;
   const n = (G.groupCount[c.g] || 0) + 1; G.groupCount[c.g] = n;
   Snd.sfx.coin(n); pop(c.x, c.y - 16, String(n)); sparkle(c.x, c.y, 6);
+  if (G.cfly.length < 14) G.cfly.push({ x: c.x - G.cam.x, y: c.y - G.cam.y, t: 0 });
   if (n <= 10) Voice.say(NUMF[n], { pri: 0 });
   UI.setCoins(G.coins);
+}
+function freeFriend(gm) {
+  const f = Store.d.friends || (Store.d.friends = {}); f[G.idx] = (f[G.idx] || 0) | (1 << gm.friend); Store.save();
+  addCoins(10, gm.x, gm.y - 24); Snd.sfx.pet(); Snd.sfx.bubble(); G.shake = Math.max(G.shake, 0.2);
+  burst(gm.x, gm.y, 18, ['#fff', '#ffd6e8', '#7ee0ff'], 220, 0.6, 4, 160);
+  G.freed.push({ x: gm.x, y: gm.y, t: 0, hue: gm.hue }); G.stats.friends = (G.stats.friends || 0) + 1;
+  if (!G.bot) Voice.say([withKid('הצלת חבר!')], { pri: 0 });
 }
 function addCoins(n, x, y) { G.coins += n; G.stats.coins += n; UI.setCoins(G.coins); if (x != null) pop(x, y, '+' + n, '#ffe27a'); }
 function doJump(v) {
@@ -2889,7 +2939,7 @@ function stepRun(dt) {
     if (!d.hit) { d.hit = true; if (d.k > 0.55 && hash2(Math.round(d.x), L.idx) < 0.4) { L.coins.push({ x: d.x, y: d.y - 46, got: false, g: ++L.gid }); Snd.sfx.pop(); burst(d.x, d.y - 20, 6, ['#ffe27a', '#fff'], 120, 0.4, 3, 200); } }
     if (G.parts.length < 90) burst(d.x, d.y - 14 * d.s, 3, [L.world.key === 'snow' ? '#fff' : L.world.key === 'forest' ? '#7fd87a' : L.world.topHi], 90, 0.45, 3, 260);
   }
-  for (const gm of L.gems) if (!gm.got && Math.abs(gm.x - p.x) < 24 && gm.y > p.y - PH - 12 && gm.y < p.y + 10) { gm.got = true; if (gm.word) { addCoins(3, gm.x, gm.y - 18); Snd.sfx.bubble(); burst(gm.x, gm.y, 12, ['#bfe9ff', '#fff', '#7ee0ff'], 180, 0.5, 4, 120); G.stats.words = (G.stats.words || 0) + 1; if (!G.bot) Coach.hearWord(gm.word); } else { addCoins(Store.d.pet === 'bat' ? 8 : 5, gm.x, gm.y - 14); Snd.sfx.gem(); sparkle(gm.x, gm.y, 16); } }
+  for (const gm of L.gems) if (!gm.got && Math.abs(gm.x - p.x) < 24 && gm.y > p.y - PH - 12 && gm.y < p.y + 10) { gm.got = true; if (gm.friend != null) freeFriend(gm); else if (gm.word) { addCoins(3, gm.x, gm.y - 18); Snd.sfx.bubble(); burst(gm.x, gm.y, 12, ['#bfe9ff', '#fff', '#7ee0ff'], 180, 0.5, 4, 120); G.stats.words = (G.stats.words || 0) + 1; if (!G.bot) Coach.hearWord(gm.word); } else { addCoins(Store.d.pet === 'bat' ? 8 : 5, gm.x, gm.y - 14); Snd.sfx.gem(); sparkle(gm.x, gm.y, 16); } }
   for (const pw of L.powers) if (!pw.got && Math.abs(pw.x - p.x) < 26 && Math.abs(pw.y - (p.y - PH / 2)) < 36) { pw.got = true; givePower(pw.type); }
   // --- enemies
   for (const e of L.enemies) {
@@ -3257,7 +3307,8 @@ function render() {
   for (const k of L.coins) if (!k.got && vis(k.x)) glow(c, k.x, k.y, 20, 'rgba(255,220,110,0.5)', 0.5);
   c.restore();
   for (const k of L.coins) if (!k.got && vis(k.x)) drawCoin(c, k.x, k.y, 11, t);
-  for (const gm of L.gems) if (!gm.got && vis(gm.x)) { if (gm.word) drawWordBubble(c, gm.x, gm.y, gm.e, t + gm.x * 0.01); else drawGem(c, gm.x, gm.y, 13, t); }
+  for (const gm of L.gems) if (!gm.got && vis(gm.x)) { if (gm.friend != null) drawFriend(c, gm.x, gm.y, t + gm.x * 0.01, gm.hue, true); else if (gm.word) drawWordBubble(c, gm.x, gm.y, gm.e, t + gm.x * 0.01); else drawGem(c, gm.x, gm.y, 13, t); }
+  for (const f of G.freed) { c.globalAlpha = clamp(1.7 - f.t, 0, 1); drawFriend(c, f.x + Math.sin(f.t * 7) * 8, f.y - f.t * 46 - f.t * f.t * 40, t * 2, f.hue, false); c.globalAlpha = 1; }
   for (const pw of L.powers) if (!pw.got && vis(pw.x)) drawPower(c, pw, t);
   for (const e of L.enemies) {
     if (e.dead || !vis(e.x)) continue;
@@ -3310,6 +3361,7 @@ function render() {
   if (W.key === 'snow') { c.fillStyle = 'rgba(255,255,255,0.9)'; for (let i = 0; i < 50; i++) { const x = ((i * 97.3 + t * 16 * (1 + i % 3) - cam.x * 0.3) % (VW + 20) + VW + 20) % (VW + 20) - 10, y = ((i * 53.7 + t * (28 + (i % 5) * 8)) % (VH + 20)) - 10; c.beginPath(); c.arc(x, y, 1.5 + (i % 3), 0, 7); c.fill(); } }
   if (W.key === 'cave') { const g = c.createRadialGradient(p.x - cam.x, p.y - cam.y - 30, Store.d.pet === 'bat' ? 190 : 120, p.x - cam.x, p.y - cam.y - 30, Math.max(VW, VH) * 0.75); g.addColorStop(0, 'rgba(10,8,30,0)'); g.addColorStop(1, 'rgba(10,8,30,0.55)'); c.fillStyle = g; c.fillRect(0, 0, VW, VH); }
   drawForeground(c, L, cam, VW, VH, t);
+  for (const f of G.cfly) { const u = clamp(f.t / 0.45, 0, 1), e = u * u, x = lerp(f.x, 34, e), y = lerp(f.y, 26, e) - Math.sin(u * Math.PI) * 28; drawCoin(c, x, y, lerp(9, 6, e), t); }
   for (const f of G.flies) { const u = clamp(f.t / 0.9, 0, 1), e = u * u * (3 - 2 * u), x = lerp(f.x, VW / 2 + (f.i - 1) * 30, e), y = lerp(f.y, 26, e) - Math.sin(u * Math.PI) * 60; drawStar(c, x, y, lerp(26, 12, e), t); }
 }
 // red bouncy mushroom (the spring)
@@ -3656,6 +3708,18 @@ function ask(rd) {
     $('#qText').textContent = rd.q; stage.innerHTML = ''; opts.innerHTML = ''; foot.hidden = true; mic.hidden = true;
     stage.className = rd.stageCls || ''; opts.className = ''; opts.style.visibility = '';
     const R = { tries: 0, busy: false, over: false, t0: now(), first: null };
+    // Boti's face beside the question: his mouth moves with the voice, he cheers a right answer and looks closer after a miss
+    const tok = (ask.tok = (ask.tok || 0) + 1), qb = $('#qBoti'); let mood = '', moodT = 0;
+    const face = () => {
+      if (ask.tok !== tok || UI.screen !== 'scCard') return;
+      paintMini(qb, c => { const t = now() / 1000, p = botiPose('idle', t); p.armL = 0.18; p.armR = -0.18;
+        if (t < moodT && mood === 'yay') { p.eye = 'happy'; p.mouth = 'open'; p.head = Math.sin(t * 12) * 0.1; p.lift = Math.abs(Math.sin(t * 9)) * 5; }
+        else if (t < moodT && mood === 'hm') { p.eye = 'open'; p.look = -1; p.head = 0.14; p.mouth = 'o'; }
+        else if (Voice.speaking) { p.mouth = 'talk'; p.talk = Snd.level(); }
+        drawBoti(c, 40, 122, 1.5, 1, p, Store.d.wear, t); }, 80, 80);
+      requestAnimationFrame(face);
+    };
+    face();
     const speakQ = () => Voice.say(rd.qs || rd.q);
     let idleN = 0;
     const idle = setInterval(() => { if (!R.busy && !R.over && !Voice.speaking && !Ear.listening && ++idleN % 2 === 0) (rd.replay || speakQ)(); }, 5000);
@@ -3664,7 +3728,7 @@ function ask(rd) {
       mark() { if (R.first == null) R.first = Math.round(now() - R.t0); },
       async success(el, o) {
         if (R.over) return; R.over = true; R.busy = true; api.mark(); clearInterval(idle);
-        Snd.sfx.good(); if (el) { el.classList.remove('hint', 'bad'); el.classList.add('good'); UI.confetti(el); }
+        Snd.sfx.good(); mood = 'yay'; moodT = now() / 1000 + 1.6; if (el) { el.classList.remove('hint', 'bad'); el.classList.add('good'); UI.confetti(el); }
         const ok = R.tries === 0 && !(o && o.assisted);
         recordTrial(rd.skill, rd.item, ok, R.tries + 1, R.first, rd.extra);
         const pr = [].concat(rd.praise || pick(PRAISE));
@@ -3675,7 +3739,7 @@ function ask(rd) {
       async fail(el, msg, hintEl) {
         if (R.over || R.busy) return; api.mark(); R.tries++; R.busy = true;
         if (el) { el.classList.remove('bad'); void el.offsetWidth; el.classList.add('bad'); }
-        Snd.sfx.pop();
+        Snd.sfx.pop(); mood = 'hm'; moodT = now() / 1000 + 1.4;
         if (rd.onFail) await rd.onFail(R.tries);
         else await Voice.say(msg || (R.tries === 1 ? pick(OOPS) : rd.hint || pick(OOPS)));
         if (R.tries >= 2 && hintEl) hintEl.classList.add('hint');
@@ -3942,7 +4006,7 @@ async function startStation(st) {
   }
   st.done = true; G.stars++; Snd.sfx.gate();
   UI.show(null);
-  G.flies.push({ x: st.x + 27 - G.cam.x, y: GR * T - 232 - G.cam.y, t: 0, i: G.stars - 1 });
+  G.flies.push({ x: st.x + 27 - G.cam.x, y: GR * T - 254 - G.cam.y, t: 0, i: G.stars - 1 });
   addCoins(perfect ? 6 : 3, st.x + 27, GR * T - 150);
   if (!G.bot) Voice.say(perfect ? [withKid('מושלם!'), 'הצלת את הכוכב!'] : 'הצלת את הכוכב!');
   syncSession();
@@ -4380,6 +4444,8 @@ const UI = {
     $('#winStars').innerHTML = [0, 1, 2].map(i => `<i class="${i < G.stars ? 'on' : ''}" style="animation-delay:${i * 0.25}s"></i>`).join('');
     $('#winCoins').textContent = G.coins; $('#winWallet').textContent = Store.d.wallet;
     $('#winTitle').textContent = withKid('ניצחת את הבוס!');
+    { const fr = (Store.d.friends || {})[idx] || 0, nf = (fr & 1) + ((fr >> 1) & 1); $('#winFriends').textContent = ` · חברים שהצלת כאן: ${nf} / 2`; }
+    { const cv = $('#winBoti'), dance = () => { if (UI.screen !== 'scWin') return; paintMini(cv, c => { const t = now() / 1000; drawBoti(c, 50, 104, 1.15, 1, botiPose('win', t), Store.d.wear, t); if (Store.d.pet) drawPet(c, Store.d.pet, 84, 30 + Math.sin(t * 5) * 4, t, -1); }, 100, 110); requestAnimationFrame(dance); }; dance(); }
     $('#btnGift').hidden = !reward; $('#winBtns').hidden = !!reward; $('#btnNext').hidden = idx >= LEVEL_COUNT - 1;
     this.confetti($('#winStars'));
     Voice.say([withKid('ניצחת את הבוס!'), 'הצלת את הכוכבים!'].concat(reward ? ['ויש לך מתנה!'] : []));
@@ -4421,7 +4487,7 @@ function renderHubDom() {
   const names = WORLDS.map((W, wi) => `<h3 class="mapname${wi * 3 <= Store.d.unlocked ? '' : ' closed'}" style="left:${total - (15 + wi * WW + WW / 2)}px;top:${by + Math.round(depth * 0.3)}px">${wi * 3 <= Store.d.unlocked ? '' : '🔒 '}${W.name}</h3>`).join('');
   const nodes = pts.map(([x, y], idx) => {
     const sIdx = idx % 3, W = WORLDS[Math.floor(idx / 3)], locked = idx > Store.d.unlocked, st = Store.d.stars[idx] || 0, cur = idx === Store.d.unlocked && !st, king = sIdx === 2;
-    return `<button class="node${locked ? ' locked' : ''}${cur ? ' cur' : ''}${king ? ' king' : ''}${st ? ' done' : ''}" data-i="${idx}" style="left:${x}px;top:${y}px;--wc:${W.node}" aria-label="${W.name} שלב ${sIdx + 1}${locked ? ' (נעול)' : ''}"><b>${king ? '👑' : sIdx + 1}</b><span class="nstars">${[0, 1, 2].map(i => `<i class="${i < st ? 'on' : ''}"></i>`).join('')}</span></button>`;
+    return `<button class="node${locked ? ' locked' : ''}${cur ? ' cur' : ''}${king ? ' king' : ''}${st ? ' done' : ''}" data-i="${idx}" style="left:${x}px;top:${y}px;--wc:${W.node}" aria-label="${W.name} שלב ${sIdx + 1}${locked ? ' (נעול)' : ''}"><b>${king ? '👑' : sIdx + 1}</b><span class="nstars">${[0, 1, 2].map(i => `<i class="${i < st ? 'on' : ''}"></i>`).join('')}</span><span class="nfr">${[0, 1].map(i => `<i class="${((Store.d.friends || {})[idx] || 0) & (1 << i) ? 'on' : ''}"></i>`).join('')}</span></button>`;
   }).join('');
   wrap.innerHTML = `<div class="map" style="width:${total}px;height:${H}px"><canvas id="mapCv"></canvas>${names}${nodes}<canvas id="mapBoti" class="mapboti bob" style="left:${pts[curIdx][0]}px;top:${pts[curIdx][1]}px"></canvas></div>`;
   { const cv = $('#mapCv'), c = cv.getContext('2d'); cv.width = total * 2; cv.height = H * 2; c.scale(2, 2);
