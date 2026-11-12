@@ -391,6 +391,16 @@ body.portrait .hubtop .tbtn span { display: none; } body.portrait .hubtop .tbtn 
 .mapboti { position: absolute; width: 3.5rem; height: 3.8rem; margin: -5.3rem 0 0 -1.75rem; pointer-events: none; filter: drop-shadow(0 0.25rem 0 rgba(8, 10, 40, .35)); }
 
 #bossBanner.lv { background: linear-gradient(#4fc3f7, #1e88e5); rotate: 2deg; font-size: clamp(1.3rem, 6.4vmin, 2.5rem); top: 16%; }
+
+/* ---------- test mode ---------- */
+#testBadge { position: absolute; top: max(0.25rem, env(safe-area-inset-top)); left: 50%; transform: translateX(-50%); z-index: 30; display: flex; align-items: center; gap: 0.5rem; background: rgba(126, 87, 194, .94); color: #fff; border: 0.16rem solid var(--ink); border-radius: 999px; padding: 0.1rem 0.3rem 0.1rem 0.75rem; font-size: 0.72rem; white-space: nowrap; direction: rtl; }
+#testBadge[hidden] { display: none; }
+#testBadge button { font: inherit; font-weight: bold; color: var(--ink); background: #fff; border: 0.12rem solid var(--ink); border-radius: 999px; padding: 0.05rem 0.6rem; }
+.saydebug { font-size: 0.78rem; background: rgba(29, 35, 64, .88); color: #fff; border-radius: 0.6rem; padding: 0.15rem 0.6rem; max-width: 100%; text-align: center; direction: rtl; }
+.saydebug[hidden] { display: none; }
+/* the badge is a slim tab on the left edge, mid-height: the one place no button uses on any screen */
+#testBadge { top: 42%; left: 0; transform: translateY(-50%); writing-mode: vertical-rl; border-radius: 0 0.7rem 0.7rem 0; border-left: 0; padding: 0.6rem 0.12rem 0.3rem; gap: 0.4rem; }
+#testBadge button { padding: 0.5rem 0.05rem; }
 </style>
 </head>
 <body>
@@ -418,6 +428,7 @@ body.portrait .hubtop .tbtn span { display: none; } body.portrait .hubtop .tbtn 
     <span class="earwave"><i></i><i></i><i></i><i></i><i></i></span>
   </div>
   <div id="sub" hidden></div>
+  <div id="testBadge" hidden><span>מצב בדיקה</span><button id="btnTestExit">יציאה</button></div>
   <div id="wipe"></div>
 
   <section id="scTitle" class="screen">
@@ -483,6 +494,7 @@ body.portrait .hubtop .tbtn span { display: none; } body.portrait .hubtop .tbtn 
         <div class="sayword" id="sayWord"></div>
         <div class="saybeats" id="sayBeats" hidden></div>
       </div>
+      <div class="saydebug" id="sayDebug" hidden></div>
     </div>
   </section>
 
@@ -565,8 +577,8 @@ body.portrait .hubtop .tbtn span { display: none; } body.portrait .hubtop .tbtn 
   </section>
 </div>
 
-<script>/* build 202611120606 */
-const BUILD = '202611120606';
+<script>/* build 202611120617 */
+const BUILD = '202611120617';
 'use strict';
 /* בוטי והכוכבים האבודים – platformer + learning stations for a 3-year-old gamer.
    File order (see build.py): core → audio/voice → data → art → engine → stations → ui → parent → boot. */
@@ -595,25 +607,41 @@ const hash2 = (a, b) => { let h = (a * 374761393 + b * 668265263) | 0; h = (h ^ 
 
 // ------------------------------------------------------------------ storage (this device) + shared db (claude.ai)
 const Store = {
-  key: 'botiStars.v3',
+  key: 'botiStars.v3', testKey: 'botiStars.v3.test', modeKey: 'botiStars.mode', test: false,
+  // Test mode (for the parent): the game runs on a COPY of the save, with every level open. Nothing done there reaches the
+  // child's real progress; leaving test mode throws the copy away.
+  enterTest() {
+    try {
+      if (!this.test) { this.save(true); const copy = JSON.parse(JSON.stringify(this.d)); copy.unlocked = LEVEL_COUNT - 1; copy.sessions = {}; localStorage.setItem(this.testKey, JSON.stringify(copy)); }
+      localStorage.setItem(this.modeKey, 'test');
+    } catch (e) { return false; }
+    this.frozen = true; location.reload(); return true;
+  },
+  exitTest() { this.frozen = true; try { localStorage.removeItem(this.modeKey); localStorage.removeItem(this.testKey); } catch (e) { /* storage blocked */ } location.replace(location.pathname); },
   d: {
     sessions: {}, stars: {}, wallet: 0, owned: ['col_blue'], wear: { col: 'col_blue', hat: null, cape: null, trail: null, skin: null },
     powers: {}, pets: [], pet: null, boost: { skills: [], words: [] }, speech: { lv: 1, words: {} }, opp: {}, setup: false,
     skill: {}, unlocked: 0, tut: {}, updatedAt: 0,
-    set: { sound: true, music: true, voice: 'auto', mic: true, limit: 15, focus: { num: true, lang: true, think: true }, ease: 0, name: '', robot: false },
+    set: { sound: true, music: true, voice: 'auto', mic: true, limit: 15, focus: { num: true, lang: true, think: true }, ease: 0, name: '', robot: false, strict: true },
   },
   load() {
     try {
-      const s = localStorage.getItem(this.key);
+      if (/[?&]test=1\b/.test(location.search) && localStorage.getItem(this.modeKey) !== 'test') {      // a link that always opens in test mode
+        const real = localStorage.getItem(this.key), copy = real ? JSON.parse(real) : JSON.parse(JSON.stringify(this.d));
+        copy.unlocked = 14; copy.sessions = {}; copy.setup = true; localStorage.setItem(this.testKey, JSON.stringify(copy)); localStorage.setItem(this.modeKey, 'test');
+      }
+      this.test = localStorage.getItem(this.modeKey) === 'test';
+      const s = localStorage.getItem(this.test ? this.testKey : this.key);
       if (s) { const o = JSON.parse(s); if (o && typeof o === 'object') { const set = Object.assign({}, this.d.set, o.set || {}); Object.assign(this.d, o); this.d.set = set; } }
     } catch (e) { /* storage blocked */ }
   },
   save(profile) {
+    if (this.frozen) return;                                          // switching between the real save and the test copy: write nothing more
     const ids = Object.keys(this.d.sessions);
     if (ids.length > 120) ids.sort((a, b) => this.d.sessions[a].startedAt - this.d.sessions[b].startedAt).slice(0, ids.length - 120).forEach(id => delete this.d.sessions[id]);
     if (profile) this.d.updatedAt = Date.now();
-    try { localStorage.setItem(this.key, JSON.stringify(this.d)); } catch (e) { /* storage blocked */ }
-    if (profile) syncProfile();
+    try { localStorage.setItem(this.test ? this.testKey : this.key, JSON.stringify(this.d)); } catch (e) { /* storage blocked */ }
+    if (profile && !this.test) syncProfile();
   },
   profile() { const { sessions, ...p } = this.d; return JSON.parse(JSON.stringify(p)); },
 };
@@ -948,11 +976,11 @@ const Ear = {
   // Resolves {text, alts, heard, voice, reason}: voice = a sound was heard even if no words came back ("he tried").
   hearWeb(ms, onLive) {
     return new Promise(res => {
-      let rec, alts = [], interim = '', done = false, tm = 0, voice = false, opened = false;
+      let rec, alts = [], interim = '', done = false, tm = 0, voice = false, opened = false, conf = 0;
       const fin = reason => {
         if (done) return; done = true; clearTimeout(tm); this.listening = false; this.cur = null; this.open = false; Snd.duck(false);
         const text = alts[0] || interim;
-        res({ text, alts: alts.length ? alts : interim ? [interim] : [], heard: !!text, voice: voice || !!text, reason });
+        res({ text, alts: alts.length ? alts : interim ? [interim] : [], heard: !!text, voice: voice || !!text, reason, conf: alts.length ? conf : 0 });
       };
       try { rec = new this.SR(); } catch (e) { return res({ text: '', alts: [], heard: false, voice: false, reason: 'error' }); }
       rec.lang = 'he-IL'; rec.interimResults = true; rec.maxAlternatives = 5; rec.continuous = false;
@@ -963,7 +991,7 @@ const Ear = {
       rec.onresult = e => {
         for (let i = e.resultIndex; i < e.results.length; i++) {
           const r = e.results[i];
-          if (r.isFinal) alts = Array.from({ length: r.length }, (_, j) => (r[j].transcript || '').trim()).filter(Boolean); else interim = (r[0].transcript || '').trim();
+          if (r.isFinal) { alts = Array.from({ length: r.length }, (_, j) => (r[j].transcript || '').trim()).filter(Boolean); conf = +r[0].confidence || 0; } else interim = (r[0].transcript || '').trim();
         }
         voice = true;
         if (onLive) onLive(alts[0] || interim, true);
@@ -1170,6 +1198,7 @@ function heardParts(alts, target) {
   }
   const allSyl = best.words.every(w => w.syl.every(v => v >= 0.6));
   best.level = best.score >= 0.75 && allSyl ? 'full' : best.mean >= 0.5 ? 'close' : 'far';
+  best.exact = best.words.every(w => w.score >= 0.95 && w.syl.every(v => v >= 0.95));
   best.miss = null;
   if (best.level !== 'full') outer: for (let wi = 0; wi < best.words.length; wi++) for (let si = 0; si < best.words[wi].syl.length; si++) if (best.words[wi].syl[si] < 0.6) { best.miss = [wi, si]; break outer; }
   return best;
@@ -3999,16 +4028,27 @@ const Coach = {
     return words;
   },
   nextKey() { const ws = this.sessionWords(); this.turn = (this.turn || 0) + 1; return ws[(this.turn - 1) % ws.length]; },
-  // ---- judging what was heard
+  // ---- judging what was heard. Strict (the default): "good" is only the word itself, heard as the phone's first choice.
+  // A near miss - a small-child form (ka for kar), a swapped sound, the word only among the phone's other guesses, or a
+  // doubtful hearing - is "close": Boti does not say yes, he says it slowly together and listens again.
+  // Lenient (parent setting off): near misses count as the word, the way speech therapists score a three-year-old.
   judge(spec, r) {
     if (!r || (!r.heard && !r.voice)) return { cls: 'silent' };
     if (!r.heard) return { cls: 'voice' };
-    let hp = heardParts(r.alts, spec.word);
-    if (hp.level !== 'full' && spec.phrase) { const h2 = heardParts(r.alts, spec.phrase); if (h2.level === 'full') return { cls: 'good', hp: h2, phrase: true, text: r.text }; }
-    if (hp.level !== 'full' && spec.kind === 'adj') { const pole = spec.key.slice(3), o = OPP[pole]; if (o.f && heardParts(r.alts, o.f).level === 'full') hp = Object.assign(hp, { level: 'full' }); }
-    let cls = hp.level === 'full' ? 'good' : hp.level === 'close' ? 'partial' : 'other';
-    if (cls === 'partial' && heardOther(r.alts, this.known().filter(w => w !== stripNiqqud(spec.word)))) cls = 'other';      // a different word, said clearly
-    return { cls, hp, text: r.text, approx: hp.approx };
+    const strict = Store.d.set.strict !== false, W = spec.word, forms = [W].concat(spec.phrase ? [spec.phrase] : [], spec.kind === 'adj' && OPP[spec.key.slice(3)].f ? [OPP[spec.key.slice(3)].f] : []);
+    const any = heardParts(r.alts, W), sure = !(r.conf > 0 && r.conf < 0.5);
+    const exactTop = forms.some(f => { const h = heardParts([r.alts[0]], f); return h.level === 'full' && h.exact && !h.approx; });
+    const fullAny = forms.some(f => heardParts(r.alts, f).level === 'full');
+    let cls = exactTop && sure ? 'good' : fullAny ? (strict ? 'close' : 'good') : any.level === 'close' ? 'partial' : 'other';
+    if (cls === 'partial' && heardOther(r.alts, this.known().filter(w => w !== stripNiqqud(W)))) cls = 'other';      // a different word, said clearly
+    return { cls, hp: any, text: r.text, conf: r.conf || 0, why: exactTop ? (sure ? '' : 'הטלפון לא בטוח') : fullAny ? (any.approx ? 'הגייה של ילד קטן' : any.exact ? 'לא הניחוש הראשון של הטלפון' : 'צליל דומה') : '' };
+  },
+  // test mode: what the phone heard and what the game made of it
+  debug(r, j) {
+    const el = $('#sayDebug'); if (!el) return; if (!Store.test) { el.hidden = true; return; }
+    el.hidden = false;
+    const name = { good: 'נכון', close: 'קרוב', partial: 'חלק מהמילה', other: 'מילה אחרת', voice: 'קול בלי מילים', silent: 'שקט' }[j.cls] || j.cls;
+    el.textContent = !r ? '' : r.nomic ? 'אין מיקרופון' : r.tap != null ? 'נגיעה בתמונה' : `שמע: ${(r.alts || []).slice(0, 4).map(a => '"' + a + '"').join(', ') || '—'}${r.conf ? ' · ביטחון ' + Math.round(r.conf * 100) + '%' : ''} · ${name}${j.why ? ' (' + j.why + ')' : ''}${r.reason && !r.heard ? ' · ' + r.reason : ''}`;
   },
   known() { return this._known || (this._known = Object.values(V).map(w => stripNiqqud(w.n)).filter(w => !w.includes(' ') && sylIpa(w))); },
   log(spec, cls, heard, cue) {
@@ -4016,7 +4056,7 @@ const Coach = {
     s.said.push({ t: Date.now(), w: spec.key, k: spec.kind, r: cls, c: cue || '', h: heard || '' }); s.updatedAt = Date.now();
     w.n++; w.t = Date.now();
     if (cls === 'good') { w.g++; const d = dayKey(); w.gd = w.gd || []; if (!w.gd.includes(d)) { w.gd.push(d); if (w.gd.length > 6) w.gd.shift(); } }
-    else if (cls === 'partial') w.p++; else if (cls === 'other') w.o++; else if (cls === 'voice') w.v++; else w.q++;
+    else if (cls === 'close') w.c = (w.c || 0) + 1; else if (cls === 'partial') w.p++; else if (cls === 'other') w.o++; else if (cls === 'voice') w.v++; else w.q++;
     const said = Object.values(sp.words).filter(x => x.g > 0).length;
     if (sp.lv === 1 && said >= 6) { sp.lv = 2; sp.up = Date.now(); }
     Store.save(true);
@@ -4112,17 +4152,20 @@ const Coach = {
       if (choice) { cue = 'choice'; r = await this.choice(spec); } else { cue = 'wait'; r = await this.listen(5000, spec); }
       j = this.judge(spec, r);
       if (r && r.tap != null) j = { cls: r.tap ? 'good' : 'other', tap: true };
-      if (j.cls !== 'good') {
+      this.debug(r, j);
+      if (j.cls !== 'good' && j.cls !== 'close' && j.cls !== 'partial') {
         cue = 'model'; $('#sayWord').textContent = stripNiqqud(W); $('#sayChoice').hidden = true;
         await this.tell(spec, w.n % 2 ? ['ביחד:', `${W}.`] : [`${W}.`]);
         const r2 = await this.listen(5000, spec), j2 = this.judge(spec, r2);
         if (j2.cls !== 'silent' || j.cls === 'silent') { r = r2; j = j2; }
+        this.debug(r, j);
       }
     }
     $('#sayWord').textContent = stripNiqqud(W); $('#sayChoice').hidden = true;
-    j = j || this.judge(spec, r);
+    if (!j) { j = this.judge(spec, r); this.debug(r, j); }
     const heard = (r && r.text) || '';
     if (j.cls === 'good') { this.reward(true); await this.tell(spec, [!j.tap && rnd() < 0.35 ? `אמרת ${W}!` : 'כן!', `${W}.`].concat(spec.phrase ? [`${spec.phrase}!`] : [])); }
+    else if (j.cls === 'close') j = await this.closeUp(spec, j);
     else if (j.cls === 'partial') j = await this.buildUp(spec, j);
     else if (j.cls === 'other') { this.reward(false); await this.tell(spec, [spec.kind === 'sound' ? `${W}.` : `זה ${W}.`].concat(close)); }
     else if (j.cls === 'voice') { this.reward(false); await this.tell(spec, ['שמעתי אותך!', `${W}.`].concat(close)); }
@@ -4146,9 +4189,8 @@ const Coach = {
   // part of the word came out: welcome it, give the whole word back slowly, and (once) build it together from its end
   async buildUp(spec, j) {
     const W = spec.word, close = spec.phrase ? [`${spec.phrase}.`] : [], parts = stripNiqqud(W).split(' ');
-    this.reward(false);
-    await this.tell(spec, ['כן!', '~' + W].concat(close));
-    let r = await this.listen(4000, spec), j2 = this.judge(spec, r);
+    await this.tell(spec, [pick(['ניסית!', 'שמעתי אותך!']), '~' + W].concat(close));
+    let r = await this.listen(4000, spec), j2 = this.judge(spec, r); this.debug(r, j2);
     const ip = parts.length === 1 ? sylIpa(parts[0]) : null;
     if (j2.cls === 'silent' && ip && ip.length >= 2) {
       // the piece he already has is normally the end of the word; start from there
@@ -4158,12 +4200,24 @@ const Coach = {
       await sleep(1700);
       await this.beats(spec);
       await this.tell(spec, [`${W}.`]);
-      r = await this.listen(5000, spec); j2 = this.judge(spec, r);
+      r = await this.listen(5000, spec); j2 = this.judge(spec, r); this.debug(r, j2);
     }
     const good = j2.cls === 'good';
     this.reward(good);
     await this.tell(spec, [good ? 'כן!' : pick(EFFORT), `${W}.`].concat(close));
-    return { cls: good ? 'good' : 'partial', built: true };
+    return { cls: good ? 'good' : j2.cls === 'close' ? 'close' : 'partial', built: true, text: (r && r.text) || j.text };
+  },
+  // nearly the word: no "yes" yet. Boti says it slowly, together, lights the beats, and listens once more.
+  async closeUp(spec, j) {
+    const W = spec.word, close = spec.phrase ? [`${spec.phrase}.`] : [];
+    await this.tell(spec, [pick(['ניסית!', 'שמעתי אותך!']), 'ביחד, לאט:'], 500);
+    await this.beats(spec);
+    await this.tell(spec, [`${W}.`]);
+    const r = await this.listen(5000, spec), j2 = this.judge(spec, r); this.debug(r, j2);
+    const good = j2.cls === 'good';
+    this.reward(good);
+    await this.tell(spec, [good ? (rnd() < 0.5 ? `אמרת ${W}!` : 'כן!') : pick(EFFORT), `${W}.`].concat(close));
+    return { cls: good ? 'good' : 'close', built: true, text: (r && r.text) || j.text };
   },
   // ---- boss fight: Boti invites a shout "together". Any voice fires it; after a silence Boti shouts alone and it fires anyway.
   async power(word) {
@@ -4194,7 +4248,7 @@ const Coach = {
   // every word the album can hold, easiest to say first
   albumKeys() { return this._album || (this._album = Object.keys(SOUNDS).map(k => 'snd_' + k).concat(VOCAB_ALL.filter(k => EXPAND[k]).sort((a, b) => phonCost(V[a].n) - phonCost(V[b].n)))); },
   // 0 not met yet, 1 heard, 2 tried (a part, a voice), 3 said
-  stage(key) { const w = this.sp().words[key]; return !w ? 0 : w.g > 0 ? 3 : w.p > 0 || w.v > 0 || w.o > 0 ? 2 : w.m > 0 ? 1 : 0; },
+  stage(key) { const w = this.sp().words[key]; return !w ? 0 : w.g > 0 ? 3 : w.p > 0 || w.c > 0 || w.v > 0 || w.o > 0 ? 2 : w.m > 0 ? 1 : 0; },
   // a word bubble caught in a level: one more model of today's word, nothing asked
   hearWord(key) { const s = this.spec(key, { i: 0 }); this.rec(key).m++; Voice.say([`${s.word}!`], { pri: 0 }); },
 };
@@ -4474,6 +4528,7 @@ function bindInput() {
   $('#btnWinShop').onclick = () => { Snd.sfx.tap(); G.mode = 'menu'; G.L = null; UI.show('scShop'); renderShop(); };
   $('#btnShop').onclick = () => { Snd.init(); Snd.sfx.tap(); UI.show('scShop'); renderShop(); Voice.say('הארון של בוטי! מה נלבש?'); };
   $('#btnShopBack').onclick = () => { Snd.sfx.tap(); UI.showHub(true); };
+  $('#testBadge').hidden = !Store.test; $('#btnTestExit').onclick = () => { Snd.sfx.tap(); Store.exitTest(); };
   $('#btnAlbum').onclick = () => { Snd.init(); Snd.sfx.tap(); UI.show('scAlbum'); renderAlbum(); Voice.say(['האלבום שלי!', 'נוגעים בתמונה.']); };
   $('#btnAlbumBack').onclick = () => { Snd.sfx.tap(); UI.showHub(true); };
   $('#btnCatch').onclick = () => { Snd.init(); Snd.sfx.tap(); Catch.start(); };
@@ -4515,7 +4570,7 @@ function itemLabel(key) {
   if (/^n\d+$/.test(key)) return key.slice(1);
   return key;
 }
-const CUES = { good: 'אמר את המילה', partial: 'אמר חלק ממנה', other: 'אמר משהו אחר', voice: 'השמיע קול', silent: 'שתק', nomic: 'בלי מיקרופון' };
+const CUES = { good: 'אמר את המילה', close: 'אמר כמעט', partial: 'אמר חלק ממנה', other: 'אמר משהו אחר', voice: 'השמיע קול', silent: 'שתק', nomic: 'בלי מיקרופון' };
 const OLD_CUE = { spont: 'good', choice: 'good', imit: 'good', parent: 'good', attempt: 'partial', none: 'silent', skip: 'silent' };       // results saved by earlier versions
 function analyze(sessions) {
   const ev = sessions.flatMap(s => s.events || []).sort((a, b) => a.t - b.t), said = sessions.flatMap(s => s.said || []).sort((a, b) => a.t - b.t), heard = sessions.flatMap(s => s.heard || []).sort((a, b) => a.t - b.t);
@@ -4560,9 +4615,9 @@ function buildInsights(A) {
   if (cnt.n >= 4 && giv.n >= 4 && cnt.lv >= giv.lv + 2) ins.push('<b>ספירה מול כמות:</b> סופר יפה, אבל "תן לי 3" עוד קשה לו. זה שלב טבעי. בבית: "תן לי 2 קוביות", ועוצרים יחד במספר.');
   const hardN = Object.entries(A.nums).filter(([k, o]) => +k >= 2 && o.n >= 3 && o.ok / o.n < 0.5).map(([k]) => k);
   if (hardN.length) ins.push(`<b>מספרים שעוד מבלבלים:</b> ${hardN.join(', ')}. ספרו יחד בדיוק את הכמות הזאת בחפצים אמיתיים.`);
-  const c = A.cue, waited = (c.good || 0) + (c.partial || 0) + (c.other || 0) + (c.voice || 0) + (c.silent || 0), voiced = waited - (c.silent || 0);
+  const c = A.cue, waited = (c.good || 0) + (c.close || 0) + (c.partial || 0) + (c.other || 0) + (c.voice || 0) + (c.silent || 0), voiced = waited - (c.silent || 0);
   if (waited >= 4) {
-    ins.push(`<b>דיבור (קופסת ההפתעות):</b> בוטי אמר מילה וחיכה ${waited} פעמים. ב-${c.good || 0} מהן הוא אמר את המילה, ב-${c.partial || 0} חלק ממנה, ב-${c.other || 0} מילה אחרת, ב-${c.voice || 0} השמיע קול, וב-${c.silent || 0} שתק.`);
+    ins.push(`<b>דיבור (קופסת ההפתעות):</b> בוטי אמר מילה וחיכה ${waited} פעמים. ב-${c.good || 0} מהן הוא אמר את המילה, ב-${c.close || 0} כמעט, ב-${c.partial || 0} חלק ממנה, ב-${c.other || 0} מילה אחרת, ב-${c.voice || 0} השמיע קול, וב-${c.silent || 0} שתק.`);
     if (voiced < waited * 0.3) ins.push('<b>איך לעזור בבית:</b> הוא עוד מקשיב יותר משמדבר, וזה בסדר. אומרים מילה אחת ברורה על מה שהוא מסתכל עליו, מחכים 5 שניות בשקט, ולא מבקשים "תגיד". קולות של חיות (מו, הב הב) הם התחלה טובה.');
     else if ((c.good || 0) < voiced * 0.4) ins.push('<b>איך לעזור בבית:</b> הוא מנסה, וזה העיקר. כשיוצא חלק מהמילה ("דול") אומרים "כן! גדול. פיל גדול" בלי לבקש שוב. לא מתקנים ר, ס, ש: הן מגיעות מאוחר.');
     else ins.push('<b>איך לעזור בבית:</b> הוא אומר מילים. מחזירים לו את המילה ומוסיפים אחת: "כדור" ← "כדור גדול". ממשיכים לחכות 5 שניות לפני שעוזרים.');
@@ -4586,7 +4641,7 @@ function reportText(A) {
   L.push('דיבור: ' + Object.entries(A.cue).map(([k, n]) => `${CUES[k] || k} ${n}`).join(', ') + `. שלב ${sp.lv}.`);
   L.push('המילים של היום (כמה פעמים שמע): ' + (((sp.set || {}).words || []).map(k => `${itemLabel(k)} ${(sp.words[k] || {}).m || 0}`).join(', ') || 'עוד אין'));
   L.push('מילים שאמר: ' + (Object.entries(sp.words).filter(([, v]) => v.g).map(([k, v]) => `${itemLabel(k)} ×${v.g}`).join(', ') || 'עוד אין'));
-  L.push('מילים שאמר חלק מהן: ' + (Object.entries(sp.words).filter(([, v]) => !v.g && v.p).map(([k]) => itemLabel(k)).join(', ') || 'אין'));
+  L.push('מילים שאמר כמעט או חלק מהן: ' + (Object.entries(sp.words).filter(([, v]) => !v.g && (v.p || v.c)).map(([k]) => itemLabel(k)).join(', ') || 'אין'));
   L.push('מה המיקרופון שמע: ' + (A.said.filter(h => h.h).slice(-15).map(h => `${itemLabel(h.w)} ← "${h.h}"`).join(', ') || 'אין'));
   L.push('מילים שלא מבין עדיין: ' + (Object.entries(A.wr).filter(([, o]) => o.n >= 2 && o.ok / o.n < 0.5).map(([k]) => itemLabel(k)).join(', ') || 'אין'));
   L.push('שלבים אחרונים: ' + A.levels.slice(-5).map(l => `שלב ${l.lv + 1}: ${Math.round((l.ms || 0) / 6000) / 10} דק׳, ${l.falls || 0} נפילות, בוס ${Math.round((l.bossMs || 0) / 1000)} שנ׳`).join('; '));
@@ -4613,13 +4668,17 @@ function renderInsights(A) {
   const settings = `<div class="pcard"><h3>הגדרות</h3>
     <div class="prow"><label class="plabel" for="iName">שם הילד:</label><input id="iName" type="text" maxlength="14" autocomplete="off" value="${esc(set.name || '')}"></div>
     <div class="prow">${tg('tSound', set.sound, 'קול ודיבור')}${tg('tMusic', set.music, 'מוזיקה')}${tg('tMic', set.mic, 'מיקרופון')}${tg('tRobot', set.robot, 'קריין הטלפון כגיבוי')}</div>
+    <div class="prow"><span class="plabel">דיבור:</span>${tg('tStrict', set.strict !== false, 'רק מילה מדויקת מקבלת "כן"')}<span class="note">כבוי = גם הגייה של ילד קטן ("קה" במקום "קר") נחשבת נכונה.</span></div>
     <div class="prow"><span class="plabel">מה לתרגל:</span>${tg('fNum', set.focus.num !== false, 'מספרים')}${tg('fLang', set.focus.lang !== false, 'שפה')}${tg('fThink', set.focus.think !== false, 'חשיבה')}</div>
     <div class="prow"><span class="plabel">קושי הפלטפורמה:</span>${seg('sEase', [[-1, 'קל יותר'], [0, 'רגיל'], [1, 'קשה יותר']], set.ease || 0)}</div>
     <div class="prow"><span class="plabel">הפסקה אחרי:</span>${seg('sLimit', [[10, '10 דק׳'], [15, '15'], [20, '20'], [30, '30']], set.limit || 15)}</div>
     <p class="note">קול: ${{ clips: 'הקלטות (אדם)', robot: 'קריין הטלפון', none: 'אין' }[Voice.engine]}. מיקרופון: ${{ web: 'מקשיב לבד בעברית', tap: 'בלחיצה', none: 'לא זמין כאן' }[Ear.mode]}${Ear.denied ? ' (נחסם)' : ''}.${miss.length ? ` משפטים בלי הקלטה: ${miss.length}.` : ''}</p>
     ${miss.length ? `<div class="words">${miss.slice(0, 30).map(m => `<span>${esc(m)}</span>`).join('')}</div>` : ''}
     <div class="prow" style="margin-top:.6rem"><button class="danger" id="bReset">איפוס כל ההתקדמות</button><span class="note" id="resetMsg"></span></div></div>`;
-  if (!A.ev.length && !A.said.length) return `<div class="pcard"><h3>עוד אין נתונים</h3><p class="note">אחרי שלב אחד יופיעו כאן: מה הוא כבר יודע, מה כדאי לחזק, מה אמר בקול ואיך (לבד / אחרי הדגמה), ציורים שלו, ואיך הוא מתמודד עם הבוסים.</p></div>${settings}`;
+  const testCard = `<div class="pcard"><h3>מצב בדיקה</h3>
+    <p class="note">${Store.test ? 'מצב בדיקה פעיל: המשחק רץ על העתק. שום דבר ממה שנעשה עכשיו לא נשמר להתקדמות של הילד. כל השלבים פתוחים, ובמסך הדיבור רואים מה הטלפון שמע.' : 'רוצה לנסות את המשחק בעצמך? במצב בדיקה המשחק רץ על העתק: כוכבים, מטבעות, מילים ונתונים של הילד לא משתנים. כל השלבים פתוחים, ובמסך הדיבור רואים מה הטלפון שמע.'}</p>
+    <div class="prow"><button class="big ${Store.test ? 'skip' : 'go'} small" id="bTest">${Store.test ? 'יציאה ממצב בדיקה' : 'כניסה למצב בדיקה'}</button></div></div>`;
+  if (!A.ev.length && !A.said.length) return `${testCard}<div class="pcard"><h3>עוד אין נתונים</h3><p class="note">אחרי שלב אחד יופיעו כאן: מה הוא כבר יודע, מה כדאי לחזק, מה אמר בקול ואיך (לבד / אחרי הדגמה), ציורים שלו, ואיך הוא מתמודד עם הבוסים.</p></div>${settings}`;
   const ins = buildInsights(A), sp = Coach.sp();
   const kpis = `<div class="kpis">
     <div class="kpi"><b>${pct(A.firstTry)}%</b><span>נכון בניסיון ראשון (${A.ev.length} שאלות)</span></div>
@@ -4640,7 +4699,7 @@ function renderInsights(A) {
   const todayW = ((sp.set || {}).words || []).map(k => `<span>${esc(itemLabel(k))} · שמע ${(sp.words[k] || {}).m || 0}</span>`).join('') || '<span>ייבחרו במשחק הבא</span>';
   const lvRows = A.levels.slice(-6).reverse().map(l => `<tr><td>${esc(WORLDS[Math.floor(l.lv / LEVELS_PER_WORLD)].name)} ${l.lv % LEVELS_PER_WORLD + 1}</td><td>${Math.round((l.ms || 0) / 6000) / 10}</td><td>${l.falls || 0}</td><td>${l.bumps || 0}</td><td>${l.stomps || 0}</td><td>${Math.round((l.bossMs || 0) / 1000)}</td><td>${{ said: 'אמר', heard: 'השמיע קול', boti: 'בוטי אמר', tap: 'לחץ' }[l.pw] || '–'}</td></tr>`).join('');
   const draws = (Store.d.drawings || []).slice().reverse().map(d => `<figure><img src="${d.u}" alt="ציור פרצוף"><figcaption>${new Date(d.t).toLocaleDateString('he-IL', { day: 'numeric', month: 'numeric' })} · רמה ${d.lv}${d.helped ? ' · עם עזרה' : ''}</figcaption></figure>`).join('');
-  return `${kpis}
+  return `${testCard}${kpis}
     <div class="pcard"><h3>מה רואים</h3><ul class="ins">${ins.map(x => `<li>${x}</li>`).join('')}</ul></div>
     ${boost}${data}
     ${can ? `<div class="pcard"><h3>מה הוא כבר יודע (לפי המשחק)</h3><ul class="ins">${can}</ul></div>` : ''}
@@ -4650,8 +4709,8 @@ function renderInsights(A) {
       <p class="note">כמו אצל קלינאית: בוטי אומר את המילה כמה פעמים ומחכה 5 שניות. הוא לא מבקש "תגיד", לא אומר "לא נכון", ומשבח כל ניסיון. אותן 3–4 מילים חוזרות כמה ימים. בבית עושים אותו דבר: אומרים, מחכים, ומוסיפים מילה אחת.</p>
       <h4>המילים של היום</h4><div class="words">${todayW}</div>
       <h4>אמר</h4><div class="words">${wl(([, v]) => v.g, 's')}</div>
-      <h4>אמר חלק מהמילה</h4><div class="words">${wl(([, v]) => !v.g && v.p, '')}</div>
-      <h4>שמע הרבה, עוד לא אמר</h4><div class="words">${wl(([, v]) => !v.g && !v.p && v.m >= 6, 'w')}</div>
+      <h4>אמר כמעט, או חלק מהמילה</h4><div class="words">${wl(([, v]) => !v.g && (v.p || v.c), '')}</div>
+      <h4>שמע הרבה, עוד לא אמר</h4><div class="words">${wl(([, v]) => !v.g && !v.p && !v.c && v.m >= 6, 'w')}</div>
       <h4>מה המיקרופון שמע</h4><div class="words">${heardHTML}</div></div>
     <div class="pcard"><h3>ספירה וכמות לפי מספר</h3><div class="nums">${numsHTML}</div></div>
     <div class="pcard"><h3>הבנת מילים (נכון / פעמים)</h3><div class="words">${rx}</div></div>
@@ -4671,7 +4730,8 @@ async function openParent() {
   $('#pBody').innerHTML = renderInsights(A);
   const set = Store.d.set, bo = Store.d.boost, again = () => Store.save(true);
   const tog = (id, get, put) => { const b = $('#' + id); if (b) b.onclick = () => { put(!get()); b.setAttribute('aria-pressed', get()); again(); }; };
-  tog('tSound', () => set.sound, v => { set.sound = v; Snd.duck(false); }); tog('tMusic', () => set.music, v => { set.music = v; Snd.duck(false); }); tog('tMic', () => set.mic, v => { set.mic = v; }); tog('tRobot', () => set.robot, v => { set.robot = v; });
+  { const bt = $('#bTest'); if (bt) bt.onclick = () => { Snd.sfx.tap(); if (Store.test) Store.exitTest(); else Store.enterTest(); }; }
+  tog('tSound', () => set.sound, v => { set.sound = v; Snd.duck(false); }); tog('tMusic', () => set.music, v => { set.music = v; Snd.duck(false); }); tog('tMic', () => set.mic, v => { set.mic = v; }); tog('tRobot', () => set.robot, v => { set.robot = v; }); tog('tStrict', () => set.strict !== false, v => { set.strict = v; });
   tog('fNum', () => set.focus.num !== false, v => { set.focus.num = v; }); tog('fLang', () => set.focus.lang !== false, v => { set.focus.lang = v; }); tog('fThink', () => set.focus.think !== false, v => { set.focus.think = v; });
   const segBind = (id, put) => $$(`#${id} button`).forEach(b => b.onclick = () => { put(b.dataset.v); $$(`#${id} button`).forEach(x => x.setAttribute('aria-pressed', x === b)); again(); });
   segBind('sEase', v => { set.ease = +v; }); segBind('sLimit', v => { set.limit = +v; });
