@@ -321,6 +321,60 @@ canvas.sc { width: 100%; height: 100%; object-fit: contain; display: block; }
 #wipe { position: absolute; inset: 0; pointer-events: none; z-index: 8; background: var(--ink); clip-path: circle(0% at 50% 50%); }
 #wipe.go { animation: wipe 0.65s ease-in both; }
 @keyframes wipe { 0% { clip-path: circle(150% at 50% 50%); } 100% { clip-path: circle(0% at 50% 50%); } }
+
+/* ---------- talk scene v2: Boti, the surprise box, the picture that pops out, beats, listening ---------- */
+#scSay.dim { background: radial-gradient(ellipse 70% 62% at 50% 52%, rgba(255, 248, 222, .96) 0, rgba(255, 244, 205, .9) 45%, rgba(255, 226, 150, .35) 72%, rgba(16, 20, 54, .6) 100%); }
+.panel.say { gap: 0.3rem; align-items: center; width: min(100%, 38rem); background: none; border: 0; box-shadow: none; }
+.saydots { display: flex; gap: 0.4rem; direction: ltr; } .saydots i { width: 0.7rem; height: 0.7rem; border-radius: 50%; background: #d9deee; border: 0.12rem solid var(--ink); }
+.saydots i.done { background: var(--gold); } .saydots i.now { background: var(--coral); transform: scale(1.25); }
+.saystage { position: relative; width: min(100%, clamp(15rem, 84vmin, 30rem)); aspect-ratio: 300 / 190; }
+#sayCv { position: absolute; inset: 0; width: 100%; height: 100%; }
+.saystage .saypic { position: absolute; left: 28.6%; top: 0; width: 31%; height: auto; aspect-ratio: 1; background: none; border-radius: 0; transform: translate(-50%, 0) scale(1); transform-origin: 50% 100%; display: grid; place-items: center; pointer-events: none; }
+.saystage .saypic .pic { width: 100%; height: 100%; } .saystage .saypic .em { line-height: 1; filter: drop-shadow(0 0.25rem 0 rgba(29, 35, 64, .22)); }
+.saystage .saypic canvas.sc { width: 100%; height: auto; }
+.saypic.hid { opacity: 0; transform: translate(-50%, 55%) scale(0.2); }
+.saypic.pop { animation: saypop 0.55s cubic-bezier(.2, 1.6, .4, 1) both; }
+@keyframes saypop { 0% { opacity: 0; transform: translate(-50%, 55%) scale(0.2) rotate(-14deg); } 100% { opacity: 1; transform: translate(-50%, 0) scale(1) rotate(0); } }
+.saypic.turn .pic { animation: turnglow 1.1s ease-in-out infinite; }
+@keyframes turnglow { 50% { transform: scale(1.07); filter: drop-shadow(0 0 0.9rem rgba(41, 182, 246, .9)); } }
+.saypic.yay .pic { animation: yay 0.8s ease-out; }
+@keyframes yay { 30% { transform: translateY(-22%) rotate(-10deg) scale(1.15); } 60% { transform: translateY(0) rotate(8deg) scale(1.05); } }
+.say .sayword { min-height: 1.2em; background: #fff; border: 0.22rem solid var(--ink); border-radius: 999px; padding: 0.08em 0.8em 0.12em; box-shadow: 0 0.25rem 0 rgba(29, 35, 64, .25); min-width: 3em; text-align: center; }
+.say .sayword:empty { visibility: hidden; }
+.saybeats { display: flex; gap: 0.35rem; direction: rtl; }
+.saybeats b { font-family: var(--f-display); font-size: clamp(1.1rem, 5.4vmin, 1.8rem); background: #eef1fa; border: 0.16rem solid var(--ink); border-radius: 0.8rem; padding: 0.05em 0.5em; transition: transform .12s, background .12s; }
+.saybeats b.on { background: var(--gold); transform: translateY(-0.35rem) scale(1.12); }
+.saystage .saychoice { position: absolute; left: 0; top: 0; width: 57%; height: 56%; display: flex; gap: 5%; justify-content: center; align-items: center; }
+.saystage .saychoice[hidden] { display: none; } .saystage .saychoice .opt { width: 46%; height: auto; aspect-ratio: 1; padding: 4%; }
+.saystage .earbar { position: absolute; left: 50%; bottom: -0.15rem; transform: translateX(-50%); min-height: 0; background: rgba(255, 255, 255, .9); border-radius: 1rem; padding: 0.1rem 0.7rem; white-space: nowrap; max-width: 96%; overflow: hidden; }
+.saystage .earbar[hidden] { display: none; }
+.saytext { display: grid; place-items: center; min-height: clamp(2.2rem, 10vmin, 3.9rem); } .saytext > * { grid-area: 1 / 1; }
+.saytext .saybeats:not([hidden]) ~ * { visibility: hidden; }
+#powerBar .pwlabel { font-size: clamp(1rem, 4.2vmin, 1.5rem); }
+
+/* ---------- sticker album ---------- */
+#albumGrid { width: 100%; display: grid; grid-template-columns: repeat(auto-fill, minmax(4.3rem, 1fr)); gap: 0.45rem; max-height: min(64vh, 27rem); overflow-y: auto; padding: 0.25rem; }
+.stk { position: relative; aspect-ratio: 1; background: var(--mist); border: 0.2rem solid var(--line); border-radius: 1rem; container-type: size; padding: 8%; cursor: pointer; }
+.stk.st0 { background: #e6e9f3; } .stk.st0 .qm { font-family: var(--f-display); font-size: 1.6rem; color: #b3bad0; }
+.stk.st1 .pic { filter: grayscale(0.85) opacity(0.6); }
+.stk.st2 { background: #fff3d6; border-color: #ffcf7a; }
+.stk.st3 { background: #fff6c7; border-color: var(--gold); box-shadow: 0 0 0 0.12rem #fff inset, 0 0.2rem 0 rgba(29, 35, 64, .18); }
+.stkstar { position: absolute; top: -0.35rem; inset-inline-end: -0.35rem; width: 1.4rem; height: 1.4rem; background: var(--gold); clip-path: polygon(50% 0, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%); filter: drop-shadow(0 0.1rem 0 rgba(29, 35, 64, .5)); }
+.stk.boing { animation: boing 0.5s ease-out; } @keyframes boing { 30% { transform: scale(1.18) rotate(-6deg); } 60% { transform: scale(0.95) rotate(4deg); } }
+#btnAlbum { background: #ffd6e8; }
+
+/* ---------- catching game ---------- */
+#scCatch { padding: 0; } #catchCv { position: absolute; inset: 0; width: 100%; height: 100%; touch-action: none; }
+.catchhud { position: absolute; top: max(0.5rem, env(safe-area-inset-top)); left: 0.6rem; right: 0.6rem; display: flex; align-items: center; gap: 0.6rem; pointer-events: none; direction: ltr; }
+.catchhud .ibtn { pointer-events: auto; }
+.catchgoal { display: flex; align-items: center; gap: 0.35rem; background: #fff; border: 0.22rem solid var(--ink); border-radius: 999px; padding: 0.1rem 0.8rem 0.1rem 0.25rem; font-family: var(--f-display); font-size: 1.5rem; box-shadow: 0 0.2rem 0 rgba(29, 35, 64, .25); }
+.catchpic { width: 2.9rem; height: 2.9rem; container-type: size; }
+.catchtime { flex: 1; height: 0.8rem; background: rgba(255, 255, 255, .55); border: 0.16rem solid var(--ink); border-radius: 999px; overflow: hidden; } .catchtime i { display: block; height: 100%; background: var(--gold); width: 100%; }
+#btnCatch { background: #c9f2d0; }
+body.portrait .hubtop .tbtn span { display: none; } body.portrait .hubtop .tbtn { padding: 0.35rem 0.6rem; }
+
+/* ---------- boss name: a tilted ribbon instead of a plain box ---------- */
+#bossBanner { background: linear-gradient(#ff8a5c, #ff4a2a); border: 0.28rem solid var(--ink); border-radius: 1.1rem; padding: 0.02em 0.75em 0.14em; box-shadow: 0 0.45rem 0 rgba(29, 35, 64, .38), 0 0 0 0.22rem rgba(255, 255, 255, .55) inset; rotate: -3deg; -webkit-text-stroke: 0; text-shadow: 0 0.09em 0 rgba(29, 35, 64, .6); }
 </style>
 </head>
 <body>
@@ -344,9 +398,8 @@ canvas.sc { width: 100%; height: 100%; object-fit: contain; display: block; }
 
   <div id="bossBanner" hidden></div>
   <div id="powerBar" hidden>
-    <span class="pwlabel">תגיד חזק:</span><b id="powerWord"></b>
+    <span class="pwlabel">ביחד:</span><b id="powerWord"></b>
     <span class="earwave"><i></i><i></i><i></i><i></i><i></i></span>
-    <button class="big go" id="powerBtn" hidden></button>
   </div>
   <div id="sub" hidden></div>
   <div id="wipe"></div>
@@ -366,7 +419,7 @@ canvas.sc { width: 100%; height: 100%; object-fit: contain; display: block; }
       <div class="prow"><label class="plabel" for="suName">איך קוראים לילד?</label><input id="suName" type="text" maxlength="14" autocomplete="off"></div>
       <p class="note">בוטי יפנה אליו בשם. השם נשמר רק במכשיר הזה.</p>
       <div class="prow"><button class="big mid small" id="suMic">להפעיל מיקרופון</button><span class="note" id="suMicState"></span></div>
-      <p class="note">המשחק מקשיב לילד אחרי שבוטי שואל, בלי ללחוץ על כלום. הקול לא נשמר; כרום הופך אותו לטקסט.</p>
+      <p class="note">המשחק מקשיב לילד לבד, בלי ללחוץ על כלום. צליל קצר של הטלפון = "עכשיו תורך". הקול לא נשמר; כרום הופך אותו לטקסט.</p>
       <p class="note">כדי לשחק במסך מלא בלי שורת כתובת: בתפריט של כרום ← "הוספה למסך הבית".</p>
       <button class="big go" id="suGo">מתחילים!</button>
     </div>
@@ -379,6 +432,8 @@ canvas.sc { width: 100%; height: 100%; object-fit: contain; display: block; }
       <div class="pill"><i class="cico"></i><b id="wallet">0</b></div>
       <span class="grow"></span>
       <button class="tbtn" id="btnTalk"><svg viewBox="0 0 24 24"><path d="M4 4h16v12H9l-5 4z"/></svg><span>לדבר עם בוטי</span></button>
+      <button class="tbtn" id="btnCatch"><svg viewBox="0 0 24 24"><path d="M4 10h16l-2 10H6zM8 10l4-6 4 6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg><span>לתפוס!</span></button>
+      <button class="tbtn" id="btnAlbum"><svg viewBox="0 0 24 24"><path d="M5 3h12a2 2 0 0 1 2 2v16H7a2 2 0 0 1-2-2zM9 8h6M9 12h6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg><span>האלבום</span></button>
       <button class="tbtn" id="btnShop"><svg viewBox="0 0 24 24"><path d="M5 8h14l-1.5 12h-11zM8.5 8a3.5 3.5 0 0 1 7 0" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linejoin="round"/></svg><span>הארון</span></button>
     </div>
     <div class="hubmid"><canvas id="hubBoti" class="bob"></canvas></div>
@@ -401,20 +456,16 @@ canvas.sc { width: 100%; height: 100%; object-fit: contain; display: block; }
 
   <section id="scSay" class="screen dim" hidden>
     <div class="panel say">
-      <div class="sayrowtop">
-        <canvas id="sayBoti"></canvas>
-        <div class="saycol">
-          <div id="sayPic" class="saypic"></div>
-          <div class="sayword" id="sayWord"></div>
-        </div>
-        <button class="micbig" id="btnMic" hidden aria-label="מיקרופון"><svg viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M6 11a6 6 0 0 0 12 0M12 17v4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button>
+      <div class="saydots" id="sayDots"></div>
+      <div class="saystage">
+        <canvas id="sayCv"></canvas>
+        <div id="sayPic" class="saypic hid"></div>
+        <div class="saychoice" id="sayChoice" hidden></div>
+        <div class="earbar" id="earBar" hidden><span class="earwave"><i></i><i></i><i></i><i></i><i></i></span><span id="sayLive"></span></div>
       </div>
-      <div class="earbar" id="earBar" hidden><span class="earwave"><i></i><i></i><i></i><i></i><i></i></span><span id="sayLive"></span></div>
-      <div class="sayrow parentrow">
-        <span class="saylabel" id="sayHint"></span>
-        <button class="big ok small" data-r="said">אמר</button>
-        <button class="big mid small" data-r="tried">ניסה</button>
-        <button class="big skip small" data-r="skip">דלג</button>
+      <div class="saytext">
+        <div class="sayword" id="sayWord"></div>
+        <div class="saybeats" id="sayBeats" hidden></div>
       </div>
     </div>
   </section>
@@ -470,6 +521,26 @@ canvas.sc { width: 100%; height: 100%; object-fit: contain; display: block; }
     </div>
   </section>
 
+  <section id="scCatch" class="screen" hidden>
+    <canvas id="catchCv"></canvas>
+    <div class="catchhud">
+      <button class="ibtn" id="btnCatchBack" aria-label="חזרה למפה"><svg viewBox="0 0 24 24"><path d="M3 11 12 3l9 8v10h-6v-6H9v6H3z"/></svg></button>
+      <div class="catchgoal"><div id="catchPic" class="catchpic"></div><b id="catchCount">0</b></div>
+      <div class="catchtime"><i id="catchBar"></i></div>
+    </div>
+  </section>
+
+  <section id="scAlbum" class="screen dim" hidden>
+    <div class="panel shop">
+      <div class="shophead">
+        <button class="big skip small" id="btnAlbumBack">חזרה</button>
+        <h2>האלבום שלי</h2>
+        <div class="pill dark"><i class="sico"></i><b id="albumCount">0</b></div>
+      </div>
+      <div id="albumGrid"></div>
+    </div>
+  </section>
+
   <section id="scParent" class="screen paper" hidden>
     <div class="pwrap">
       <div class="phead"><h2>תובנות להורה</h2><button class="big skip small" id="btnParentBack">חזרה למשחק</button></div>
@@ -478,7 +549,8 @@ canvas.sc { width: 100%; height: 100%; object-fit: contain; display: block; }
   </section>
 </div>
 
-<script>/* build 202611112151 */
+<script>/* build 202611120536 */
+const BUILD = '202611120536';
 'use strict';
 /* בוטי והכוכבים האבודים – platformer + learning stations for a 3-year-old gamer.
    File order (see build.py): core → audio/voice → data → art → engine → stations → ui → parent → boot. */
@@ -502,6 +574,7 @@ function mulberry32(a) {
 const kid = () => String((Store.d.set || {}).name || '').trim().slice(0, 14);
 const withKid = (text, p) => { const n = kid(); return n && rnd() < (p == null ? 1 : p) ? text.replace(/[!.]*$/, '') + `, ${n}!` : text; };
 const kidPre = () => (kid() ? kid() + ', ' : '');
+const dayKey = t => { const d = new Date(t || Date.now()); return `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`; };
 const hash2 = (a, b) => { let h = (a * 374761393 + b * 668265263) | 0; h = (h ^ (h >>> 13)) * 1274126177 | 0; return ((h ^ (h >>> 16)) >>> 0) / 4294967296; };
 
 // ------------------------------------------------------------------ storage (this device) + shared db (claude.ai)
@@ -509,7 +582,7 @@ const Store = {
   key: 'botiStars.v3',
   d: {
     sessions: {}, stars: {}, wallet: 0, owned: ['col_blue'], wear: { col: 'col_blue', hat: null, cape: null, trail: null, skin: null },
-    powers: {}, pets: [], pet: null, boost: { skills: [], words: [] }, speech: { lv: 1, words: {} }, setup: false,
+    powers: {}, pets: [], pet: null, boost: { skills: [], words: [] }, speech: { lv: 1, words: {} }, opp: {}, setup: false,
     skill: {}, unlocked: 0, tut: {}, updatedAt: 0,
     set: { sound: true, music: true, voice: 'auto', mic: true, limit: 15, focus: { num: true, lang: true, think: true }, ease: 0, name: '', robot: false },
   },
@@ -610,7 +683,8 @@ function importData(text) {
   Store.save(true);
 }
 
-// ------------------------------------------------------------------ sound effects + music (WebAudio, no files)
+// ------------------------------------------------------------------ sound effects + music. Music loops and a few effects are real
+// recordings (audio/*.ogg, public-domain packs: see audio/CREDITS.txt); everything else, and the fallback, is synthesised.
 const Snd = (() => {
   let ac = null, master = null, musicGain = null, voiceGain = null, analyser = null, timer = null, step = 0, tune = null, noiseBuf = null, lvlBuf = null;
   function init() {
@@ -623,6 +697,19 @@ const Snd = (() => {
     noiseBuf = ac.createBuffer(1, ac.sampleRate * 0.2, ac.sampleRate);
     const ch = noiseBuf.getChannelData(0);
     for (let i = 0; i < ch.length; i++) ch[i] = rnd() * 2 - 1;
+    ['s_jump', 's_coin', 's_break'].forEach(n => loadBuf(n).then(bf => { if (bf) ready[n] = bf; }));
+    document.addEventListener('visibilitychange', () => { try { if (document.hidden) ac.suspend(); else ac.resume(); } catch (e) { /* ignore */ } });
+  }
+  const bufs = {}, ready = {}, MUSIC = ['forest', 'beach', 'snow', 'cave', 'space'];
+  function loadBuf(name) {
+    return bufs[name] || (bufs[name] = fetch('audio/' + name + '.ogg').then(r => (r.ok ? r.arrayBuffer() : null)).then(ab => (ab && ac ? ac.decodeAudioData(ab) : null)).catch(() => null));
+  }
+  function sample(name, vol, rate) {
+    const bf = ready[name];
+    if (!ac || !bf || !Store.d.set.sound) return false;
+    const src = ac.createBufferSource(), g = ac.createGain();
+    src.buffer = bf; src.playbackRate.value = rate || 1; g.gain.value = vol; src.connect(g); g.connect(master); src.start();
+    return true;
   }
   function tone(f, dur, type = 'sine', vol = 0.3, when = 0, slide = 0, dest = null) {
     if (!ac || !Store.d.set.sound) return;
@@ -641,11 +728,11 @@ const Snd = (() => {
   }
   const seq = (notes, dur, type, vol, gap) => notes.forEach((f, i) => tone(f, dur, type, vol, i * gap));
   const sfx = {
-    jump: () => tone(300, 0.2, 'square', 0.09, 0, 2.2),
+    jump: () => sample('s_jump', 0.5, 0.94 + rnd() * 0.12) || tone(300, 0.2, 'square', 0.09, 0, 2.2),
     jet: () => { tone(220, 0.28, 'sawtooth', 0.07, 0, 3); noise(0.25, 0.1, 0, 1500); },
-    coin: n => { const f = 880 * Math.pow(2, Math.min(n || 0, 9) / 12); tone(f, 0.06, 'square', 0.07); tone(f * 1.5, 0.2, 'square', 0.07, 0.055); },
+    coin: n => { if (sample('s_coin', 0.42, Math.pow(2, Math.min(n || 0, 9) / 12))) return; const f = 880 * Math.pow(2, Math.min(n || 0, 9) / 12); tone(f, 0.06, 'square', 0.07); tone(f * 1.5, 0.2, 'square', 0.07, 0.055); },
     gem: () => seq([1047, 1319, 1568, 2093], 0.16, 'triangle', 0.14, 0.06),
-    stomp: () => { tone(200, 0.16, 'square', 0.16, 0, 0.4); noise(0.1, 0.15, 0, 800); },
+    stomp: () => { if (sample('s_break', 0.6, 0.95 + rnd() * 0.1)) return; tone(200, 0.16, 'square', 0.16, 0, 0.4); noise(0.1, 0.15, 0, 800); },
     bump: () => tone(150, 0.22, 'triangle', 0.3, 0, 0.5),
     spring: () => tone(180, 0.35, 'sine', 0.3, 0, 5),
     fall: () => tone(600, 0.5, 'sine', 0.18, 0, 0.2),
@@ -682,22 +769,36 @@ const Snd = (() => {
     { ms: 215, root: 466, sc: [0, 2, 4, 6, 7, 9, 11, 12], lead: [0, 4, 7, 4, 3, 4, 5, -1, 7, 5, 4, 3, 4, 2, 0, -1], bass: [0, 4, 0, 4, 3, 5, 4, 4] },
     { ms: 170, root: 294, sc: [0, 1, 3, 5, 7, 8, 10, 12], lead: [0, 0, 3, 0, 4, 3, 1, 0, 0, 0, 5, 4, 3, 1, 3, -1], bass: [0, 0, 0, 0, 1, 1, 3, 3], boss: true },
   ];
+  // i = world number, 'boss', 'menu' or null. The recorded loop plays when it has loaded; until then (or without it) the little
+  // synthesised tune plays. Only the current loop and the boss loop stay in memory.
+  let track = null, trackName = '';
+  function stopTrack() { if (track) { try { track.stop(); } catch (e) { /* already stopped */ } track = null; } clearInterval(timer); timer = null; tune = null; }
   function music(i) {
     if (!ac) return;
-    tune = i == null ? null : TUNES[i === 'boss' ? 5 : i % 5];
-    step = 0; clearInterval(timer); timer = null;
-    duck(false);
-    if (!tune) return;
-    timer = setInterval(() => {
-      if (!Store.d.set.music || !Store.d.set.sound || document.hidden || !tune) return;
-      const n = tune.lead[step % 16];
-      if (n >= 0) tone(tune.root * Math.pow(2, tune.sc[n] / 12), 0.2, tune.boss ? 'square' : 'triangle', tune.boss ? 0.05 : 0.075, 0, 0, musicGain);
-      if (step % 2 === 0) tone(tune.root / 4 * Math.pow(2, tune.sc[tune.bass[(step / 2) % 8]] / 12), 0.34, 'sine', 0.17, 0, 0, musicGain);
-      if (step % 4 === 2 || (tune.boss && step % 2 === 1)) noise(0.05, 0.04, 0, 6000, musicGain);
-      step++;
-    }, tune.ms);
+    const name = i == null ? '' : i === 'boss' ? 'm_boss' : i === 'menu' ? 'm_menu' : 'm_' + MUSIC[i % 5];
+    if (name === trackName && (track || timer)) { duck(false); return; }
+    stopTrack(); trackName = name; step = 0; duck(false);
+    if (!name) return;
+    Object.keys(bufs).forEach(k => { if (k.startsWith('m_') && k !== name && k !== 'm_boss') delete bufs[k]; });
+    const synth = () => {
+      tune = TUNES[i === 'boss' ? 5 : i === 'menu' ? 1 : i % 5];
+      timer = setInterval(() => {
+        if (!Store.d.set.music || !Store.d.set.sound || document.hidden || !tune) return;
+        const n = tune.lead[step % 16];
+        if (n >= 0) tone(tune.root * Math.pow(2, tune.sc[n] / 12), 0.2, tune.boss ? 'square' : 'triangle', tune.boss ? 0.05 : 0.075, 0, 0, musicGain);
+        if (step % 2 === 0) tone(tune.root / 4 * Math.pow(2, tune.sc[tune.bass[(step / 2) % 8]] / 12), 0.34, 'sine', 0.17, 0, 0, musicGain);
+        if (step % 4 === 2 || (tune.boss && step % 2 === 1)) noise(0.05, 0.04, 0, 6000, musicGain);
+        step++;
+      }, tune.ms);
+    };
+    synth();
+    loadBuf(name).then(bf => {
+      if (trackName !== name || !bf || track) return;
+      clearInterval(timer); timer = null; tune = null;
+      try { track = ac.createBufferSource(); track.buffer = bf; track.loop = true; track.connect(musicGain); track.start(); } catch (e) { track = null; synth(); }
+    });
   }
-  function duck(on) { if (ac && musicGain) musicGain.gain.setTargetAtTime(Store.d.set.music ? (on ? 0.07 : 0.4) : 0, ac.currentTime, 0.15); }
+  function duck(on) { if (ac && musicGain) musicGain.gain.setTargetAtTime(Store.d.set.music && Store.d.set.sound ? (on ? 0.09 : track ? 0.62 : 0.4) : 0, ac.currentTime, 0.15); }
   // play one decoded voice clip; resolves when it ends (or is stopped)
   function playBuf(buf) {
     let src = null, done;
@@ -711,7 +812,7 @@ const Snd = (() => {
     let s = 0; for (let i = 0; i < lvlBuf.length; i += 4) { const v = (lvlBuf[i] - 128) / 128; s += v * v; }
     return Math.min(1, Math.sqrt(s / (lvlBuf.length / 4)) * 5);
   }
-  return { init, sfx, music, duck, playBuf, level, ctx: () => ac };
+  return { init, sfx, music, duck, playBuf, level, ctx: () => ac, playing: () => trackName + (track ? ':file' : timer ? ':synth' : ''), effects: () => Object.keys(ready) };
 })();
 
 // ------------------------------------------------------------------ subtitles (what the voice says, so a parent can read along)
@@ -725,8 +826,9 @@ const fnv = s => { let h = 0x811c9dc5; for (let i = 0; i < s.length; i++) { h ^=
 const lineKey = t => fnv(stripNiqqud(String(t)).replace(/\s+/g, ' ').trim());
 const Voice = {
   man: null, packs: {}, cache: new Map(), speaking: false, tok: 0, curPri: 0, cur: null, missing: {}, heb: null, ready: null,
+  // pack 0 (the most used lines) loads at once; the others arrive quietly, so no line waits for a download and the game works offline
   init() {
-    this.ready = fetch('voice/manifest.json').then(r => (r.ok ? r.json() : null)).then(m => { if (m && m.lines) { this.man = m; this.pack(0); } }).catch(() => {});
+    this.ready = fetch('voice/manifest.json?b=' + (typeof BUILD === 'string' ? BUILD : '')).then(r => (r.ok ? r.json() : null)).then(m => { if (m && m.lines) { this.man = m; this.pack(0); if (!(navigator.connection && navigator.connection.saveData)) m.packs.forEach((_, i) => setTimeout(() => this.pack(i), 4000 + i * 1500)); } }).catch(() => {});
     if ('speechSynthesis' in window) {
       const pv = () => { const vs = speechSynthesis.getVoices() || []; this.heb = vs.find(v => /^(he|iw)/i.test(v.lang)) || null; };
       pv(); try { speechSynthesis.addEventListener('voiceschanged', pv); } catch (e) { /* older browsers */ }
@@ -808,7 +910,7 @@ const Voice = {
 const STANDALONE = !(window.claude && typeof window.claude.use === 'function');
 const Ear = {
   SR: window.SpeechRecognition || window.webkitSpeechRecognition || null, mode: 'none', listening: false, denied: false, cur: null,
-  d: null, buf: '', partial: '', resolve: null, timer: 0, silence: 0, onLive: null, lang: 'he',
+  d: null, buf: '', partial: '', resolve: null, timer: 0, silence: 0, onLive: null, lang: 'he', open: false, blocked: 0,
   init() { if (STANDALONE && this.SR) this.mode = 'web'; },
   initClaude(d) {
     if (!d || this.mode === 'web') return;
@@ -822,34 +924,48 @@ const Ear = {
   stop() { if (this.cur) { try { this.cur.abort(); } catch (e) { /* ignore */ } } if (this.mode === 'tap' && this.listening) this.finishTap('stopped'); },
   // resolves {text, alts, heard, reason}; never rejects. In 'tap' mode it must be called straight from a click.
   hear(ms, onLive) {
-    if (!this.usable || this.listening) return Promise.resolve({ text: '', alts: [], heard: false, reason: this.listening ? 'busy' : 'unavailable' });
+    if (!this.usable || this.listening) return Promise.resolve({ text: '', alts: [], heard: false, voice: false, reason: this.listening ? 'busy' : 'unavailable' });
     Voice.stop();
     return this.mode === 'web' ? this.hearWeb(ms || 5500, onLive) : this.hearTap(ms || 7000, onLive);
   },
+  // One recognition session per try (on Android the system beeps when it opens: that beep is the child's "your turn" signal).
+  // Resolves {text, alts, heard, voice, reason}: voice = a sound was heard even if no words came back ("he tried").
   hearWeb(ms, onLive) {
     return new Promise(res => {
-      let rec, alts = [], interim = '', done = false, tm = 0;
+      let rec, alts = [], interim = '', done = false, tm = 0, voice = false, opened = false;
       const fin = reason => {
-        if (done) return; done = true; clearTimeout(tm); this.listening = false; this.cur = null; Snd.duck(false);
+        if (done) return; done = true; clearTimeout(tm); this.listening = false; this.cur = null; this.open = false; Snd.duck(false);
         const text = alts[0] || interim;
-        res({ text, alts: alts.length ? alts : interim ? [interim] : [], heard: !!text, reason });
+        res({ text, alts: alts.length ? alts : interim ? [interim] : [], heard: !!text, voice: voice || !!text, reason });
       };
-      try { rec = new this.SR(); } catch (e) { return res({ text: '', alts: [], heard: false, reason: 'error' }); }
+      try { rec = new this.SR(); } catch (e) { return res({ text: '', alts: [], heard: false, voice: false, reason: 'error' }); }
       rec.lang = 'he-IL'; rec.interimResults = true; rec.maxAlternatives = 5; rec.continuous = false;
       this.listening = true; this.cur = rec; Snd.duck(true);
+      rec.onaudiostart = () => { opened = true; this.open = true; this.blocked = 0; };
+      rec.onsoundstart = rec.onspeechstart = () => { voice = true; if (onLive) onLive(interim, true); };
+      rec.onnomatch = () => { voice = true; };
       rec.onresult = e => {
         for (let i = e.resultIndex; i < e.results.length; i++) {
           const r = e.results[i];
           if (r.isFinal) alts = Array.from({ length: r.length }, (_, j) => (r[j].transcript || '').trim()).filter(Boolean); else interim = (r[0].transcript || '').trim();
         }
-        if (onLive) onLive(alts[0] || interim);
+        voice = true;
+        if (onLive) onLive(alts[0] || interim, true);
         if (alts.length) fin('done');
       };
-      rec.onerror = e => { if (e.error === 'not-allowed' || e.error === 'service-not-allowed') this.denied = true; fin(e.error || 'error'); };
-      rec.onend = () => fin(alts.length || interim ? 'done' : 'silence');
-      tm = setTimeout(() => { try { rec.stop(); } catch (e) { /* ignore */ } setTimeout(() => fin('timeout'), 800); }, ms);
+      rec.onerror = e => {
+        const c = e.error || 'error';
+        // "not-allowed" also arrives when the recogniser is merely busy, so one of them must not switch the microphone off for good
+        if (c === 'not-allowed' || c === 'service-not-allowed') { this.blocked = (this.blocked || 0) + 1; this.checkPermission(); if (this.blocked >= 3) this.denied = true; }
+        fin(c === 'no-speech' ? 'silence' : c);
+      };
+      rec.onend = () => fin(alts.length || interim ? 'done' : voice ? 'nomatch' : 'silence');
+      tm = setTimeout(() => { try { rec.stop(); } catch (e) { /* ignore */ } setTimeout(() => fin(voice ? 'nomatch' : 'timeout'), 900); }, ms);
       try { rec.start(); } catch (e) { fin('error'); }
     });
+  },
+  checkPermission() {
+    try { navigator.permissions.query({ name: 'microphone' }).then(st => { this.denied = st.state === 'denied'; }, () => {}); } catch (e) { /* not supported: the counter above decides */ }
   },
   hearTap(maxMs, onLive) {
     this.buf = ''; this.partial = ''; this.onLive = onLive || null; this.listening = true; Snd.duck(true);
@@ -927,7 +1043,7 @@ const PH_VOW = 'aeiou';
 const HE_SND = { 'א': '_', 'ע': '_', 'ה': '_h', 'ב': 'bv', 'ג': 'g', 'ד': 'd', 'ו': 'vou_', 'ז': 'z', 'ח': 'x', 'ט': 't', 'י': 'yie_', 'כ': 'kx', 'ל': 'l', 'מ': 'm', 'נ': 'n',
   'ס': 's', 'פ': 'pf', 'צ': 'c', 'ק': 'k', 'ר': 'r', 'ש': 'Ss', 'ת': 't', 'J': 'j', 'Q': 'C', 'Z': 'z' };
 // swaps a three-year-old makes (fronting k->t, r->l / y, sh->s ...) and swaps the recogniser makes (voicing): close, not wrong
-const PH_NEAR = ['kt', 'gd', 'Ss', 'sc', 'ct', 'zs', 'rl', 'ry', 'ly', 'xh', 'xk', 'bp', 'dt', 'gk', 'vf', 'vb', 'fp', 'mn', 'jd', 'jz', 'Ct', 'CS', 'Sc'];
+const PH_NEAR = ['kt', 'gd', 'Ss', 'sc', 'ct', 'zs', 'rl', 'ry', 'ly', 'xh', 'xk', 'bp', 'dt', 'gk', 'vf', 'vb', 'fp', 'mn', 'jd', 'jz', 'Ct', 'CS', 'Sc', 'Sz', 'zc', 'st', 'St', 'zd', 'Sd', 'sd', 'rx'];
 const phNear = (a, b) => PH_NEAR.includes(a + b) || PH_NEAR.includes(b + a);
 const heLetters = w => normHe(String(w).replace(/ג[׳']/g, 'J').replace(/צ[׳']/g, 'Q').replace(/ז[׳']/g, 'Z')).replace(/j/g, 'J').replace(/q/g, 'Q').replace(/z/g, 'Z').replace(/[^א-תJQZ]/g, '');
 const normKeep = w => stripNiqqud(String(w)).replace(/ג[׳']/g, 'J').replace(/צ[׳']/g, 'Q').replace(/ז[׳']/g, 'Z').replace(/[ךםןףץ]/g, c => FINALS[c]).replace(/[^א-תJQZ ]/g, ' ').replace(/\s+/g, ' ').trim();
@@ -961,7 +1077,7 @@ function phAlign(syls, heard) {
   D[0][0] = 0;
   for (let i = 0; i <= m; i++) for (let j = 0; j <= n; j++) {
     const d = D[i][j]; if (d >= INF) continue;
-    if (i < m) { const c = d + (isV(T[i]) ? 0.01 : 1); if (c < D[i + 1][j]) { D[i + 1][j] = c; B[i + 1][j] = 1; } }                                  // target sound not heard
+    if (i < m) { const c = d + (isV(T[i]) ? 0.01 : T[i] === 'h' ? 0.05 : 1); if (c < D[i + 1][j]) { D[i + 1][j] = c; B[i + 1][j] = 1; } }                                  // target sound not heard
     if (j < n) { const c = d + (opts(H[j]).includes('_') ? 0.03 : 0.7); if (c < D[i][j + 1]) { D[i][j + 1] = c; B[i][j + 1] = 2; } }                    // extra heard letter
     if (i < m && j < n) { const c = d + mcost(T[i], H[j]); if (c < D[i + 1][j + 1]) { D[i + 1][j + 1] = c; B[i + 1][j + 1] = 3; } }
   }
@@ -970,7 +1086,7 @@ function phAlign(syls, heard) {
   while (i > 0 || j > 0) {
     const b = B[i][j];
     if (b === 3) { const c = mcost(T[i - 1], H[j - 1]); got[i - 1] = c < 0.1 ? 1 : c < 1 ? 0.8 : 0; map[j - 1] = S[i - 1]; i--; j--; }
-    else if (b === 1) { got[i - 1] = isV(T[i - 1]) ? 1 : 0; i--; }
+    else if (b === 1) { got[i - 1] = isV(T[i - 1]) || T[i - 1] === 'h' ? 1 : 0; i--; }
     else { if (!opts(H[j - 1]).includes('_')) extra++; j--; }
   }
   for (let k = 0, last = 0; k < n; k++) { if (map[k] < 0) map[k] = last; else last = map[k]; }       // silent letters stay with the syllable before them
@@ -980,6 +1096,20 @@ function phAlign(syls, heard) {
   // a syllable with no consonant of its own (the "a" of "a-ba") counts as said when its neighbours were
   const fill = syl.map((v, k) => (v != null ? v : (syl[k + 1] != null ? syl[k + 1] : syl[k - 1] != null ? syl[k - 1] : score)));
   return { score, syl: fill, extra, map };
+}
+
+// the forms a small child gives a word, as syllable lists. A form must keep two consonants (one, when the word has only two).
+function childForms(syls) {
+  const out = [], cons = s => s.replace(/[aeiou]/g, ''), all = cons(syls.join('')), min = all.length <= 2 ? 1 : 2;
+  const add = (v, needV) => { v = v.filter(Boolean); if (v.length && cons(v.join('')).length >= min && v.join('') !== syls.join('')) out.push({ syls: v, needV: !!needV }); };
+  const last = syls[syls.length - 1], noEnd = /[rl]$/.test(last) ? syls.slice(0, -1).concat([last.slice(0, -1)]) : null;
+  const noStart = /^[^aeiou]/.test(syls[0]) ? [syls[0].slice(1)].concat(syls.slice(1)) : null;
+  if (noEnd) add(noEnd);
+  if (noStart) add(noStart, true);
+  if (noEnd && noStart && syls.length >= 2) add([noStart[0]].concat(noEnd.slice(1)), true);
+  syls.forEach((sy, i) => { const on = sy.search(/[aeiou]/); if (on >= 2) { add(syls.map((x, k) => (k === i ? x.slice(1) : x))); add(syls.map((x, k) => (k === i ? x[0] + x.slice(2) : x))); } });
+  if (syls.length >= 3) { add(syls.slice(1)); if (noEnd) add(noEnd.slice(1)); }
+  return out;
 }
 
 // what was heard (alternatives from the recogniser) against a target: {words:[{word, syls, score, syl}], score, level, miss:[wi, si] | null, text}
@@ -1011,11 +1141,33 @@ function heardParts(alts, target) {
     if (!best || score + mean * 0.01 > best.score + best.mean * 0.01) best = { words, score, mean, text };
   }
   if (!best) return { words: tw.map(zero), score: 0, mean: 0, level: 'none', miss: null, text: '' };
+  // a three-year-old's forms of the word are the word (Hebrew norms: research/slp.md section 4): the last r / l left off, the first
+  // consonant left off, one consonant of a cluster, the first syllable of a long word. They are tried only for a single word.
+  if (tw.length === 1 && !(best.score >= 0.75 && best.words[0].syl.every(v => v >= 0.6))) {
+    for (const vs of childForms(tw[0].syls)) {
+      for (const text of [].concat(alts || [])) for (const tok of normKeep(text).split(' ').filter(Boolean).slice(0, 6)) {
+        if (vs.needV && !/^[אעהיו]/.test(tok)) continue;
+        const a = one({ word: tw[0].word, syls: vs.syls }, tok);
+        if (a.score >= 0.95 && a.syl.every(v => v >= 0.95)) { best.level = 'full'; best.approx = true; best.miss = null; best.text = text; return best; }
+      }
+    }
+  }
   const allSyl = best.words.every(w => w.syl.every(v => v >= 0.6));
   best.level = best.score >= 0.75 && allSyl ? 'full' : best.mean >= 0.5 ? 'close' : 'far';
   best.miss = null;
   if (best.level !== 'full') outer: for (let wi = 0; wi < best.words.length; wi++) for (let si = 0; si < best.words[wi].syl.length; si++) if (best.words[wi].syl[si] < 0.6) { best.miss = [wi, si]; break outer; }
   return best;
+}
+
+// did he clearly say a DIFFERENT word we know (shown a cat, said "kelev")? The recogniser writes real words in their normal
+// spelling, so only an exact spelling counts ("dur" must not pass for "dvora" just because the letter vav can be a v).
+function heardOther(alts, words) {
+  const set = new Set(words.map(w => normKeep(w)));
+  for (const text of [].concat(alts || [])) for (const tok of normKeep(text).split(' ').filter(Boolean).slice(0, 6)) {
+    if (set.has(tok)) return tok;
+    if (tok.length > 2 && tok[0] === 'ה' && set.has(tok.slice(1))) return tok.slice(1);
+  }
+  return null;
 }
 
 // Hebrew letters of a word split by its syllables: כדור + ["ka","dur"] -> ["כ","דור"]  (for the syllable stones on screen)
@@ -1029,7 +1181,7 @@ function sylChunks(word, syls) {
 }
 
 // generated by tools/phon.py - do not edit. Coach words as IPA syllables (stress mark before the stressed vowel).
-const SYL = {"בום":"bˈum","אש":"ʔˈeʃ","קפוץ":"kfˈots","ברק":"ba-ʁˈak","חזק":"χa-zˈak","לך":"le-χˈa","כלב":"kˈe-lev","גדול":"ɡa-dˈol","תפוח":"ta-pˈu-aχ","חתול":"χa-tˈul","קטן":"ka-tˈan","בננה":"ba-nˈa-na","כדור":"ka-dˈuʁ","מכונית":"me-χo-nˈit","אדום":"ʔa-dˈom","נעל":"nˈa-ʔal","צהובה":"tse-hu-bˈa","שמש":"ʃˈe-meʃ","מהירה":"me-hi-ʁˈa","דג":"dˈaɡ","קטנה":"kta-nˈa","מיטה":"mi-tˈa","חמה":"χa-mˈa","ספר":"sˈe-feʁ","שוחה":"so-χˈa","פרח":"pe-ʁˈaχ","רכה":"ʁa-kˈa","אוטובוס":"ʔˈo-to-bus","יפה":"ja-fˈe","כובע":"kˈo-va","בלון":"ba-lˈon","כוס":"kˈos","מלאה":"me-le-ʔˈa","ציפור":"tsi-pˈoʁ","פרה":"pa-ʁˈa","עף":"ʔˈaf","סוס":"sˈus","עפה":"ʔa-fˈa","לחם":"lˈe-χem","גדולה":"ɡdo-lˈa","רץ":"ʁˈats","גלידה":"ɡlˈi-da","ברווז":"baʁ-vˈaz","עוגה":"ʔu-ɡˈa","טעים":"ta-ʔˈim","רכבת":"ʁa-kˈe-vet","קרה":"ka-ʁˈa","טעימה":"te-ʔi-mˈa","מטוס":"ma-tˈos","ביצה":"be-tsˈa","לבנה":"le-va-nˈa","חולצה":"χul-tsˈa","ארוכה":"ʔa-ʁu-kˈa","גרב":"ɡˈe-ʁev","מפתח":"maf-tˈe-aχ","נקייה":"ne-ki-jˈa","טלפון":"tˈe-le-fon","עץ":"ʔˈets","ירח":"ja-ʁˈe-aχ","מצלצל":"me-tsal-tsˈel","כוכב":"ko-χˈav","גבוה":"ɡa-vˈo-a","דובי":"dˈu-bi","עגול":"ʔa-ɡˈol","בית":"bˈa-jit","נוצץ":"no-tsˈets","דלת":"dˈe-let","רך":"ʁˈaχ","צפרדע":"tsfaʁ-de-ʔˈa","אריה":"ʔaʁ-jˈe","פתוחה":"ptu-χˈa","קוף":"kˈof","קופצת":"ko-fˈe-tset","גזר":"ɡˈe-zeʁ","מצחיק":"mats-χˈik","פיל":"pˈil","ענק":"ʔa-nˈak","פיצה":"pˈi-tsa","ארנב":"ʔaʁ-nˈav","קופץ":"ko-fˈets","תות":"tˈut","כתום":"ka-tˈom","סירה":"si-ʁˈa","אופניים":"ʔo-fa-nˈa-jim","מכנסיים":"miχ-na-sˈa-jim","שטה":"ʃˈa-ta","מעיל":"me-ʔˈil","מהירים":"me-hi-ʁˈim","שעון":"ʃa-ʔˈon","ארוכים":"ʔa-ʁu-kˈim","כפית":"ka-pˈit","חם":"χˈam","מטרייה":"mit-ʁi-jˈa","מתקתק":"me-tak-tˈek","ענן":"ʔa-nˈan","גשם":"ɡˈe-ʃem","מתנה":"ma-ta-nˈa","עוגייה":"ʔu-ɡi-jˈa","לבן":"la-vˈan","יורד":"jo-ʁˈed","צב":"tsˈav","תוף":"tˈof","רועש":"ʁo-ʔˈeʃ","דבורה":"dvo-ʁˈa","מתוקה":"me-tu-kˈa","פרפר":"paʁ-pˈaʁ","איטי":"ʔi-tˈi","אבטיח":"ʔa-va-tˈi-aχ","צבעוני":"tsiv-ʔo-nˈi","גבינה":"ɡvi-nˈa","אפרוח":"ʔef-ʁˈo-aχ","צהוב":"tsa-hˈov","חללית":"χa-la-lˈit","מתוק":"ma-tˈok","משאית":"ma-sa-ʔˈit","טרקטור":"tʁˈak-toʁ","שמלה":"sim-lˈa","משקפיים":"miʃ-ka-fˈa-jim","מסוק":"ma-sˈok","כפפה":"kfa-fˈa","גיטרה":"ɡi-tˈa-ʁa","עגולים":"ʔa-ɡu-lˈim","עיפרון":"ʔi-pa-ʁˈon","מספריים":"mis-pa-ʁˈi-jim","מנגנת":"me-na-ɡˈe-net","קשת":"kˈe-ʃet","חד":"χˈad","חדים":"χa-dˈim","פנס":"pa-nˈas","מאיר":"me-ʔˈiʁ","איש":"ʔˈiʃ","שלג":"ʃˈe-leɡ","צבעונית":"tsiv-ʔo-nˈit","קר":"kˈaʁ","חלב":"χa-lˈav","דבש":"dvˈaʃ","אמבטיה":"ʔam-bˈat-ja","סבון":"sa-bˈon","פלסטר":"plˈas-teʁ","עצם":"ʔˈe-tsem","קערה":"ka-ʔa-ʁˈa","דף":"dˈaf","שער":"ʃˈa-ʔaʁ","בקבוק":"bak-bˈuk","תינוק":"ti-nˈok","ים":"jˈam","הב":"hˈav","מיאו":"mˈi-ʔu","מו":"mˈo","גע":"ɡˈa","קווה":"kˈa-va","ציף":"tsˈif","בזזז":"baz-zˈaz","ראו":"ʁa-ʔˈu","טו":"tˈu","ביפ":"bˈip","טיק":"tˈik","טק":"tˈek","אוכל":"ʔˈo-χel","בוטי":"bˈo-ti","שותה":"ʃo-tˈe","ישן":"ja-ʃˈan","בוכה":"bo-χˈa","צוחק":"tso-χˈek","קורא":"ko-ʁˈe","מצייר":"me-tsa-jˈeʁ","בועט":"bo-ʔˈet","מתרחץ":"mit-ʁa-χˈets","יושב":"jo-ʃˈev","רוקד":"ʁo-kˈed","מחבק":"me-χa-bˈek","שמח":"sa-mˈe-aχ","עצוב":"ʔa-tsˈuv","כועס":"ko-ʔˈes","מפחד":"me-fa-χˈed","מופתע":"muf-tˈa","עייף":"ʔa-jˈef","כחול":"ka-χˈol","ירוק":"ja-ʁˈok","סגול":"sa-ɡˈol","ורוד":"va-ʁˈod","עיגול":"ʔi-ɡˈul","ריבוע":"ʁi-bˈu-a","משולש":"me-ʃu-lˈaʃ","לב":"lˈev","מעוין":"me-ʔu-jˈan","עיניים":"ʔe-nˈa-jim","אף":"ʔˈaf","פה":"pˈo","אוזניים":"ʔoz-nˈa-jim","שיער":"se-ʔˈaʁ","ראש":"ʁˈoʃ","יד":"jˈad","רגל":"ʁˈe-ɡel","בטן":"bˈe-ten","אנטנה":"ʔan-tˈe-na"};
+const SYL = {"כלב":"kˈe-lev","חתול":"χa-tˈul","כדור":"ka-dˈuʁ","תפוח":"ta-pˈu-aχ","בננה":"ba-nˈa-na","מכונית":"me-χo-nˈit","נעל":"nˈa-ʔal","שמש":"ʃˈe-meʃ","דג":"dˈaɡ","מיטה":"mi-tˈa","ספר":"sˈe-feʁ","פרח":"pˈe-ʁaχ","אוטובוס":"ʔˈo-to-bus","כוס":"kˈos","כובע":"kˈo-va","בלון":"ba-lˈon","ציפור":"tsi-pˈoʁ","פרה":"pa-ʁˈa","סוס":"sˈus","ברווז":"baʁ-vˈaz","לחם":"lˈe-χem","גלידה":"ɡlˈi-da","עוגה":"ʔu-ɡˈa","ביצה":"be-tsˈa","רכבת":"ʁa-kˈe-vet","מטוס":"ma-tˈos","חולצה":"χul-tsˈa","גרב":"ɡˈe-ʁev","מפתח":"maf-tˈe-aχ","טלפון":"tˈe-le-fon","עץ":"ʔˈets","ירח":"ja-ʁˈe-aχ","כוכב":"ko-χˈav","דובי":"dˈu-bi","בית":"bˈa-jit","דלת":"dˈe-let","צפרדע":"tsfaʁ-de-ʔˈa","אריה":"ʔaʁ-jˈe","קוף":"kˈof","פיל":"pˈil","ארנב":"ʔaʁ-nˈav","גזר":"ɡˈe-zeʁ","פיצה":"pˈi-tsa","תות":"tˈut","סירה":"si-ʁˈa","אופניים":"ʔo-fa-nˈa-jim","מכנסיים":"miχ-na-sˈa-jim","מעיל":"me-ʔˈil","שעון":"ʃa-ʔˈon","כפית":"ka-pˈit","מטרייה":"mit-ʁi-jˈa","מתנה":"ma-ta-nˈa","ענן":"ʔa-nˈan","גשם":"ɡˈe-ʃem","תוף":"tˈof","עוגייה":"ʔu-ɡi-jˈa","צב":"tsˈav","דבורה":"dvo-ʁˈa","פרפר":"paʁ-pˈaʁ","אפרוח":"ʔef-ʁˈo-aχ","אבטיח":"ʔa-va-tˈi-aχ","גבינה":"ɡvi-nˈa","חללית":"χa-la-lˈit","משאית":"ma-sa-ʔˈit","טרקטור":"tʁˈak-toʁ","מסוק":"ma-sˈok","שמלה":"sim-lˈa","משקפיים":"miʃ-ka-fˈa-jim","כפפה":"kfa-fˈa","גיטרה":"ɡi-tˈa-ʁa","עיפרון":"ʔi-pa-ʁˈon","מספריים":"mis-pa-ʁˈa-jim","פנס":"pa-nˈas","קשת":"kˈe-ʃet","אש":"ʔˈeʃ","איש":"ʔˈiʃ","שלג":"ʃˈe-leɡ","הב":"hˈav","מיאו":"mjˈaw","מו":"mˈu","גע":"ɡˈa","טו":"tˈu","ביפ":"bˈip","טיק":"tˈik","טק":"tˈak","בום":"bˈum","ציף":"tsˈif","חם":"χˈam","חמה":"χa-mˈa","קר":"kˈaʁ","קרה":"ka-ʁˈa","גדול":"ɡa-dˈol","גדולה":"ɡdo-lˈa","קטן":"ka-tˈan","קטנה":"kta-nˈa","למעלה":"le-mˈaʔ-la","למטה":"le-mˈa-ta","בפנים":"bif-nˈim","בחוץ":"ba-χˈuts","רטוב":"ʁa-tˈov","רטובה":"ʁe-tu-vˈa","יבש":"ja-vˈeʃ","יבשה":"ja-ba-ʃˈa","נקי":"na-kˈi","נקייה":"ne-ki-jˈa","מלוכלך":"me-luχ-lˈaχ","מלוכלכת":"me-luχ-lˈe-χet","פתוח":"pa-tˈu-aχ","פתוחה":"ptu-χˈa","סגור":"sa-ɡˈuʁ","סגורה":"sɡu-ʁˈa","מהר":"ma-hˈeʁ","לאט":"le-ʔˈat","מלא":"ma-lˈe","מלאה":"me-le-ʔˈa","ריק":"ʁˈek","ריקה":"ʁe-kˈa","יום":"jˈom","לילה":"lˈaj-la","ארוך":"ʔa-ʁˈoχ","ארוכה":"ʔa-ʁu-kˈa","קצר":"ka-tsˈaʁ","קצרה":"ktsa-ʁˈa","הופ":"hˈop","די":"dˈaj","עוף":"ʔˈuf","קום":"kˈum","גול":"ɡˈol"};
 
 // ------------------------------------------------------------------ words (emoji picture, name, plural, gender, category)
 const V = {};
@@ -1175,11 +1327,55 @@ const SKILLS = {
   color: { n: 'צבעים', d: 'think', max: 3, pg: '', can: ['4 צבעי יסוד', '7 צבעים', 'צבע + צורה'], tip: '"תביא לי משהו אדום". צבעים בבגדים ובאוכל.' },
   shape: { n: 'צורות', d: 'think', max: 3, pg: '', can: ['עיגול / ריבוע / משולש', 'גם כוכב ולב', 'צורה + צבע'], tip: 'מחפשים צורות בבית: צלחת עגולה, חלון מרובע.' },
   draw: { n: 'ציור פרצוף', d: 'draw', max: 3, pg: '6–7', can: ['עובר על קווים מנוקדים', 'מצייר עיגול ופה לבד', 'מצייר פרצוף שלם לבד'], tip: 'מציירים יחד על דף גדול: עיגול, עיניים, אף, פה. גם בחול ובאדים על המראה.' },
+  opp: { n: 'הפכים (חם, קר, למעלה...)', d: 'lang', max: 4, pg: '12', can: ['חם / קר, גדול / קטן, למעלה / למטה', 'גם בפנים / בחוץ, רטוב / יבש', 'גם נקי / מלוכלך, פתוח / סגור', 'גם מהר / לאט, מלא / ריק, יום / לילה, ארוך / קצר'], tip: 'מילה אחת בכל פעם: "חם" מול "לא חם" על הרבה דברים (מרק, תה, אמבטיה). רק אחרי כמה ימים מוסיפים "קר".' },
   body: { n: 'חלקי גוף', d: 'lang', max: 2, pg: '6–7', can: ['חלקי הפנים', 'חלקי הגוף'], tip: 'במקלחת ובהתלבשות: "איפה הבטן? איפה הרגל?".' },
 };
 const DOMAINS = { num: 'מספרים', lang: 'שפה והבנה', think: 'חשיבה וזיכרון', draw: 'ציור' };
-const PRAISE = ['כל הכבוד!', 'יופי!', 'מעולה!', 'אלוף!', 'נכון!', 'וואו!', 'איזה יופי!'];
-const OOPS = ['אופס! ננסה שוב', 'כמעט! עוד פעם', 'לא נורא, עוד ניסיון'];
+// praise names what he did (found, listened, tried) and changes every time; a miss is never called a mistake - Boti just shows the way
+const PRAISE = ['מצאת!', 'נכון!', 'יופי!', 'הקשבת יפה!', 'חשבת טוב!', 'וואו!', 'איזה יופי!', 'כל הכבוד!'];
+const OOPS = ['בוא נראה יחד.', 'הנה, תסתכל.', 'נסתכל שוב.'];
+const EFFORT = ['ניסית!', 'יפה ניסית!', 'עבדת יפה!', 'שמעתי אותך!'];
+
+// ------------------------------------------------------------------ opposites. Speech therapists teach ONE pole at a time ("hot / not hot"
+// on many things), the other pole on a later day, and only then the two together. ex = [picture, noun, gender, verb for fast/slow].
+const OPP = {
+  hot: { n: 'חם', f: 'חמה', vs: 'cold', ex: [['🍲', 'מרק', 'm'], ['☕', 'תה', 'm'], ['🔥', 'אש', 'f'], ['☀️', 'שמש', 'f']] },
+  cold: { n: 'קר', f: 'קרה', vs: 'hot', ex: [['🧊', 'קרח', 'm'], ['❄️', 'שלג', 'm'], ['🍦', 'גלידה', 'f'], ['⛄', 'איש שלג', 'm']] },
+  big: { n: 'גדול', f: 'גדולה', vs: 'small', ex: [['🐘', 'פיל', 'm'], ['🏠', 'בית', 'm'], ['⚽', 'כדור', 'm'], ['🐟', 'דג', 'm']] },
+  small: { n: 'קטן', f: 'קטנה', vs: 'big', ex: [['🐘', 'פיל', 'm'], ['🏠', 'בית', 'm'], ['⚽', 'כדור', 'm'], ['🐟', 'דג', 'm']] },
+  up: { n: 'למעלה', vs: 'down', adv: 1, ex: [['🎈', 'בלון', 'm'], ['🐦', 'ציפור', 'f'], ['🐱', 'חתול', 'm'], ['⚽', 'כדור', 'm']] },
+  down: { n: 'למטה', vs: 'up', adv: 1, ex: [['🎈', 'בלון', 'm'], ['🐦', 'ציפור', 'f'], ['🐱', 'חתול', 'm'], ['⚽', 'כדור', 'm']] },
+  in: { n: 'בפנים', vs: 'out', adv: 1, ex: [['🐶', 'כלב', 'm'], ['⚽', 'כדור', 'm'], ['🧸', 'דובי', 'm'], ['🐱', 'חתול', 'm']] },
+  out: { n: 'בחוץ', vs: 'in', adv: 1, ex: [['🐶', 'כלב', 'm'], ['⚽', 'כדור', 'm'], ['🧸', 'דובי', 'm'], ['🐱', 'חתול', 'm']] },
+  wet: { n: 'רטוב', f: 'רטובה', vs: 'dry', ex: [['🐶', 'כלב', 'm'], ['🐱', 'חתול', 'm'], ['🧸', 'דובי', 'm'], ['👕', 'חולצה', 'f']] },
+  dry: { n: 'יבש', f: 'יבשה', vs: 'wet', ex: [['🐶', 'כלב', 'm'], ['🐱', 'חתול', 'm'], ['🧸', 'דובי', 'm'], ['👕', 'חולצה', 'f']] },
+  clean: { n: 'נקי', f: 'נקייה', vs: 'dirty', ex: [['🐶', 'כלב', 'm'], ['🧸', 'דובי', 'm'], ['👕', 'חולצה', 'f'], ['🚗', 'מכונית', 'f']] },
+  dirty: { n: 'מלוכלך', f: 'מלוכלכת', vs: 'clean', ex: [['🐶', 'כלב', 'm'], ['🧸', 'דובי', 'm'], ['👕', 'חולצה', 'f'], ['🚗', 'מכונית', 'f']] },
+  open: { n: 'פתוח', f: 'פתוחה', vs: 'closed', ex: [['box', 'ארגז', 'm'], ['window', 'חלון', 'm'], ['book', 'ספר', 'm'], ['door', 'דלת', 'f']] },
+  closed: { n: 'סגור', f: 'סגורה', vs: 'open', ex: [['box', 'ארגז', 'm'], ['window', 'חלון', 'm'], ['book', 'ספר', 'm'], ['door', 'דלת', 'f']] },
+  fast: { n: 'מהר', vs: 'slow', adv: 2, ex: [['🐇', 'ארנב', 'm', 'רץ'], ['🚗', 'מכונית', 'f', 'נוסעת'], ['🐎', 'סוס', 'm', 'רץ']] },
+  slow: { n: 'לאט', vs: 'fast', adv: 2, ex: [['🐢', 'צב', 'm', 'הולך'], ['🐌', 'שבלול', 'm', 'הולך']] },
+  full: { n: 'מלא', f: 'מלאה', vs: 'empty', ex: [['basket', 'סל', 'm'], ['bottle', 'בקבוק', 'm'], ['glass', 'כוס', 'f']] },
+  empty: { n: 'ריק', f: 'ריקה', vs: 'full', ex: [['basket', 'סל', 'm'], ['bottle', 'בקבוק', 'm'], ['glass', 'כוס', 'f']] },
+  day: { n: 'יום', vs: 'night', noun: 1, ex: [['sky', '', 'm']] },
+  night: { n: 'לילה', vs: 'day', noun: 1, ex: [['sky', '', 'm']] },
+  long: { n: 'ארוך', f: 'ארוכה', vs: 'short', ex: [['snake', 'נחש', 'm'], ['pencil', 'עיפרון', 'm'], ['train', 'רכבת', 'f']] },
+  short: { n: 'קצר', f: 'קצרה', vs: 'long', ex: [['snake', 'נחש', 'm'], ['pencil', 'עיפרון', 'm'], ['train', 'רכבת', 'f']] },
+};
+// order of teaching: the first pole of each pair is the one understood earlier and easier to say
+const OPP_PAIRS = [['hot', 'cold'], ['big', 'small'], ['up', 'down'], ['in', 'out'], ['wet', 'dry'], ['clean', 'dirty'], ['open', 'closed'], ['fast', 'slow'], ['full', 'empty'], ['day', 'night'], ['long', 'short']];
+const OPP_LV = [3, 5, 7, 11];                                   // pairs open at each level of the skill
+const oppWord = (pole, g) => (g === 'f' && OPP[pole].f) || OPP[pole].n;
+// a short model with the target word last: "מרק חם", "הבלון למעלה", "הארנב רץ מהר", "עכשיו לילה"
+function oppPhrase(pole, i) {
+  const o = OPP[pole], [, noun, g, verb] = o.ex[i % o.ex.length];
+  if (o.noun) return `עכשיו ${o.n}`;
+  if (o.adv === 2) return `ה${noun} ${verb} ${o.n}`;
+  if (o.adv) return `ה${noun} ${o.n}`;
+  return `${noun} ${oppWord(pole, g)}`;
+}
+const oppAsk = pole => (OPP[pole].noun ? `איפה ${OPP[pole].n}?` : OPP[pole].adv === 2 ? `מי ${pole === 'fast' ? 'רץ' : 'הולך'} ${OPP[pole].n}?` : `מה ${OPP[pole].n}?`);
+const oppPic = (pole, i) => ({ opp: { k: pole, e: OPP[pole].ex[i % OPP[pole].ex.length][0] } });
 
 // ------------------------------------------------------------------ worlds
 const WORLDS = [
@@ -1189,6 +1385,15 @@ const WORLDS = [
   { key: 'cave', name: 'מערת הקריסטלים', sky: ['#1b1740', '#3d2a6b'], far: '#2a2358', mid: '#3a2f73', top: '#8f7ae0', topHi: '#b9a6ff', body: '#4b3f8a', dot: '#3c3273', edge: '#2a2358', enemy: '#ff6ad5', node: '#8f7ae0', boss: 'שומר הקריסטל' },
   { key: 'space', name: 'תחנת החלל', sky: ['#070b24', '#1c1f5a'], far: '#1b1f55', mid: '#2a2f7a', top: '#9fb3c8', topHi: '#d5e2ee', body: '#55657a', dot: '#465568', edge: '#2f3a4a', enemy: '#7dff9b', node: '#ff5a8a', boss: 'החייזר הירוק' },
 ];
+// the three levels of a world are three times of day: morning, sunset, night (in the cave and in space: three colours of light)
+const WORLD_MOODS = {
+  forest: [null, { sky: ['#ff9a62', '#ffe2b0'], far: '#c9b86a', mid: '#8fb352', sunCol: '#ffb347', sunY: 60, tint: 'rgba(255,150,60,0.10)', fx: 'leaf' }, { sky: ['#2b2466', '#e9897c'], far: '#5f5f9c', mid: '#3f7a5c', sunCol: '#fff1c4', moon: 1, tint: 'rgba(50,30,110,0.17)', night: 0.7, fx: 'fly' }],
+  beach: [null, { sky: ['#ff7e5f', '#ffd9a0'], far: '#5f86c9', sunCol: '#ffd27a', tint: 'rgba(255,130,70,0.10)' }, { sky: ['#2f2a75', '#f08f8a'], far: '#46468c', sunCol: '#fff1c4', moon: 1, tint: 'rgba(50,30,110,0.17)', night: 0.6, fx: 'fly' }],
+  snow: [{ fx: 'snow' }, { sky: ['#ff9eb5', '#ffeee6'], far: '#e6c9de', mid: '#d9c3e6', tint: 'rgba(255,140,170,0.08)', fx: 'snow' }, { sky: ['#101a44', '#35588a'], far: '#5b79ad', mid: '#6f8fbf', tint: 'rgba(20,30,90,0.2)', night: 1, fx: 'snow2' }],
+  cave: [null, { sky: ['#0c2730', '#1c5a58'], far: '#123c44', mid: '#1c5560', tint: 'rgba(0,120,110,0.08)' }, { sky: ['#2a0e2c', '#6b2548'], far: '#3b1540', mid: '#55204f', tint: 'rgba(140,20,80,0.08)' }],
+  space: [null, { sky: ['#1a0b3a', '#4a1f6e'], far: '#2e1557', mid: '#44207a', tint: 'rgba(120,40,160,0.07)' }, { sky: ['#240808', '#5a1c2a'], far: '#3a1018', mid: '#55202c', tint: 'rgba(160,30,40,0.08)' }],
+};
+const worldFor = idx => { const wi = Math.floor(idx / 3) % WORLDS.length, W = WORLDS[wi], m = (WORLD_MOODS[W.key] || [])[idx % 3]; return m ? Object.assign({}, W, m) : W; };
 const LEVELS_PER_WORLD = 3;
 const LEVEL_COUNT = WORLDS.length * LEVELS_PER_WORLD;
 const starsTotal = () => Object.values(Store.d.stars).reduce((a, b) => a + b, 0);
@@ -1483,6 +1688,7 @@ function drawPadSign(c, x, y, sign, t, hot, wob) {
   if (sign.color) { c.beginPath(); c.arc(0, -39, 18, 0, 7); fillStroke(c, COLORS[sign.color][1], 2); }
   else if (sign.shape) { drawShape(c, sign.shape, 0, -39, 17, COLORS[sign.col || 'blue'][1]); }
   else if (sign.num != null) { c.fillStyle = INK; c.font = 'bold 34px "Secular One", Arial'; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText(String(sign.num), 0, -37); }
+  else if (sign.opp) drawOppSign(c, sign.opp, t);
   else if (sign.e) emoji(c, sign.e, 0, -39, 36 * (sign.sz || 1));
   c.restore();
 }
@@ -1509,18 +1715,20 @@ function drawBackground(c, L, cam, VW, VH, horizon, t) {
   const g = c.createLinearGradient(0, 0, 0, VH); g.addColorStop(0, W.sky[0]); g.addColorStop(Math.min(1, horizon / VH), W.sky[1]);
   c.fillStyle = g; c.fillRect(0, 0, VW, VH);
   const rep = (f, span, n, fn) => { for (let i = 0; i < n; i++) { const x = ((i * span / n * 1.37 + hash2(i, 7) * span - cam * f) % span + span) % span - 120; fn(x, i); } };
-  if (k === 'cave' || k === 'space') {
-    for (const s of L.stars) { c.globalAlpha = 0.35 + 0.65 * Math.abs(Math.sin(t * 1.4 + s.p)); c.fillStyle = k === 'cave' ? '#b9a6ff' : '#fff'; c.fillRect(((s.x * (VW + 200) - cam * 0.05) % (VW + 200) + VW + 200) % (VW + 200) - 100, s.y * horizon, s.r, s.r); }
+  if (k === 'cave' || k === 'space' || W.night) {
+    for (const s of L.stars) { c.globalAlpha = (0.35 + 0.65 * Math.abs(Math.sin(t * 1.4 + s.p))) * (W.night || 1); c.fillStyle = k === 'cave' ? '#b9a6ff' : '#fff'; c.fillRect(((s.x * (VW + 200) - cam * 0.05) % (VW + 200) + VW + 200) % (VW + 200) - 100, s.y * horizon, s.r, s.r); }
     c.globalAlpha = 1;
   }
   if (k === 'forest') {
-    glow(c, VW - 90, 70, 90, 'rgba(255,244,190,0.9)', 0.9); c.beginPath(); c.arc(VW - 90, 70, 30, 0, 7); c.fillStyle = '#ffe27a'; c.fill();
+    { const sy = 70 + (W.sunY || 0); glow(c, VW - 90, sy, 90, W.moon ? 'rgba(210,225,255,0.7)' : 'rgba(255,244,190,0.9)', 0.9); c.beginPath(); c.arc(VW - 90, sy, 30, 0, 7); c.fillStyle = W.sunCol || '#ffe27a'; c.fill();
+      if (W.moon) { c.beginPath(); c.arc(VW - 78, sy - 8, 26, 0, 7); c.fillStyle = W.sky[0]; c.fill(); } }
     rep(0.12, VW + 400, 5, (x, i) => drawCloud(c, x, 50 + (i % 3) * 30, 1 + (i % 2) * 0.3, 0.95));
     waveBand(c, cam, 0.2, horizon - 60, 30, 0.006, W.far, VW, VH);
     rep(0.35, VW + 300, 9, (x, i) => { const h = 70 + (i % 3) * 26; c.fillStyle = '#5aa85e'; c.fillRect(x - 5, horizon - 30 - h * 0.4, 10, h * 0.5); for (const [dx, dy, r] of [[0, -30 - h * 0.6, 26 + (i % 2) * 8], [-16, -22 - h * 0.4, 18], [17, -24 - h * 0.4, 20]]) { c.beginPath(); c.arc(x + dx, horizon + dy, r, 0, 7); c.fill(); } });
     waveBand(c, cam, 0.5, horizon - 14, 16, 0.011, W.mid, VW, VH);
   } else if (k === 'beach') {
-    glow(c, VW * 0.72, horizon - 90, 130, 'rgba(255,250,210,0.95)', 0.9); c.beginPath(); c.arc(VW * 0.72, horizon - 90, 34, 0, 7); c.fillStyle = '#fff3a8'; c.fill();
+    { const sy = horizon - (W.moon ? 170 : W.sunCol ? 66 : 90); glow(c, VW * 0.72, sy, 130, W.moon ? 'rgba(210,225,255,0.7)' : 'rgba(255,250,210,0.95)', 0.9); c.beginPath(); c.arc(VW * 0.72, sy, 34, 0, 7); c.fillStyle = W.sunCol || '#fff3a8'; c.fill();
+      if (W.moon) { c.beginPath(); c.arc(VW * 0.72 + 13, sy - 9, 29, 0, 7); c.fillStyle = W.sky[0]; c.fill(); } }
     rep(0.1, VW + 400, 4, (x, i) => drawCloud(c, x, 44 + (i % 3) * 26, 1.1, 0.9));
     c.fillStyle = W.far; c.fillRect(0, horizon - 64, VW, 70);
     c.strokeStyle = 'rgba(255,255,255,0.6)'; c.lineWidth = 2;
@@ -1892,7 +2100,7 @@ function drawTiles2(c, L, c0, c1, r0, r1, t) {
 // ---------- ambience: light, living things in the sky, a soft foreground, so the world does not look flat
 function drawAmbient(c, L, cam, VW, VH, horizon, t) {
   const k = L.world.key;
-  if (k === 'forest' || k === 'beach') {
+  if ((k === 'forest' || k === 'beach') && !L.world.moon) {
     c.save(); c.globalCompositeOperation = 'lighter'; const sx = k === 'forest' ? VW - 90 : VW * 0.72, sy = k === 'forest' ? 70 : horizon - 90;
     const RL = Math.min(VH, 460); for (let i = 0; i < 5; i++) { const a = 2.0 + i * 0.22 + Math.sin(t * 0.3 + i) * 0.03; const g = c.createLinearGradient(sx, sy, sx + Math.cos(a) * RL, sy + Math.sin(a) * RL); g.addColorStop(0, 'rgba(255,244,190,0.13)'); g.addColorStop(1, 'rgba(255,244,190,0)'); c.fillStyle = g; c.beginPath(); c.moveTo(sx, sy); c.lineTo(sx + Math.cos(a - 0.05) * RL * 1.4, sy + Math.sin(a - 0.05) * RL * 1.4); c.lineTo(sx + Math.cos(a + 0.05) * RL * 1.4, sy + Math.sin(a + 0.05) * RL * 1.4); c.closePath(); c.fill(); }
     c.restore();
@@ -1922,8 +2130,175 @@ function drawForeground(c, L, cam, VW, VH, t) {
     c.fill();
   }
   c.globalAlpha = 1;
+  drawWeather(c, L, cam, VW, VH, t);
+  if (L.world.tint) { c.fillStyle = L.world.tint; c.fillRect(0, 0, VW, VH); }
   const g = c.createRadialGradient(VW / 2, VH / 2, Math.min(VW, VH) * 0.55, VW / 2, VH / 2, Math.max(VW, VH) * 0.8); g.addColorStop(0, 'rgba(10,12,40,0)'); g.addColorStop(1, 'rgba(10,12,40,0.22)'); c.fillStyle = g; c.fillRect(0, 0, VW, VH);
 }
+
+// a picture floating in a soap bubble: one of today's words
+function drawWordBubble(c, x, y, e, t) {
+  const by = y + Math.sin(t * 2.2) * 5, r = 23 + Math.sin(t * 3.1) * 1.2;
+  c.save(); c.translate(x, by);
+  const g = c.createRadialGradient(-6, -8, 3, 0, 0, r); g.addColorStop(0, 'rgba(255,255,255,0.95)'); g.addColorStop(0.6, 'rgba(214,242,255,0.75)'); g.addColorStop(1, 'rgba(120,200,255,0.55)');
+  c.beginPath(); c.arc(0, 0, r, 0, 7); c.fillStyle = g; c.fill(); c.lineWidth = 2.4; c.strokeStyle = 'rgba(255,255,255,0.95)'; c.stroke();
+  c.lineWidth = 1.2; c.strokeStyle = 'rgba(41,130,200,0.55)'; c.beginPath(); c.arc(0, 0, r + 1.6, 0, 7); c.stroke();
+  emoji(c, e, 0, 1, 27, Math.sin(t * 1.7) * 0.08);
+  c.beginPath(); c.arc(-8, -10, 9, Math.PI * 1.05, Math.PI * 1.5); c.lineWidth = 3; c.strokeStyle = 'rgba(255,255,255,0.95)'; c.lineCap = 'round'; c.stroke();
+  c.restore();
+}
+
+// things in the air, in front of everything: snow, drifting leaves, fireflies. Positions come from time alone (no state to keep).
+function drawWeather(c, L, cam, VW, VH, t) {
+  const fx = L.world.fx; if (!fx) return;
+  if (fx === 'snow' || fx === 'snow2') {
+    const n = fx === 'snow2' ? 46 : 30; c.fillStyle = 'rgba(255,255,255,0.92)';
+    for (let i = 0; i < n; i++) { const sp = 34 + (i % 5) * 14, x = ((hash2(i, 3) * (VW + 60) + Math.sin(t * 0.8 + i) * 22 - cam.x * (0.2 + (i % 3) * 0.15)) % (VW + 60) + VW + 60) % (VW + 60) - 30, y = (hash2(i, 9) * VH + t * sp) % (VH + 20) - 10; c.beginPath(); c.arc(x, y, 1.6 + (i % 3), 0, 7); c.fill(); }
+  } else if (fx === 'leaf') {
+    for (let i = 0; i < 12; i++) { const sp = 26 + (i % 4) * 9, x = ((hash2(i, 5) * (VW + 80) + t * (18 + i % 3 * 8) - cam.x * 0.4) % (VW + 80) + VW + 80) % (VW + 80) - 40 + Math.sin(t * 1.3 + i) * 16, y = (hash2(i, 11) * VH + t * sp) % (VH + 20) - 10;
+      c.save(); c.translate(x, y); c.rotate(t * 1.6 + i); c.fillStyle = ['#ffb347', '#ff8a50', '#ffd54f', '#c0ca33'][i % 4]; c.beginPath(); c.ellipse(0, 0, 6, 3, 0, 0, 7); c.fill(); c.restore(); }
+  } else if (fx === 'fly') {
+    c.save(); c.globalCompositeOperation = 'lighter';
+    for (let i = 0; i < 14; i++) { const x = ((hash2(i, 5) * (VW + 80) + Math.sin(t * 0.5 + i * 2) * 40 - cam.x * 0.5) % (VW + 80) + VW + 80) % (VW + 80) - 40, y = VH * (0.3 + hash2(i, 12) * 0.5) + Math.sin(t * 0.9 + i) * 18, a = 0.35 + 0.65 * Math.abs(Math.sin(t * 1.7 + i * 1.3));
+      const g = c.createRadialGradient(x, y, 0, x, y, 11); g.addColorStop(0, `rgba(255,246,150,${a})`); g.addColorStop(1, 'rgba(255,246,150,0)'); c.fillStyle = g; c.beginPath(); c.arc(x, y, 11, 0, 7); c.fill(); }
+    c.restore();
+  }
+}
+
+// ------------------------------------------------------------------ pictures for the opposites (drawn on the 220 x 190 scene canvas).
+// One picture shows ONE pole on one thing: hot soup, a wet dog, an open box, a balloon up on the tree.
+function drawOppPic(c, o, t) {
+  t = t || 0.4;
+  const k = o.k, e = o.e, isEm = e && !/^[a-z]+$/.test(e);
+  const blob = (x, y, rx, ry, col, lw) => { c.beginPath(); c.ellipse(x, y, rx, ry, 0, 0, 7); c.fillStyle = col; c.fill(); if (lw) { c.lineWidth = lw; c.strokeStyle = INK; c.stroke(); } };
+  const halo = (col) => { const g = c.createRadialGradient(110, 100, 10, 110, 100, 105); g.addColorStop(0, col); g.addColorStop(1, 'rgba(255,255,255,0)'); c.fillStyle = g; c.fillRect(0, 0, 220, 190); };
+  const drop = (x, y, s) => { c.beginPath(); c.moveTo(x, y - 9 * s); c.bezierCurveTo(x + 7 * s, y, x + 6 * s, y + 7 * s, x, y + 7 * s); c.bezierCurveTo(x - 6 * s, y + 7 * s, x - 7 * s, y, x, y - 9 * s); c.fillStyle = '#4fc3f7'; c.fill(); c.lineWidth = 1.6; c.strokeStyle = '#1976d2'; c.stroke(); };
+  const spark = (x, y, r) => { c.beginPath(); for (let i = 0; i < 8; i++) { const a = i * Math.PI / 4, rr = i % 2 ? r * 0.32 : r; c.lineTo(x + Math.cos(a) * rr, y + Math.sin(a) * rr); } c.closePath(); c.fillStyle = '#fff59d'; c.fill(); c.lineWidth = 1.6; c.strokeStyle = '#f9a825'; c.stroke(); };
+  const flake = (x, y, r) => { c.strokeStyle = '#fff'; c.lineWidth = 2.6; c.lineCap = 'round'; for (let i = 0; i < 3; i++) { const a = i * Math.PI / 3; c.beginPath(); c.moveTo(x - Math.cos(a) * r, y - Math.sin(a) * r); c.lineTo(x + Math.cos(a) * r, y + Math.sin(a) * r); c.stroke(); } };
+  const steam = (x, y) => { c.lineCap = 'round'; for (const [lw, col] of [[7, INK], [4, '#fff']]) { c.lineWidth = lw; c.strokeStyle = col; c.beginPath(); c.moveTo(x, y); c.bezierCurveTo(x - 10, y - 10, x + 10, y - 18, x, y - 30); c.stroke(); } };
+  const ground = (y) => { c.fillStyle = 'rgba(29,35,64,0.12)'; c.beginPath(); c.ellipse(110, y || 170, 78, 8, 0, 0, 7); c.fill(); };
+
+  if (k === 'hot') {
+    halo('rgba(255,138,40,0.55)'); ground();
+    emoji(c, e, 110, 112, 100);
+    if (e === '🍲' || e === '☕') { steam(86, 56); steam(110, 46); steam(134, 56); }
+    else { c.strokeStyle = '#ff7043'; c.lineWidth = 4; c.lineCap = 'round'; [[30, 60], [190, 60], [22, 120], [198, 120]].forEach(([x, y]) => { c.beginPath(); c.moveTo(x, y); c.quadraticCurveTo(x + 7, y - 9, x, y - 18); c.quadraticCurveTo(x - 7, y - 27, x, y - 36); c.stroke(); }); }
+  } else if (k === 'cold') {
+    halo('rgba(120,200,255,0.6)'); ground();
+    emoji(c, e, 110, 108, 100);
+    [[34, 40, 9], [186, 36, 11], [24, 112, 7], [196, 118, 8], [58, 22, 6], [160, 164, 7]].forEach(([x, y, r]) => { c.save(); c.shadowColor = '#4aa3e0'; c.shadowBlur = 4; flake(x, y, r); c.restore(); });
+  } else if (k === 'big' || k === 'small') {
+    ground(k === 'big' ? 174 : 168);
+    emoji(c, e, 110, k === 'big' ? 96 : 146, k === 'big' ? 150 : 42);
+  } else if (k === 'up' || k === 'down') {
+    c.fillStyle = '#bfe3ff'; rrect(c, 0, 0, 220, 190, 16); c.fill();
+    c.fillStyle = '#7ccf6b'; c.beginPath(); c.moveTo(0, 190); c.lineTo(0, 160); c.quadraticCurveTo(110, 142, 220, 160); c.lineTo(220, 190); c.closePath(); c.fill();
+    rrect(c, 72, 96, 22, 66, 5); fillStroke(c, '#a1764a', 2.4);
+    [[83, 78, 38], [56, 92, 26], [110, 92, 26], [83, 54, 28]].forEach(([x, y, r]) => { c.beginPath(); c.arc(x, y, r, 0, 7); c.fillStyle = '#3fae5a'; c.fill(); });
+    c.lineWidth = 2.4; c.strokeStyle = INK; c.beginPath(); c.arc(83, 54, 28, Math.PI * 1.05, Math.PI * 1.95); c.stroke();
+    if (k === 'up') emoji(c, e, e === '🎈' ? 158 : 88, e === '🎈' ? 44 : 30, 54); else emoji(c, e, 158, 148, 54);
+    c.fillStyle = '#ff7043'; c.strokeStyle = INK; c.lineWidth = 2; const ax = 196, ay = k === 'up' ? 30 : 152, d = k === 'up' ? -1 : 1;
+    c.beginPath(); c.moveTo(ax, ay + d * 16); c.lineTo(ax - 11, ay); c.lineTo(ax - 4, ay); c.lineTo(ax - 4, ay - d * 16); c.lineTo(ax + 4, ay - d * 16); c.lineTo(ax + 4, ay); c.lineTo(ax + 11, ay); c.closePath(); c.fill(); c.stroke();
+  } else if (k === 'in' || k === 'out') {
+    ground(174);
+    const bx = k === 'in' ? 54 : 22, bw = 112;
+    c.beginPath(); c.moveTo(bx, 96); c.lineTo(bx - 14, 74); c.lineTo(bx + 30, 74); c.lineTo(bx + 44, 96); c.closePath(); fillStroke(c, '#c99a5b', 2.4);          // back flaps
+    c.beginPath(); c.moveTo(bx + bw, 96); c.lineTo(bx + bw + 14, 74); c.lineTo(bx + bw - 30, 74); c.lineTo(bx + bw - 44, 96); c.closePath(); fillStroke(c, '#c99a5b', 2.4);
+    rrect(c, bx, 92, bw, 14, 3); fillStroke(c, '#7a5630', 2.4);
+    if (k === 'in') emoji(c, e, bx + bw / 2, 88, 66);
+    rrect(c, bx, 100, bw, 70, 6); fillStroke(c, '#e0b072', 2.6);
+    c.strokeStyle = 'rgba(122,86,48,0.55)'; c.lineWidth = 3; c.beginPath(); c.moveTo(bx + bw / 2, 100); c.lineTo(bx + bw / 2, 170); c.stroke();
+    if (k === 'out') emoji(c, e, 174, 138, 62);
+  } else if (k === 'wet' || k === 'dry') {
+    ground();
+    if (k === 'wet') blob(110, 172, 84, 11, '#9fdcff', 0);
+    emoji(c, e, 110, 104, 104);
+    if (k === 'wet') { [[40, 50, 1.1], [182, 44, 1.2], [26, 104, 0.9], [196, 110, 1], [70, 22, 0.8], [150, 20, 0.9], [110, 60, 0.7], [84, 120, 0.7], [140, 132, 0.8]].forEach(([x, y, s]) => drop(x, y, s)); }
+  } else if (k === 'dirty' || k === 'clean') {
+    ground();
+    emoji(c, e, 110, 104, 104);
+    if (k === 'dirty') {
+      [[82, 84, 15, 11], [134, 118, 18, 12], [112, 62, 10, 8], [72, 132, 12, 9], [146, 78, 9, 7], [104, 140, 8, 6]].forEach(([x, y, a, b]) => blob(x, y, a, b, 'rgba(110,72,38,0.9)', 0));
+      [[30, 150, 14, 6], [188, 156, 18, 7]].forEach(([x, y, a, b]) => blob(x, y, a, b, '#6e4826', 0));
+      c.strokeStyle = 'rgba(110,72,38,0.8)'; c.lineWidth = 3; c.lineCap = 'round'; [[40, 40], [180, 46], [196, 100]].forEach(([x, y]) => { c.beginPath(); c.moveTo(x, y); c.quadraticCurveTo(x + 5, y - 7, x, y - 14); c.stroke(); });
+    } else { [[36, 44, 14], [186, 56, 17], [30, 128, 10], [192, 136, 12], [110, 20, 9]].forEach(([x, y, r]) => spark(x, y, r)); }
+  } else if (k === 'open' || k === 'closed') {
+    const op = k === 'open'; ground(176);
+    if (e === 'book') emoji(c, op ? '📖' : '📕', 110, 100, 116);
+    else if (e === 'box') {
+      if (op) {
+        c.beginPath(); c.moveTo(52, 86); c.lineTo(30, 50); c.lineTo(86, 50); c.lineTo(108, 86); c.closePath(); fillStroke(c, '#c99a5b', 2.6);
+        c.beginPath(); c.moveTo(168, 86); c.lineTo(190, 50); c.lineTo(134, 50); c.lineTo(112, 86); c.closePath(); fillStroke(c, '#c99a5b', 2.6);
+        rrect(c, 52, 80, 116, 22, 3); fillStroke(c, '#4e3418', 2.6);
+        spark(110, 60, 15);
+      }
+      rrect(c, 52, 92, 116, 78, 6); fillStroke(c, '#e0b072', 2.8);
+      if (!op) { rrect(c, 46, 80, 128, 18, 5); fillStroke(c, '#c99a5b', 2.8); rrect(c, 100, 80, 20, 60, 2); fillStroke(c, '#f5e6c8', 2); }
+    } else if (e === 'window') {
+      rrect(c, 44, 30, 132, 132, 8); fillStroke(c, '#8d6e63', 3);
+      rrect(c, 54, 40, 112, 112, 4); fillStroke(c, op ? '#9fdcff' : '#6d4c41', 2.4);
+      if (op) { emoji(c, '☀️', 132, 74, 38); c.fillStyle = '#7ccf6b'; c.beginPath(); c.moveTo(54, 152); c.lineTo(54, 126); c.quadraticCurveTo(110, 108, 166, 126); c.lineTo(166, 152); c.closePath(); c.fill();
+        c.beginPath(); c.moveTo(44, 30); c.lineTo(14, 42); c.lineTo(14, 150); c.lineTo(44, 162); c.closePath(); fillStroke(c, '#a1887f', 2.6); c.beginPath(); c.moveTo(176, 30); c.lineTo(206, 42); c.lineTo(206, 150); c.lineTo(176, 162); c.closePath(); fillStroke(c, '#a1887f', 2.6);
+      } else { c.strokeStyle = INK; c.lineWidth = 2.6; c.beginPath(); c.moveTo(110, 40); c.lineTo(110, 152); c.stroke(); c.strokeStyle = 'rgba(0,0,0,0.25)'; c.lineWidth = 2; for (let y = 54; y < 150; y += 14) { c.beginPath(); c.moveTo(58, y); c.lineTo(106, y); c.moveTo(114, y); c.lineTo(162, y); c.stroke(); } blob(102, 98, 3.5, 3.5, '#ffca28', 1.4); blob(118, 98, 3.5, 3.5, '#ffca28', 1.4); }
+    } else {                                                          // door
+      rrect(c, 60, 22, 100, 150, 6); fillStroke(c, '#8d6e63', 3);
+      rrect(c, 70, 32, 80, 140, 3); fillStroke(c, op ? '#fff3c4' : '#c62828', 2.4);
+      if (op) { c.beginPath(); c.moveTo(70, 32); c.lineTo(36, 46); c.lineTo(36, 180); c.lineTo(70, 172); c.closePath(); fillStroke(c, '#c62828', 2.6); blob(46, 112, 4, 4, '#ffca28', 1.4); emoji(c, '🌳', 114, 122, 56); }
+      else { rrect(c, 80, 44, 60, 48, 3); c.strokeStyle = 'rgba(0,0,0,0.25)'; c.lineWidth = 2.4; c.stroke(); rrect(c, 80, 104, 60, 56, 3); c.stroke(); blob(138, 104, 5, 5, '#ffca28', 1.6); }
+    }
+  } else if (k === 'fast' || k === 'slow') {
+    ground();
+    if (k === 'fast') {
+      c.strokeStyle = 'rgba(29,35,64,0.45)'; c.lineWidth = 4; c.lineCap = 'round';
+      [[150, 62, 208], [162, 88, 214], [154, 114, 204], [166, 140, 212]].forEach(([x, y, x2]) => { c.beginPath(); c.moveTo(x, y); c.lineTo(x2, y); c.stroke(); });
+      [[176, 160, 11], [198, 152, 7]].forEach(([x, y, r]) => blob(x, y, r, r * 0.8, 'rgba(180,170,160,0.8)', 0));
+      emoji(c, e, 92, 104, 100, -0.1);
+    } else emoji(c, e, 110, 110, 100);
+  } else if (k === 'full' || k === 'empty') {
+    const fu = k === 'full'; ground(176);
+    if (e === 'glass') {
+      if (fu) { c.beginPath(); c.moveTo(69, 60); c.lineTo(151, 60); c.lineTo(141, 162); c.lineTo(79, 162); c.closePath(); c.fillStyle = '#ffb74d'; c.fill(); }
+      c.beginPath(); c.moveTo(64, 34); c.lineTo(156, 34); c.lineTo(143, 166); c.lineTo(77, 166); c.closePath(); c.fillStyle = 'rgba(200,235,255,0.35)'; c.fill(); c.lineWidth = 3.4; c.strokeStyle = INK; c.lineJoin = 'round'; c.stroke();
+      c.strokeStyle = 'rgba(255,255,255,0.9)'; c.lineWidth = 5; c.lineCap = 'round'; c.beginPath(); c.moveTo(82, 52); c.lineTo(88, 120); c.stroke();
+    } else if (e === 'bottle') {
+      rrect(c, 72, 64, 76, 108, 16); c.fillStyle = 'rgba(200,235,255,0.4)'; c.fill();
+      if (fu) { rrect(c, 76, 88, 68, 80, 12); c.fillStyle = '#fff'; c.fill(); c.strokeStyle = '#cfd8dc'; c.lineWidth = 2; c.stroke(); }
+      rrect(c, 72, 64, 76, 108, 16); c.lineWidth = 3.2; c.strokeStyle = INK; c.stroke();
+      rrect(c, 84, 46, 52, 20, 5); fillStroke(c, '#4fc3f7', 2.8); c.beginPath(); c.moveTo(98, 46); c.quadraticCurveTo(110, 12, 122, 46); c.closePath(); fillStroke(c, '#ffcc80', 2.8);
+      c.strokeStyle = 'rgba(29,35,64,0.4)'; c.lineWidth = 2; for (let y = 96; y < 160; y += 18) { c.beginPath(); c.moveTo(74, y); c.lineTo(90, y); c.stroke(); }
+    } else {                                                          // basket
+      if (fu) { emoji(c, '🍎', 82, 78, 50); emoji(c, '🍎', 138, 78, 50); emoji(c, '🍎', 110, 62, 52); }
+      c.beginPath(); c.moveTo(40, 90); c.lineTo(180, 90); c.lineTo(162, 168); c.lineTo(58, 168); c.closePath(); fillStroke(c, '#d7a55f', 3);
+      c.strokeStyle = 'rgba(122,86,48,0.6)'; c.lineWidth = 2.4; for (let y = 108; y < 168; y += 18) { c.beginPath(); c.moveTo(46, y); c.lineTo(174, y); c.stroke(); } for (let x = 66; x < 170; x += 22) { c.beginPath(); c.moveTo(x, 92); c.lineTo(x + (x - 110) * -0.12, 166); c.stroke(); }
+      rrect(c, 34, 82, 152, 14, 6); fillStroke(c, '#b9833f', 2.8);
+    }
+  } else if (k === 'day' || k === 'night') {
+    const dy = k === 'day';
+    const g = c.createLinearGradient(0, 0, 0, 190); g.addColorStop(0, dy ? '#4fb3ff' : '#101440'); g.addColorStop(1, dy ? '#d9f3ff' : '#3a2f73'); c.fillStyle = g; rrect(c, 0, 0, 220, 190, 16); c.fill();
+    if (dy) { emoji(c, '☀️', 168, 44, 56); emoji(c, '☁️', 52, 46, 44); }
+    else { emoji(c, '🌙', 168, 44, 50); c.fillStyle = '#fff'; [[30, 30, 2.4], [70, 54, 1.8], [110, 24, 2.2], [136, 70, 1.6], [48, 86, 2], [196, 92, 2.2], [92, 76, 1.5]].forEach(([x, y, r]) => { c.beginPath(); c.arc(x, y, r, 0, 7); c.fill(); }); }
+    c.fillStyle = dy ? '#7ccf6b' : '#27506b'; c.beginPath(); c.moveTo(0, 190); c.lineTo(0, 150); c.quadraticCurveTo(110, 122, 220, 150); c.lineTo(220, 190); c.closePath(); c.fill();
+    c.save(); if (!dy) c.globalAlpha = 0.85; emoji(c, '🏠', 96, 132, 62); c.restore();
+    if (!dy) { c.fillStyle = '#ffe082'; rrect(c, 89, 132, 11, 11, 2); c.fill(); }
+  } else if (k === 'long' || k === 'short') {
+    const lg = k === 'long'; ground(160);
+    if (e === 'snake') {
+      const x0 = lg ? 18 : 82, x1 = lg ? 186 : 128;
+      for (const [lw, col] of [[25, INK], [19, '#66bb6a']]) { c.lineWidth = lw; c.strokeStyle = col; c.lineCap = 'round'; c.lineJoin = 'round'; c.beginPath(); for (let x = x0; x <= x1; x += 4) { const y = 118 + Math.sin((x - x0) / 15) * (lg ? 15 : 7); if (x === x0) c.moveTo(x, y); else c.lineTo(x, y); } c.stroke(); }
+      const hy = 118 + Math.sin((x1 - x0) / 15) * (lg ? 15 : 7); blob(x1 + 10, hy, 17, 14, '#66bb6a', 2.8); blob(x1 + 15, hy - 5, 3.2, 3.2, INK, 0); c.strokeStyle = '#e53935'; c.lineWidth = 2.6; c.beginPath(); c.moveTo(x1 + 26, hy + 2); c.lineTo(x1 + 36, hy + 2); c.stroke();
+    } else if (e === 'pencil') {
+      const w = lg ? 160 : 52, x = 110 - w / 2 - 12;
+      rrect(c, x, 96, 16, 30, 4); fillStroke(c, '#f48fb1', 2.6); rrect(c, x + 14, 96, w, 30, 2); fillStroke(c, '#fdd835', 2.6);
+      c.beginPath(); c.moveTo(x + 14 + w, 96); c.lineTo(x + 14 + w + 28, 111); c.lineTo(x + 14 + w, 126); c.closePath(); fillStroke(c, '#ffcc80', 2.6);
+      c.beginPath(); c.moveTo(x + 14 + w + 18, 105.5); c.lineTo(x + 14 + w + 28, 111); c.lineTo(x + 14 + w + 18, 116.5); c.closePath(); c.fillStyle = INK; c.fill();
+    } else {                                                          // train: an engine with three cars, or the engine alone
+      const cars = lg ? 3 : 0, w = 46, tot = (cars + 1) * w, x = 110 - tot / 2 + w / 2;
+      c.strokeStyle = INK; c.lineWidth = 3; c.beginPath(); c.moveTo(110 - tot / 2 - 8, 148); c.lineTo(110 + tot / 2 + 8, 148); c.stroke();
+      emoji(c, '🚂', x, 120, 46); for (let i = 1; i <= cars; i++) emoji(c, '🚃', x + i * w, 122, 44);
+    }
+  }
+}
+// the same picture as a small sign on a listening pad (54 x 54)
+function drawOppSign(c, o, t) { c.save(); c.translate(-25, -64); c.scale(50 / 220, 50 / 220); c.translate(0, 14); drawOppPic(c, o, t); c.restore(); }
 
 // ------------------------------------------------------------------ platformer engine
 const T = 40, LH = 14, GR = 12, PW = 22, PH = 40;       // tile, level rows, ground row, player box
@@ -1945,7 +2320,7 @@ window.addEventListener('resize', () => { resize(); if (typeof UI !== 'undefined
 function newLevel(idx) {
   const wi = Math.floor(idx / LEVELS_PER_WORLD) % WORLDS.length, cols = 640;
   return {
-    idx, wi, world: WORLDS[wi], cols, w: 0, tiles: new Uint8Array(cols * LH), gid: 0, grav: wi === 4 ? 0.72 : 1,
+    idx, wi, world: worldFor(idx), cols, w: 0, tiles: new Uint8Array(cols * LH), gid: 0, grav: wi === 4 ? 0.72 : 1,
     coins: [], gems: [], springs: [], movers: [], crumbles: [], enemies: [], pads: [], stations: [], decor: [], pits: [], stars: [], finish: null, boss: null,
     balloons: [], launchers: [], waters: [], rides: [], winds: [], teles: [], powers: [], shots: [],
     get(c, r) { return c < 0 || c >= this.cols || r < 0 || r >= LH ? 0 : this.tiles[r * this.cols + c]; },
@@ -2209,6 +2584,16 @@ const hasPower = k => !!(Store.d.powers && Store.d.powers[k]);
 function startLevel(idx) {
   ensureSession();
   const L = genLevel(idx);
+  // today's words float through the level as picture bubbles: popping one makes Boti say the word (a model, nothing is asked).
+  // About eight per level, spread along the way: some take the place of a gem, the rest of a coin (always a reachable spot).
+  { const ws = Coach.sessionWords().map(k => [k, Coach.bubblePic(k)]).filter(x => x[1]), spots = [], far = x => spots.every(s => Math.abs(s.x - x) > 9 * T);
+    if (ws.length) {
+      const gs = L.gems.slice().sort((p, q) => p.x - q.x), nG = Math.min(4, Math.floor(gs.length * 0.6));
+      for (let i = 0; i < nG; i++) { const gm = gs[Math.floor((i + 0.5) * gs.length / nG)]; if (far(gm.x)) spots.push(gm); }
+      const cs = L.coins.slice().sort((p, q) => p.x - q.x), step = Math.max(1, Math.floor(cs.length / 14));
+      for (let i = Math.floor(step / 2); i < cs.length && spots.length < 8; i += step) { const cn = cs[i]; if (cn.x > 12 * T && far(cn.x)) { cn.got = true; const gm = { x: cn.x, y: cn.y, got: false }; L.gems.push(gm); spots.push(gm); } }
+      spots.sort((p, q) => p.x - q.x).forEach((gm, i) => { const w = ws[i % ws.length]; gm.word = w[0]; gm.e = w[1]; });
+    } }
   Object.assign(G, { L, idx, mode: 'run', t: 0, coins: 0, stars: 0, parts: [], pops: [], flies: [], hinted: {}, groupCount: {}, idleT: 0, winT: 0, shake: 0, levelStart: now(), hold: false, freeze: 0, zoom: 1 });
   Object.assign(G.p, { x: 3 * T, y: GR * T, vx: 0, vy: 0, dir: 1, onGround: true, ground: null, coy: 0, buf: 0, dbl: 0, inv: 0, hurtT: 0, land: 0, jetT: 0, jumping: false, ice: false, conv: 0, carry: 0, water: false, wind: false,
     safe: { x: 3 * T, y: GR * T }, bub: null, falls: {}, blockT: 0, lock: 0, hover: 0, fallFrom: GR * T, pow: { giant: 0, magnet: 0, shield: 0, rocket: 0 }, turnT: 0 });
@@ -2425,7 +2810,13 @@ function stepRun(dt) {
     if (mag && dx * dx + dy * dy < mag * mag) { const d = Math.hypot(dx, dy) || 1, v = 520 * dt; c.x += dx / d * v; c.y += dy / d * v; }
     if (Math.abs(dx) < 22 && c.y > p.y - PH - 10 && c.y < p.y + 8) collect(c);
   }
-  for (const gm of L.gems) if (!gm.got && Math.abs(gm.x - p.x) < 24 && gm.y > p.y - PH - 12 && gm.y < p.y + 10) { gm.got = true; addCoins(Store.d.pet === 'bat' ? 8 : 5, gm.x, gm.y - 14); Snd.sfx.gem(); sparkle(gm.x, gm.y, 16); }
+  if (p.onGround && Math.abs(p.vx) > 40) for (const d of L.decor) {
+    if (d.x < p.x - 30 || d.x > p.x + 30 || Math.abs(d.y - p.y) > 8 || d.w > 0.35) continue;
+    d.w = 1; d.wd = p.vx > 0 ? 1 : -1;
+    if (!d.hit) { d.hit = true; if (d.k > 0.55 && hash2(Math.round(d.x), L.idx) < 0.4) { L.coins.push({ x: d.x, y: d.y - 46, got: false, g: ++L.gid }); Snd.sfx.pop(); burst(d.x, d.y - 20, 6, ['#ffe27a', '#fff'], 120, 0.4, 3, 200); } }
+    if (G.parts.length < 90) burst(d.x, d.y - 14 * d.s, 3, [L.world.key === 'snow' ? '#fff' : L.world.key === 'forest' ? '#7fd87a' : L.world.topHi], 90, 0.45, 3, 260);
+  }
+  for (const gm of L.gems) if (!gm.got && Math.abs(gm.x - p.x) < 24 && gm.y > p.y - PH - 12 && gm.y < p.y + 10) { gm.got = true; if (gm.word) { addCoins(3, gm.x, gm.y - 18); Snd.sfx.bubble(); burst(gm.x, gm.y, 12, ['#bfe9ff', '#fff', '#7ee0ff'], 180, 0.5, 4, 120); G.stats.words = (G.stats.words || 0) + 1; if (!G.bot) Coach.hearWord(gm.word); } else { addCoins(Store.d.pet === 'bat' ? 8 : 5, gm.x, gm.y - 14); Snd.sfx.gem(); sparkle(gm.x, gm.y, 16); } }
   for (const pw of L.powers) if (!pw.got && Math.abs(pw.x - p.x) < 26 && Math.abs(pw.y - (p.y - PH / 2)) < 36) { pw.got = true; givePower(pw.type); }
   // --- enemies
   for (const e of L.enemies) {
@@ -2633,20 +3024,20 @@ function botThink() {
 // listening task breaks, and every boss has a power word the child says out loud to stun it before the last hit.
 const BOSSES = [
   { type: 'hopper', name: 'הג׳לי הקופץ', hp: 3, word: 'בום', reward: { pet: 'bird' } },
-  { type: 'charger', name: 'החיפושית המהירה', hp: 3, word: 'קפוץ', reward: { skin: 'skin_dino' } },
-  { type: 'king', base: 'hopper', name: 'מלך הג׳לי', hp: 4, shield: 'color', word: 'אש', reward: { power: 'rocket' } },
-  { type: 'charger', name: 'הסרטן האדום', hp: 3, word: 'לך', reward: { pet: 'crab' } },
-  { type: 'thrower', name: 'הקוף הזורק', hp: 3, word: 'בום', reward: { skin: 'skin_pirate' } },
-  { type: 'king', base: 'charger', name: 'מלך הסרטנים', hp: 4, shield: 'numeral', word: 'חזק', reward: { power: 'hover' } },
-  { type: 'roller', name: 'כדור השלג הענק', hp: 3, word: 'קפוץ', reward: { pet: 'penguin' } },
-  { type: 'flyer', name: 'ציפור הקרח', hp: 3, word: 'אש', reward: { skin: 'skin_knight' } },
-  { type: 'king', base: 'thrower', name: 'איש השלג הגדול', hp: 4, shield: 'size', word: 'ברק', reward: { power: 'magnet' } },
-  { type: 'flyer', name: 'העטלף הגדול', hp: 3, word: 'בום', reward: { pet: 'bat' } },
-  { type: 'thrower', name: 'גולם האבן', hp: 3, word: 'חזק', reward: { skin: 'skin_ninja' } },
-  { type: 'king', base: 'roller', name: 'שומר הקריסטל', hp: 5, shield: 'shape', word: 'אש', reward: { power: 'stomp' } },
-  { type: 'flyer', name: 'הצלחת המעופפת', hp: 3, word: 'ברק', reward: { pet: 'ufo' } },
-  { type: 'charger', name: 'רובוט הברזל', hp: 4, word: 'בום', reward: { skin: 'skin_astro' } },
-  { type: 'king', base: 'hopper', name: 'מלך החייזרים', hp: 5, shield: 'vocab', word: 'חזק', reward: { skin: 'skin_gold' } },
+  { type: 'charger', name: 'החיפושית המהירה', hp: 3, word: 'הופ', reward: { skin: 'skin_dino' } },
+  { type: 'king', base: 'hopper', name: 'מלך הג׳לי', hp: 4, shield: 'color', word: 'עוף', reward: { power: 'rocket' } },
+  { type: 'charger', name: 'הסרטן האדום', hp: 3, word: 'קום', reward: { pet: 'crab' } },
+  { type: 'thrower', name: 'הקוף הזורק', hp: 3, word: 'די', reward: { skin: 'skin_pirate' } },
+  { type: 'king', base: 'charger', name: 'מלך הסרטנים', hp: 4, shield: 'numeral', word: 'גול', reward: { power: 'hover' } },
+  { type: 'roller', name: 'כדור השלג הענק', hp: 3, word: 'הופ', reward: { pet: 'penguin' } },
+  { type: 'flyer', name: 'ציפור הקרח', hp: 3, word: 'בום', reward: { skin: 'skin_knight' } },
+  { type: 'king', base: 'thrower', name: 'איש השלג הגדול', hp: 4, shield: 'size', word: 'קום', reward: { power: 'magnet' } },
+  { type: 'flyer', name: 'העטלף הגדול', hp: 3, word: 'עוף', reward: { pet: 'bat' } },
+  { type: 'thrower', name: 'גולם האבן', hp: 3, word: 'די', reward: { skin: 'skin_ninja' } },
+  { type: 'king', base: 'roller', name: 'שומר הקריסטל', hp: 5, shield: 'shape', word: 'גול', reward: { power: 'stomp' } },
+  { type: 'flyer', name: 'הצלחת המעופפת', hp: 3, word: 'הופ', reward: { pet: 'ufo' } },
+  { type: 'charger', name: 'רובוט הברזל', hp: 4, word: 'קום', reward: { skin: 'skin_astro' } },
+  { type: 'king', base: 'hopper', name: 'מלך החייזרים', hp: 5, shield: 'vocab', word: 'בום', reward: { skin: 'skin_gold' } },
 ];
 const POWERS = {
   rocket: { name: 'קפיצת טיל', how: 'באוויר לוחצים שוב על הקפיצה!' }, hover: { name: 'ריחוף', how: 'מחזיקים את הקפיצה ומרחפים לאט!' },
@@ -2668,7 +3059,7 @@ function bossShieldBroken() {
 function bossPower(B) {
   B.powered = true; G.mode = 'power'; Object.assign(G.input, { l: false, r: false, j: false, jp: false });
   Coach.power(B.def.word).then(res => {
-    G.stats.pw = res; B.st = 'dizzy'; B.stun = res === 'tap' ? 3.2 : 6; B.t = 0; B.y = GR * T; G.shake = 1.2; Snd.sfx.zap();
+    G.stats.pw = res; B.st = 'dizzy'; B.stun = res === 'boti' ? 4.2 : 6; B.t = 0; B.y = GR * T; G.shake = 1.2; Snd.sfx.zap();
     for (let i = 0; i < 5; i++) G.parts.push({ x: B.x + (rnd() - 0.5) * 30, y: B.y - B.h - 200 + i * 44, vx: 0, vy: 0, life: 0.45, max: 0.45, c: '#fff59d', s: 14, g: 0, shape: 'bolt' });
     burst(B.x, B.y - B.h / 2, 34, ['#fff59d', '#fff', '#ffb341'], 300, 0.7, 5, 200);
     G.mode = 'run'; Voice.say(['וואו!', 'עכשיו קפוץ עליו!']);
@@ -2761,7 +3152,7 @@ function render() {
   c.translate(-cam.x + (G.shake > 0 ? (rnd() - 0.5) * 7 * G.shake : 0), -cam.y + (G.shake > 0 ? (rnd() - 0.5) * 5 * G.shake : 0));
   const x0 = cam.x - 70, x1 = cam.x + VW + 70, vis = x => x > x0 && x < x1, bottom = cam.y + VH + 20;
   for (const z of L.winds) if (vis(z.x) || vis(z.x + z.w)) drawWind(c, z, t, bottom);
-  for (const d of L.decor) if (vis(d.x)) drawDecor(c, d, W, 0, t);
+  for (const d of L.decor) if (vis(d.x)) { if (d.w > 0) { d.w = Math.max(0, d.w - 0.022); c.save(); c.translate(d.x, d.y); c.rotate(Math.sin(d.w * 16) * d.w * 0.22 * (d.wd || 1)); c.translate(-d.x, -d.y); drawDecor(c, d, W, 0, t); c.restore(); } else drawDecor(c, d, W, 0, t); }
   const F = L.finish;
   if (vis(F.x)) {
     if (F.locked) { c.globalAlpha = 0.45; drawRocket(c, F.x, F.y, t, 0); c.globalAlpha = 1; emoji(c, '🔒', F.x, F.y - 150, 30); }
@@ -2788,12 +3179,12 @@ function render() {
       else { c.globalAlpha = P.state === 'ask' ? 1 : 0.6; drawPadSign(c, cx, pd.y, { e: '❔' }, t, false, P.state === 'ask'); c.globalAlpha = 1; }
     });
   }
-  for (const s of L.stations) if (vis(s.x)) { drawGate(c, s, gy, t); if (s.talk && !s.done) emoji(c, '💬', s.x + 62, gy - 262 + Math.sin(t * 4) * 4, 30); }
+  for (const s of L.stations) if (vis(s.x)) { drawGate(c, s, gy, t); if (s.talk && !s.done) { const bj = Math.abs(Math.sin(t * 3.2)) * 9; glow(c, s.x - 30, gy - 30, 46, 'rgba(255,226,120,0.7)', 0.5 + Math.sin(t * 4) * 0.2); emoji(c, '🎁', s.x - 30, gy - 24 - bj, 46, Math.sin(t * 3.2) * 0.08); } }
   c.save(); c.globalCompositeOperation = 'lighter';
   for (const k of L.coins) if (!k.got && vis(k.x)) glow(c, k.x, k.y, 20, 'rgba(255,220,110,0.5)', 0.5);
   c.restore();
   for (const k of L.coins) if (!k.got && vis(k.x)) drawCoin(c, k.x, k.y, 11, t);
-  for (const gm of L.gems) if (!gm.got && vis(gm.x)) drawGem(c, gm.x, gm.y, 13, t);
+  for (const gm of L.gems) if (!gm.got && vis(gm.x)) { if (gm.word) drawWordBubble(c, gm.x, gm.y, gm.e, t + gm.x * 0.01); else drawGem(c, gm.x, gm.y, 13, t); }
   for (const pw of L.powers) if (!pw.got && vis(pw.x)) drawPower(c, pw, t);
   for (const e of L.enemies) {
     if (e.dead || !vis(e.x)) continue;
@@ -2860,9 +3251,21 @@ function renderHub(c) {
   for (let i = 0; i < 40; i++) { c.globalAlpha = 0.25 + 0.3 * Math.abs(Math.sin(t + i)); c.fillStyle = '#fff'; c.fillRect(hash2(i, 5) * VW, hash2(i, 9) * VH * 0.8, 1.6, 1.6); }
   c.globalAlpha = 1;
   const total = LEVEL_COUNT * 3, have = starsTotal(), top = PORTRAIT ? VH * 0.12 : 46, span = (PORTRAIT ? VH * 0.3 : VH * 0.36);
+  const st = G.story != null ? t - G.story : -1;
+  if (st > 5.6) { G.story = null; Store.d.tut.story = true; Store.save(); }
   for (let i = 0; i < total; i++) {
     const x = 24 + hash2(i, 11) * (VW - 48), y = top + hash2(i, 29) * span;
-    if (i < have) drawStar(c, x, y, 8 + hash2(i, 3) * 5, t + i, { plain: true });
+    if (st >= 0) {
+      const u = (st - 1.1 - i * 0.07) / 0.9;                          // this star's fall, 0..1
+      if (u < 0) { drawStar(c, x, y, 8 + hash2(i, 3) * 5, t + i, { plain: true }); continue; }
+      if (u < 1) {
+        const fx = x + (hash2(i, 41) - 0.5) * 160 * u, fy = y + (VH - y + 30) * u * u;
+        c.save(); c.globalCompositeOperation = 'lighter'; const gr = c.createLinearGradient(fx, fy, x + (fx - x) * 0.4, y + (fy - y) * 0.55); gr.addColorStop(0, 'rgba(255,236,150,0.9)'); gr.addColorStop(1, 'rgba(255,236,150,0)');
+        c.strokeStyle = gr; c.lineWidth = 4; c.lineCap = 'round'; c.beginPath(); c.moveTo(fx, fy); c.lineTo(x + (fx - x) * 0.4, y + (fy - y) * 0.55); c.stroke(); c.restore();
+        drawStar(c, fx, fy, 9, t * 6 + i, { plain: true });
+      }
+    }
+    if (i < have && st < 0) drawStar(c, x, y, 8 + hash2(i, 3) * 5, t + i, { plain: true });
     else { c.globalAlpha = 0.4; starPath(c, x, y, 6, 3); c.strokeStyle = '#8f9bd8'; c.lineWidth = 1.2; c.stroke(); c.globalAlpha = 1; }
   }
   c.beginPath(); c.arc(VW - 70, top + 10, 26, 0, 7); c.fillStyle = '#fff6c7'; c.fill(); c.beginPath(); c.arc(VW - 58, top + 2, 23, 0, 7); c.fillStyle = '#131a4a'; c.fill();
@@ -2919,7 +3322,7 @@ function P(s) {
   let inner = '';
   if (s.v) inner = `<span class="em">${V[s.v].e}</span>`;
   else if (s.e) inner = `<span class="em">${s.e}</span>`;
-  else if (s.scene || s.mood || s.need || s.feel) inner = `<canvas class="sc" data-d="${esc(JSON.stringify(s))}"></canvas>`;
+  else if (s.scene || s.mood || s.need || s.feel || s.opp) inner = `<canvas class="sc" data-d="${esc(JSON.stringify(s))}"></canvas>`;
   else if (s.num != null) inner = `<b class="dg">${s.num}</b><span class="pips">${'<i></i>'.repeat(s.num)}</span>`;
   else if (s.digit != null) inner = `<b class="dg big">${s.digit}</b>`;
   else if (s.dot) inner = `<i class="dot" style="background:${COLORS[s.dot][1]}"></i>`;
@@ -2935,7 +3338,7 @@ function hydrate(root) {
     if (cvs.dataset.done) return; cvs.dataset.done = 1;
     const d = JSON.parse(cvs.dataset.d); cvs.width = SCENE_W * 2; cvs.height = SCENE_H * 2;
     const c = cvs.getContext('2d'); c.scale(2, 2);
-    if (d.scene) drawScene(c, d.scene); else if (d.mood) drawMoodBust(c, d.mood); else if (d.need) drawNeedScene(c, d.need); else if (d.feel) drawNeedScene(c, { mood: 'q', prop: d.feel });
+    if (d.opp) drawOppPic(c, d.opp); else if (d.scene) drawScene(c, d.scene); else if (d.mood) drawMoodBust(c, d.mood); else if (d.need) drawNeedScene(c, d.need); else if (d.feel) drawNeedScene(c, { mood: 'q', prop: d.feel });
   });
 }
 const picOpt = (pic, label, cls) => ({ pic, label, cls });
@@ -3092,8 +3495,41 @@ const MAKE = {
     const face = lv === 1 || rnd() < 0.3, t = pick(face ? FACE_PARTS : BODY_PARTS);
     return { type: 'zones', skill: 'body', item: (face ? 'f_' : 'b_') + t, face, part: t, q: face ? `איפה ה${PARTS[t]}?` : `איפה ה${PARTS[t]} של בוטי?`, praise: ['כן!', `ה${PARTS[t]}!`], say: { key: 'b_' + t, word: PARTS[t], pic: face ? { e: { eyes: '👀', nose: '👃', mouth: '👄', ears: '👂', hair: '💇' }[t] } : { scene: 'laugh' } } };
   },
+  // opposites, one pole at a time: "what is hot?" between a hot thing and things that are not hot. A miss is answered with
+  // "that is not hot" (never with the other word) until the pair has reached the stage where both words are known.
+  opp(lv) {
+    const st = oppState(), pairs = OPP_PAIRS.slice(0, OPP_LV[lv - 1]), cur = oppPick(pairs, st);
+    const [A, B] = cur.pair, both = cur.stage >= 2, pole = cur.stage === 0 ? A : cur.stage === 1 ? B : pick([A, B]), other = OPP[pole].vs;
+    const o = OPP[pole], ti = ri(0, o.ex.length - 1), nOpt = lv >= 2 && OPP[other].ex.length > 1 && rnd() < 0.6 ? 3 : 2;
+    const same = OPP[other].ex.length === o.ex.length && OPP[other].ex[ti][0] === o.ex[ti][0];       // the same thing in both states (wet dog / dry dog)
+    const foils = [same ? ti : ri(0, OPP[other].ex.length - 1)];
+    if (nOpt === 3) foils.push(...others(OPP[other].ex.map((_, i) => i), foils, 1));
+    const items = shuffle([{ pole, i: ti }, ...foils.map(i => ({ pole: other, i }))]), ci = items.findIndex(x => x.pole === pole), phrase = oppPhrase(pole, ti);
+    return {
+      skill: 'opp', item: pole, q: oppAsk(pole), options: items.map(x => picOpt(oppPic(x.pole, x.i), oppPhrase(x.pole, x.i))), correct: ci,
+      praise: ['כן!', `${o.n}.`, `${phrase}.`], wrong: () => [both ? `זה ${OPP[other].n}.` : `זה לא ${o.n}.`, oppAsk(pole)], hint: [`הנה. ${phrase}.`],
+      after: async () => { oppMark(pole); }, say: { key: 'op_' + pole, word: o.n, pic: oppPic(pole, ti), phrase },
+    };
+  },
   draw(lv) { return { type: 'draw', skill: 'draw', item: 'face' + lv, lv, q: 'בוא נצייר פרצוף!', praise: 'איזה פרצוף יפה ציירת!' }; },
 };
+// where each pair of opposites stands: stage 0 = first word only, 1 = second word only (from another day on), 2 = both together
+function oppState() { return Store.d.opp || (Store.d.opp = {}); }
+function oppPick(pairs, st) {
+  const today = dayKey(), rows = pairs.map(pair => { const id = pair.join('_'), r = st[id] || { a: 0, b: 0 }; return { pair, id, r, stage: r.b >= 5 && r.dayB && r.dayB !== today ? 2 : r.a >= 5 && r.dayA && r.dayA !== today ? 1 : r.a >= 5 && r.dayA === today && r.a >= 9 ? 1 : 0 }; });
+  // at most one pair is new at a time: stay with the pairs already started, open the next one when all of them know their first word
+  const started = rows.filter(x => x.r.a > 0 || x.r.b > 0), fresh = rows.find(x => !(x.r.a > 0 || x.r.b > 0));
+  const pool = started.length && (started.some(x => x.stage === 0) || !fresh) ? started : started.concat(fresh ? [fresh] : []);
+  const w = pool.map(x => (x.stage === 2 ? 0.6 : 1.4)); let roll = rnd() * sum(w), i = 0;
+  for (; i < pool.length - 1; i++) { roll -= w[i]; if (roll <= 0) break; }
+  return pool[i] || rows[0];
+}
+function oppMark(pole) {
+  const pair = OPP_PAIRS.find(p => p.includes(pole)); if (!pair) return;
+  const st = oppState(), id = pair.join('_'), r = st[id] || (st[id] = { a: 0, b: 0 }), first = pair[0] === pole;
+  if (first) { r.a++; if (!r.dayA) r.dayA = dayKey(); } else { r.b++; if (!r.dayB) r.dayB = dayKey(); }
+  Store.save();
+}
 const FACE_PARTS = ['eyes', 'nose', 'mouth', 'ears', 'hair'], BODY_PARTS = ['head', 'hand', 'leg', 'tummy', 'antenna', 'eyes'];
 const COMBO_SHAPES = ['circle', 'square', 'triangle', 'star', 'heart'];
 function comboRound(skill) {
@@ -3107,12 +3543,18 @@ function makeRound(skill) { const r = MAKE[skill](sk(skill).lv); r.lv = sk(skill
 function padTask(only) {
   const f = Store.d.set.focus || {}, types = [];
   if (f.think !== false) types.push('color', 'color', 'size', 'shape');
-  if (f.lang !== false) types.push('vocab', 'vocab', 'vocab');
+  if (f.lang !== false) types.push('vocab', 'vocab', 'vocab', 'opp');
   if (f.num !== false) types.push('numeral', 'numeral');
   const type = only || pick(types.length ? types : ['color', 'vocab', 'numeral']), ci = ri(0, 2);
   if (type === 'color') { const cs = others(sk('color').lv === 1 ? ['red', 'blue', 'yellow', 'green'] : Object.keys(COLORS), [], 3), n = COLORS[cs[ci]][0]; return { skill: 'color', item: cs[ci], signs: cs.map(c => ({ color: c })), correct: ci, q: `קפוץ על ה${n}!`, praise: ['כן!', `${n}!`], wrong: i => [`זה ${COLORS[cs[i]][0]}.`, `איפה ה${n}?`] }; }
   if (type === 'shape') { const ss = others(sk('shape').lv === 1 ? ['circle', 'square', 'triangle'] : Object.keys(SHAPES), [], 3), n = SHAPES[ss[ci]]; return { skill: 'shape', item: ss[ci], signs: ss.map(s => ({ shape: s, col: 'blue' })), correct: ci, q: `קפוץ על ה${n}!`, praise: ['כן!', `${n}!`], wrong: i => [`זה ${SHAPES[ss[i]]}.`, `איפה ה${n}?`] }; }
   if (type === 'size') { const e = V[pick(['ball', 'apple', 'dog', 'star', 'fish'])].e, szs = shuffle([0.5, 0.78, 1.12]), big = rnd() < 0.5, want = big ? 1.12 : 0.5; return { skill: 'size', item: big ? 'most_big' : 'most_small', signs: szs.map(sz => ({ e, sz })), correct: szs.indexOf(want), q: big ? 'קפוץ על הכי גדול!' : 'קפוץ על הכי קטן!', praise: big ? 'כן! הכי גדול!' : 'כן! הכי קטן!', wrong: () => [big ? 'איפה הכי גדול?' : 'איפה הכי קטן?'] }; }
+  if (type === 'opp') {
+    const st = oppState().hot_cold || { a: 0, b: 0 }, pole = st.b >= 3 && rnd() < 0.5 ? 'cold' : 'hot', other = OPP[pole].vs, o = OPP[pole];
+    const ti = ri(0, o.ex.length - 1), fo = others(OPP[other].ex.map((_, i) => i), [], 2), order = shuffle([0, 1, 2]), signs = [], src = [{ pole, i: ti }, { pole: other, i: fo[0] }, { pole: other, i: fo[1] }];
+    order.forEach((k, j) => { signs[j] = { opp: oppPic(src[k].pole, src[k].i).opp }; });
+    return { skill: 'opp', item: pole, signs, correct: order.indexOf(0), q: `קפוץ על ה${o.n}!`, praise: ['כן!', `${o.n}.`, `${oppPhrase(pole, ti)}.`], wrong: () => [`זה לא ${o.n}.`, oppAsk(pole)] };
+  }
   if (type === 'numeral') { const maxN = [3, 5, 10, 10][sk('numeral').lv - 1], ns = others(Array.from({ length: maxN }, (_, i) => i + 1), [], 3), n = ns[ci]; return { skill: 'numeral', item: 'd' + n, signs: ns.map(k => ({ num: k })), correct: ci, q: `קפוץ על המספר ${n}!`, qs: [`קפוץ על המספר ${NUMF[n]}!`], praise: ['כן!', `${NUMF[n]}!`], wrong: i => [`זה ${NUMF[ns[i]]}.`, `איפה המספר ${NUMF[n]}?`] }; }
   const ks = others(VOCAB_L.slice(0, sk('vocab').lv).flat(), [], 3), k = ks[ci];
   return { skill: 'vocab', item: k, signs: ks.map(x => ({ e: V[x].e })), correct: ci, q: SAY.jumpOn(k), praise: ['כן!', SAY.the(k)], wrong: i => [SAY.thisIs(ks[i]), SAY.where(k)] };
@@ -3141,13 +3583,12 @@ function ask(rd) {
         const pr = [].concat(rd.praise || pick(PRAISE));
         await Voice.say(ok && kid() && rnd() < 0.3 ? pr.concat(withKid('יופי!')) : pr);
         if (rd.after) await rd.after();
-        if (rd.say && wantSay()) await Coach.elicit(Coach.from(rd.say));
         resolve({ ok });
       },
       async fail(el, msg, hintEl) {
         if (R.over || R.busy) return; api.mark(); R.tries++; R.busy = true;
         if (el) { el.classList.remove('bad'); void el.offsetWidth; el.classList.add('bad'); }
-        Snd.sfx.bad();
+        Snd.sfx.pop();
         if (rd.onFail) await rd.onFail(R.tries);
         else await Voice.say(msg || (R.tries === 1 ? pick(OOPS) : rd.hint || pick(OOPS)));
         if (R.tries >= 2 && hintEl) hintEl.classList.add('hint');
@@ -3397,10 +3838,6 @@ function drawStation(rd, api, stage, opts) {
   Voice.say(['בוא נצייר פרצוף!', STEPS[0].say]);
 }
 
-// ------------------------------------------------------------------ how often a listening round is followed by "now you say it"
-let sayBudget = 0;
-function wantSay() { if (sayBudget <= 0) return false; if (rnd() < 0.7) { sayBudget--; return true; } return false; }
-
 // ------------------------------------------------------------------ a gate in the level. Gate 2 of every level is a friend who wants to talk
 // (the speech coach); the others are two rounds of one thinking / language / numbers skill.
 async function startStation(st) {
@@ -3410,9 +3847,9 @@ async function startStation(st) {
   let perfect = true;
   if (!G.bot) {
     await sleep(400);
-    if (st.talk) { const good = await Coach.lesson(2, ['חבר מחכה לנו!', 'בוא נדבר איתו.']); perfect = good >= 2; }
+    if (st.talk) { const good = await Coach.lesson(3, ['הנה קופסת הפתעות!']); perfect = good >= 1; G.coins += Coach.gain || 0; UI.setCoins(G.coins); }
     else {
-      const skill = pickSkill(slot); st.skill = skill; sayBudget = 1;
+      const skill = pickSkill(slot); st.skill = skill;
       for (let i = 0; i < 2; i++) { const r = await ask(makeRound(skill)); if (!r.ok) perfect = false; }
     }
   }
@@ -3425,148 +3862,363 @@ async function startStation(st) {
   G.mode = 'run';
 }
 
-// ------------------------------------------------------------------ speech coach: Boti gets the child to SAY things, the way a speech
-// therapist prompts - open question -> choice of two -> model ("say: ...") -> accept the attempt. A right word is praised and
-// expanded by one word ("yes! ball! a big ball"); a different word is recast ("this is a ball"), never called wrong.
-// Every result is logged with the cue level that was needed, which is what the parent screen reports.
+// ------------------------------------------------------------------ speech coach. Built on what speech-language therapists do with a
+// late talker (research/slp.md):
+//   * model the word and WAIT five seconds - Boti never says "say X";
+//   * every try is welcomed and rewarded, nothing is ever called wrong, the right word is simply said back (a recast) and
+//     grown by one word ("yes! ball. a big ball");
+//   * a word that came out in part is built up from its END, slow and smooth ("dol" -> "gadol"), once, by invitation ("together");
+//   * small-child pronunciations (ka for kar, tadur for kadur) count as the word;
+//   * a few words per session, each heard many times, the same words for several days.
+// The game hears by itself (speech recognition): said / part of it / another word / a voice without words / silence.
+// There are no buttons for a parent. Without a microphone Boti still models and waits; he just cannot tell what was said.
 const EXPAND = {
   dog: 'כלב גדול', cat: 'חתול קטן', ball: 'כדור גדול', apple: 'תפוח אדום', banana: 'בננה צהובה', car: 'מכונית מהירה', shoe: 'נעל קטנה', sun: 'שמש חמה',
-  fish: 'דג שוחה', bed: 'מיטה רכה', book: 'ספר יפה', flower: 'פרח יפה', bus: 'אוטובוס גדול', cup: 'כוס מלאה', hat: 'כובע אדום', balloon: 'בלון עף',
-  bird: 'ציפור עפה', cow: 'פרה גדולה', horse: 'סוס רץ', duck: 'ברווז שוחה', bread: 'לחם טעים', icecream: 'גלידה קרה', cake: 'עוגה טעימה', egg: 'ביצה לבנה',
-  train: 'רכבת ארוכה', plane: 'מטוס עף', shirt: 'חולצה נקייה', sock: 'גרב קטן', key: 'מפתח קטן', phone: 'טלפון מצלצל', tree: 'עץ גבוה', moon: 'ירח עגול',
-  star: 'כוכב נוצץ', teddy: 'דובי רך', house: 'בית גדול', door: 'דלת פתוחה', frog: 'צפרדע קופצת', lion: 'אריה חזק', monkey: 'קוף מצחיק', elephant: 'פיל ענק',
-  rabbit: 'ארנב קופץ', carrot: 'גזר כתום', pizza: 'פיצה חמה', strawberry: 'תות אדום', boat: 'סירה שטה', bike: 'אופניים מהירים', pants: 'מכנסיים ארוכים',
-  coat: 'מעיל חם', clock: 'שעון מתקתק', spoon: 'כפית קטנה', umbrella: 'מטרייה גדולה', gift: 'מתנה יפה', cloud: 'ענן לבן', rain: 'גשם יורד', drum: 'תוף רועש', cookie: 'עוגייה מתוקה',
-  turtle: 'צב איטי', bee: 'דבורה עפה', butterfly: 'פרפר צבעוני', chick: 'אפרוח צהוב', watermelon: 'אבטיח מתוק', cheese: 'גבינה צהובה', rocket: 'חללית מהירה', truck: 'משאית גדולה',
-  tractor: 'טרקטור חזק', heli: 'מסוק עף', dress: 'שמלה יפה', glasses: 'משקפיים עגולים', glove: 'כפפה חמה', guitar: 'גיטרה מנגנת', pencil: 'עיפרון חד', scissors: 'מספריים חדים',
-  flashlight: 'פנס מאיר', rainbow: 'קשת צבעונית', fire: 'אש חמה', snowman: 'איש שלג קר',
+  fish: 'דג קטן', bed: 'מיטה רכה', book: 'ספר יפה', flower: 'פרח יפה', bus: 'אוטובוס גדול', cup: 'כוס מלאה', hat: 'כובע אדום', balloon: 'בלון אדום',
+  bird: 'ציפור קטנה', cow: 'פרה גדולה', horse: 'סוס גדול', duck: 'ברווז קטן', bread: 'לחם טעים', icecream: 'גלידה קרה', cake: 'עוגה טעימה', egg: 'ביצה לבנה',
+  train: 'רכבת ארוכה', plane: 'מטוס גדול', shirt: 'חולצה נקייה', sock: 'גרב קטן', key: 'מפתח קטן', phone: 'טלפון קטן', tree: 'עץ גבוה', moon: 'ירח עגול',
+  star: 'כוכב קטן', teddy: 'דובי רך', house: 'בית גדול', door: 'דלת פתוחה', frog: 'צפרדע ירוקה', lion: 'אריה גדול', monkey: 'קוף מצחיק', elephant: 'פיל ענק',
+  rabbit: 'ארנב לבן', carrot: 'גזר כתום', pizza: 'פיצה חמה', strawberry: 'תות אדום', boat: 'סירה קטנה', bike: 'אופניים מהירים', pants: 'מכנסיים ארוכים',
+  coat: 'מעיל חם', clock: 'שעון גדול', spoon: 'כפית קטנה', umbrella: 'מטרייה גדולה', gift: 'מתנה יפה', cloud: 'ענן לבן', rain: 'גשם יורד', drum: 'תוף גדול', cookie: 'עוגייה מתוקה',
+  turtle: 'צב קטן', bee: 'דבורה קטנה', butterfly: 'פרפר יפה', chick: 'אפרוח צהוב', watermelon: 'אבטיח מתוק', cheese: 'גבינה צהובה', rocket: 'חללית מהירה', truck: 'משאית גדולה',
+  tractor: 'טרקטור גדול', heli: 'מסוק גדול', dress: 'שמלה יפה', glasses: 'משקפיים עגולים', glove: 'כפפה חמה', guitar: 'גיטרה יפה', pencil: 'עיפרון חד', scissors: 'מספריים חדים',
+  flashlight: 'פנס קטן', rainbow: 'קשת יפה', fire: 'אש חמה', snowman: 'איש שלג קר',
 };
-const SOUNDS = { dog: 'הב הב', cat: 'מיאו', cow: 'מו', duck: 'גע גע', frog: 'קווה קווה', bird: 'ציף ציף', bee: 'בזזז', lion: 'ראו', train: 'טו טו', car: 'ביפ ביפ', clock: 'טיק טק', drum: 'בום בום' };
-const POWER_WORDS = ['בום', 'אש', 'קפוץ', 'ברק', 'חזק', 'לך'];
+// animal and thing sounds made of the earliest consonants: the easiest first "words"
+const SOUNDS = { dog: 'הב הב', cat: 'מיאו', cow: 'מו', duck: 'גע גע', train: 'טו טו', car: 'ביפ ביפ', clock: 'טיק טק', drum: 'בום בום', bird: 'ציף ציף' };
+// one-syllable shouts for the boss fights, early consonants only
+const POWER_WORDS = ['בום', 'הופ', 'די', 'עוף', 'קום', 'גול'];
 const VOCAB_ALL = VOCAB_L.flat();
 const foilOf = k => { const i = VOCAB_ALL.indexOf(k), c = V[k].c; for (let d = 3; d < VOCAB_ALL.length; d++) { const f = VOCAB_ALL[(i + d) % VOCAB_ALL.length]; if (V[f].c !== c) return f; } return VOCAB_ALL[(i + 1) % VOCAB_ALL.length]; };
 const says = k => (V[k].g === 'f' ? 'אומרת' : 'אומר');
+// how hard a word is to say: early consonants (m n y p b t d k g f x h) are free, l v cost a little, r and the hissing sounds more,
+// consonant clusters and every syllable after the second more still. First spoken targets are the cheapest words.
+function phonCost(word) {
+  let cost = 0;
+  for (const w of stripNiqqud(word).split(' ')) {
+    const syl = sylOf(w); cost += Math.max(0, syl.length - 2) * 2 + (syl.length - 1) * 0.5;
+    syl.forEach((s, si) => { const cons = s.replace(/[aeiou]/g, ''), onset = s.search(/[aeiou]/); if (onset >= 2) cost += 1.5; for (let i = 0; i < cons.length; i++) { const ch = cons[i], last = si === syl.length - 1 && s.endsWith(ch); cost += 'lv'.includes(ch) ? 0.5 : ch === 'r' ? (last ? 0.3 : 1) : 'SszcjC'.includes(ch) ? 1.5 : 0; } });
+  }
+  return cost;
+}
 
 const Coach = {
-  on: false, raf: 0, mood: 'idle', _parent: null,
+  on: false, raf: 0, mood: 'idle', box: 0, beat: -1, quiet: 0, silentRun: 0, _tap: null, ring: 0,
   sp() { const s = Store.d.speech || (Store.d.speech = { lv: 1, words: {} }); if (!s.words) s.words = {}; return s; },
-  // ---- targets
-  word(k) { return { key: k, kind: 'word', word: V[k].n, pic: { v: k }, q: 'מה זה?', recast: `זה ${V[k].n}.`, expand: EXPAND[k], foil: VOCAB_ALL.includes(k) ? V[foilOf(k)].n : null }; },
-  sound(k) { return { key: 'snd_' + k, kind: 'sound', word: SOUNDS[k], pic: { v: k }, q: `מה ${says(k)} ${the(k)}?`, recast: `${the(k)} ${says(k)}:` }; },
-  two(k) { return { key: 'two_' + k, kind: 'two', word: EXPAND[k], pic: { v: k }, q: null }; },
-  verb(k) { return { key: 'v_' + k, kind: 'verb', word: VERBS[k], pic: { scene: k }, q: 'מה בוטי עושה?', recast: `בוטי ${VERBS[k]}.`, expand: `בוטי ${VERBS[k]}` }; },
-  from(s) { return V[s.key] && EXPAND[s.key] ? this.word(s.key) : s.key.startsWith('v_') && VERBS[s.key.slice(2)] ? this.verb(s.key.slice(2)) : { key: s.key, kind: 'other', word: s.word, pic: s.pic, q: s.key.startsWith('e_') ? 'איך בוטי מרגיש?' : 'מה זה?', recast: `${s.word}.` }; },
-  // pick what to work on: boosted words first, then words he understands but has not said, at his current level
-  pick() {
-    const sp = this.sp(), W = sp.words, boost = (Store.d.boost && Store.d.boost.words) || [];
-    const rx = {}; allLocalEvents().forEach(e => { if (e.s === 'vocab' && e.ok) rx[e.i] = 1; });
-    const pool = VOCAB_L.slice(0, Math.max(1, sk('vocab').lv)).flat().filter(k => EXPAND[k]);
-    const wOf = k => { const st = W[k] || {}; let w = 1; if (boost.includes(k)) w *= 5; if (rx[k] && !st.s) w *= 2.5; if ((st.s || 0) >= 2) w *= 0.25; return w; };
-    const wpick = (arr, wf) => { const ws = arr.map(wf); let r = rnd() * sum(ws), i = 0; for (; i < arr.length - 1; i++) { r -= ws[i]; if (r <= 0) break; } return arr[i]; };
-    const roll = rnd();
-    if (sp.lv >= 3 && roll < 0.3) return this.verb(pick(VERB_L.slice(0, sk('verb').lv).flat()));
-    if (sp.lv >= 2 && roll < 0.6) { const said = pool.filter(k => (W[k] || {}).s); return this.two(pick(said.length >= 3 ? said : pool)); }
-    if (roll > 0.78) return this.sound(wpick(Object.keys(SOUNDS), k => ((W['snd_' + k] || {}).s ? 0.4 : 1)));
-    return this.word(wpick(pool, wOf));
+  rec(key) {
+    const W = this.sp().words, w = W[key] || (W[key] = { m: 0, n: 0, g: 0, p: 0, o: 0, v: 0, q: 0 });
+    if (w.g == null || w.m == null) { w.g = (w.s || 0) + (w.c || 0) + (w.i || 0); w.p = w.a || 0; w.m = w.m || (w.n || 0) * 2; w.o = w.o || 0; w.v = w.v || 0; w.q = w.q || 0; w.n = w.n || 0; }     // a record saved by an earlier version
+    return w;
   },
-  match(spec, alts) { return spec.kind === 'two' ? heardAll(alts, spec.word) : Math.max(heardScore(alts, [spec.word]), spec.expand ? heardAll(alts, spec.expand) : 0); },
-  log(spec, res, heard) {
-    const s = ensureSession(), sp = this.sp(), w = sp.words[spec.key] || (sp.words[spec.key] = { n: 0, s: 0, c: 0, i: 0, a: 0 });
-    s.said.push({ t: Date.now(), w: spec.key, k: spec.kind, r: res, h: heard || '' }); s.updatedAt = Date.now();
-    w.n++; if (res === 'spont') w.s++; else if (res === 'choice') w.c++; else if (res === 'imit' || res === 'parent') w.i++; else if (res === 'attempt') w.a++;
-    w.t = Date.now();
-    const alone = Object.entries(sp.words).filter(([k, v]) => !k.includes('_') && v.s > 0).length, twos = Object.entries(sp.words).filter(([k, v]) => k.startsWith('two_') && v.s + v.i > 0).length;
-    if (sp.lv === 1 && alone >= 6) { sp.lv = 2; sp.up = Date.now(); } else if (sp.lv === 2 && twos >= 5) { sp.lv = 3; sp.up = Date.now(); }
+  // ---- what a target looks like
+  spec(key, o) {
+    o = o || {};
+    if (key.startsWith('snd_')) { const k = key.slice(4); return { key, kind: 'sound', word: SOUNDS[k], pic: { v: k }, lead: `${the(k)} ${says(k)}:` }; }
+    if (key.startsWith('op_')) { const pole = key.slice(3), i = o.i == null ? Math.floor(rnd() * OPP[pole].ex.length) : o.i; return { key, kind: 'adj', word: OPP[pole].n, pic: oppPic(pole, i), phrase: oppPhrase(pole, i) }; }
+    if (key.startsWith('v_')) { const k = key.slice(2); return { key, kind: 'verb', word: VERBS[k], pic: { scene: k }, phrase: `בוטי ${VERBS[k]}` }; }
+    if (V[key]) return { key, kind: 'word', word: V[key].n, pic: { v: key }, phrase: EXPAND[key] || null, foil: VOCAB_ALL.includes(key) ? foilOf(key) : null };
+    return { key, kind: 'other', word: o.word, pic: o.pic, phrase: o.phrase || null };
+  },
+  from(s) { return this.spec(s.key, s); },
+  // ---- today's words: three or four, the same ones for a few days, easiest to pronounce first, the parent's boost words before all
+  sessionWords() {
+    const sp = this.sp(), today = dayKey();
+    if (sp.set && sp.set.day === today && sp.set.words && sp.set.words.length) return sp.set.words;
+    const W = sp.words, boost = (Store.d.boost && Store.d.boost.words) || [];
+    const done = k => { const r = W[k]; return r && r.gd && r.gd.length >= 2; };                       // said on two different days
+    const rx = {}; allLocalEvents().forEach(e => { if (e.s === 'vocab' && e.ok) rx[e.i] = 1; });
+    const nouns = VOCAB_L.slice(0, Math.max(1, sk('vocab').lv)).flat().filter(k => EXPAND[k]);
+    const opp = Object.keys(OPP).filter(p => { const pr = OPP_PAIRS.find(x => x.includes(p)), r = pr && oppState()[pr.join('_')]; return r && (pr[0] === p ? r.a : r.b) >= 3; }).map(p => 'op_' + p);
+    const cost = k => phonCost(this.spec(k, { i: 0 }).word) - (boost.includes(k) ? 50 : 0) - (rx[k] ? 0.8 : 0) + ((W[k] || {}).m ? -0.5 : 0) + hash2(k.length * 7 + k.charCodeAt(0), sp.n || 0) * 1.2;
+    const keep = ((sp.set && sp.set.words) || []).filter(k => !done(k) && (sp.set.age || 0) < 3);
+    const fresh = nouns.concat(opp).filter(k => !done(k) && !keep.includes(k)).sort((a, b) => cost(a) - cost(b));
+    const snd = Object.keys(SOUNDS).map(k => 'snd_' + k).filter(k => !done(k) && !keep.includes(k)).sort((a, b) => ((W[a] || {}).m || 0) - ((W[b] || {}).m || 0));
+    const words = keep.slice(0, 3);
+    while (words.length < 3 && fresh.length) words.push(fresh.shift());
+    if (!words.some(k => k.startsWith('snd_')) && snd.length) words.push(snd[0]);
+    while (words.length < 4 && fresh.length) words.push(fresh.shift());
+    sp.set = { day: today, words, age: keep.length ? (sp.set.age || 0) + 1 : 0 }; sp.n = (sp.n || 0) + 1; Store.save(true);
+    return words;
+  },
+  nextKey() { const ws = this.sessionWords(); this.turn = (this.turn || 0) + 1; return ws[(this.turn - 1) % ws.length]; },
+  // ---- judging what was heard
+  judge(spec, r) {
+    if (!r || (!r.heard && !r.voice)) return { cls: 'silent' };
+    if (!r.heard) return { cls: 'voice' };
+    let hp = heardParts(r.alts, spec.word);
+    if (hp.level !== 'full' && spec.phrase) { const h2 = heardParts(r.alts, spec.phrase); if (h2.level === 'full') return { cls: 'good', hp: h2, phrase: true, text: r.text }; }
+    if (hp.level !== 'full' && spec.kind === 'adj') { const pole = spec.key.slice(3), o = OPP[pole]; if (o.f && heardParts(r.alts, o.f).level === 'full') hp = Object.assign(hp, { level: 'full' }); }
+    let cls = hp.level === 'full' ? 'good' : hp.level === 'close' ? 'partial' : 'other';
+    if (cls === 'partial' && heardOther(r.alts, this.known().filter(w => w !== stripNiqqud(spec.word)))) cls = 'other';      // a different word, said clearly
+    return { cls, hp, text: r.text, approx: hp.approx };
+  },
+  known() { return this._known || (this._known = Object.values(V).map(w => stripNiqqud(w.n)).filter(w => !w.includes(' ') && sylIpa(w))); },
+  log(spec, cls, heard, cue) {
+    const s = ensureSession(), w = this.rec(spec.key), sp = this.sp();
+    s.said.push({ t: Date.now(), w: spec.key, k: spec.kind, r: cls, c: cue || '', h: heard || '' }); s.updatedAt = Date.now();
+    w.n++; w.t = Date.now();
+    if (cls === 'good') { w.g++; const d = dayKey(); w.gd = w.gd || []; if (!w.gd.includes(d)) { w.gd.push(d); if (w.gd.length > 6) w.gd.shift(); } }
+    else if (cls === 'partial') w.p++; else if (cls === 'other') w.o++; else if (cls === 'voice') w.v++; else w.q++;
+    const said = Object.values(sp.words).filter(x => x.g > 0).length;
+    if (sp.lv === 1 && said >= 6) { sp.lv = 2; sp.up = Date.now(); }
     Store.save(true);
   },
-  // ---- screen
-  open(spec) {
-    UI.show('scSay'); this.on = true; this.mood = 'talk';
-    $('#sayPic').innerHTML = P(spec.pic); hydrate($('#sayPic'));
-    $('#sayWord').textContent = spec.q ? '?' : spec.word; $('#sayLive').textContent = ''; $('#btnMic').hidden = true; this.bar(false);
-    $('#sayHint').textContent = Ear.auto ? '' : Ear.usable ? 'לוחצים על המיקרופון ואומרים' : 'להורה: הוא אמר?';
-    $$('#scSay [data-r]').forEach(b => b.onclick = () => { Snd.init(); if (this._parent) this._parent(b.dataset.r); });
-    const cvs = $('#sayBoti'), loop = () => {
+  // ---- the scene
+  open(spec, n, of) {
+    UI.show('scSay'); this.on = true; this.mood = 'talk'; this.box = 0; this.beat = -1; this.ring = 0;
+    const pic = $('#sayPic'); pic.innerHTML = P(spec.pic); hydrate(pic); pic.className = 'saypic hid';
+    $('#sayWord').textContent = ''; $('#sayLive').textContent = ''; $('#sayChoice').hidden = true; this.bar(false);
+    $('#sayDots').innerHTML = Array.from({ length: of || 1 }, (_, i) => `<i class="${i < n ? 'done' : i === n ? 'now' : ''}"></i>`).join('');
+    const parts = stripNiqqud(spec.word).split(' '), chunks = parts.length === 1 && sylIpa(parts[0]) ? sylChunks(parts[0], sylOf(parts[0])) : parts;
+    $('#sayBeats').innerHTML = chunks.map(ch => `<b>${esc(ch)}</b>`).join(''); $('#sayBeats').hidden = true;
+    const cvs = $('#sayCv'), loop = () => {
       if (!this.on || UI.screen !== 'scSay') return;
-      paintMini(cvs, c => { const t = now() / 1000, p = botiPose('idle', t); if (this.mood === 'listen') { p.eye = 'surprised'; p.mouth = 'o'; p.head = Math.sin(t * 3) * 0.05; p.armR = -2.3; } else if (Voice.speaking) { p.mouth = 'talk'; p.talk = Snd.level(); } else p.eye = 'happy'; drawBoti(c, 60, 124, 1.45, 1, p, Store.d.wear, t); }, 120, 130);
+      paintMini(cvs, c => this.paint(c, now() / 1000), 300, 190);
       this.raf = requestAnimationFrame(loop);
     };
     cancelAnimationFrame(this.raf); loop(); UI.fit();
   },
+  // Boti beside the surprise box. box: 0 closed (it wobbles), 0..1 opening, 1 open with light coming out
+  paint(c, t) {
+    const b = this.box, listen = this.mood === 'listen';
+    c.fillStyle = 'rgba(29,35,64,0.12)'; c.beginPath(); c.ellipse(150, 176, 132, 10, 0, 0, 7); c.fill();
+    const p = botiPose('idle', t);
+    if (listen) { p.eye = 'surprised'; p.mouth = 'o'; p.head = Math.sin(t * 3) * 0.05; p.armR = -2.3; p.look = -1; }
+    else if (Voice.speaking) { p.mouth = 'talk'; p.talk = Snd.level(); p.armL = 0.9 + Math.sin(t * 5) * 0.2; p.look = -1; }
+    else { p.eye = 'happy'; p.look = -1; }
+    if (this.cheer > t) { p.armL = 2.7; p.armR = -2.7; p.eye = 'happy'; p.mouth = 'open'; }
+    drawBoti(c, 232, 172 - (this.cheer > t ? Math.abs(Math.sin(t * 9)) * 10 : 0), 1.55, -1, p, Store.d.wear, t);
+    if (listen) { for (let i = 0; i < 3; i++) { const k = (t * 0.9 + i / 3) % 1; c.beginPath(); c.arc(196, 84, 10 + k * 26, -0.9, 0.9); c.strokeStyle = `rgba(41,182,246,${0.8 * (1 - k)})`; c.lineWidth = 4; c.lineCap = 'round'; c.stroke(); } }
+    // the box
+    const bx = 86, by = 172, wob = b === 0 ? Math.sin(t * 13) * (Math.sin(t * 1.7) > 0.2 ? 0.07 : 0.012) : 0, sq = b > 0 && b < 1 ? 1 + Math.sin(b * Math.PI) * 0.12 : 1;
+    c.save(); c.translate(bx, by); c.rotate(wob); c.scale(1 / sq, sq);
+    if (b > 0) { c.save(); c.globalCompositeOperation = 'lighter'; for (let i = 0; i < 7; i++) { const a = -Math.PI / 2 + (i - 3) * 0.3 + Math.sin(t * 0.8 + i) * 0.05; c.beginPath(); c.moveTo(0, -62); c.lineTo(Math.cos(a - 0.09) * 150, -62 + Math.sin(a - 0.09) * 150); c.lineTo(Math.cos(a + 0.09) * 150, -62 + Math.sin(a + 0.09) * 150); c.closePath(); c.fillStyle = `rgba(255,222,110,${0.2 * b})`; c.fill(); } c.restore(); }
+    rrect(c, -44, -62, 88, 62, 9); fillStroke(c, '#ff7a59', 3);
+    c.fillStyle = '#ffd54f'; c.fillRect(-9, -62, 18, 62); c.strokeStyle = INK; c.lineWidth = 2; c.strokeRect(-9, -62, 18, 62);
+    c.save(); c.translate(-50 - b * 26, -62 + b * 34); c.rotate(-b * 1.15); c.globalAlpha = 1; rrect(c, 0, -22, 100, 22, 8); fillStroke(c, '#ff5a3c', 3); c.fillStyle = '#ffd54f'; c.fillRect(41, -22, 18, 22); c.strokeStyle = INK; c.lineWidth = 2; c.strokeRect(41, -22, 18, 22);
+    c.beginPath(); c.ellipse(40, -30, 13, 9, -0.5, 0, 7); fillStroke(c, '#ffd54f', 2.4); c.beginPath(); c.ellipse(60, -30, 13, 9, 0.5, 0, 7); fillStroke(c, '#ffd54f', 2.4); c.beginPath(); c.arc(50, -26, 6, 0, 7); fillStroke(c, '#ffb300', 2.4); c.restore();
+    c.restore();
+    if (b === 0) { c.fillStyle = INK; c.font = 'bold 30px "Secular One", Arial'; c.textAlign = 'center'; c.fillText('?', bx, 78 + Math.sin(t * 4) * 4); }
+  },
   bar(on) { const b = $('#earBar'); if (b) b.hidden = !on; if (on) $('#sayLive').textContent = ''; },
-  live(t) { const el = $('#sayLive'); if (el) el.textContent = t || ''; },
-  reveal(w) { $('#sayWord').textContent = w; },
-  // ---- one elicitation. Resolves 'spont' | 'choice' | 'imit' | 'parent' | 'attempt' | 'none' | 'skip'
-  async elicit(spec) {
-    this.open(spec);
-    const parent = new Promise(r => { this._parent = v => r({ parent: v }); });
-    const say = x => Promise.race([Voice.say(x), parent]);
-    const hear = async () => {
-      if (!Ear.usable) return parent;                              // no microphone here: the parent answers with the buttons
-      this.mood = 'listen';
-      let p;
-      if (Ear.auto) { this.bar(true); p = Ear.hear(5200, t => this.live(t)); }
-      else p = new Promise(r => { const b = $('#btnMic'); b.hidden = false; b.onclick = () => { b.onclick = null; b.classList.add('live'); this.bar(true); Ear.hear(6500, t => this.live(t)).then(x => { b.classList.remove('live'); b.hidden = true; r(x); }); }; });
-      const r = await Promise.race([p, parent]);
-      this.bar(false); this.mood = 'idle';
-      if (r && r.parent) Ear.stop();
-      return r;
-    };
-    const steps = [];
-    if (spec.q && Ear.usable) steps.push({ cue: 'spont', p: [spec.q] });
-    if (spec.foil && Ear.auto) steps.push({ cue: 'choice', p: [rnd() < 0.5 ? `זה ${spec.word} או ${spec.foil}?` : `זה ${spec.foil} או ${spec.word}?`] });
-    steps.push({ cue: 'imit', model: true, p: [withKid('תגיד:', 0.3), '~' + spec.word] });
-    let r = null, res = 'none', heard = '';
-    for (let i = 0; i < steps.length; i++) {
-      const st = steps[i];
-      if (st.model) this.reveal(spec.word);
-      r = await say(st.p); if (r && r.parent) break;
-      r = await hear(); if (r && r.parent) break;
-      if (r.heard) heard = r.text;
-      if (r.heard && this.match(spec, r.alts) >= 0.5) { res = st.cue; break; }
-      if (r.heard && !st.model) { r = await say(['שמעתי אותך!', spec.recast || `${spec.word}.`]); if (r && r.parent) break; i = steps.length - 2; }   // a different word: recast, then model it
+  // ---- small steps the flows are made of
+  async tell(spec, segs, gap) {                                       // Boti speaks; every time the target word is in it counts as one model
+    const w = this.rec(spec.key), bare = stripNiqqud(spec.word);
+    segs = segs.filter(Boolean); w.m += segs.filter(s => stripNiqqud(s).replace(/^~/, '').includes(bare)).length;
+    this.mood = 'talk'; await Voice.say(segs, { gap: gap == null ? 850 : gap });
+  },
+  async openBox(spec) {
+    Snd.sfx.pop(); const t0 = now();
+    await new Promise(res => { const step = () => { this.box = clamp((now() - t0) / 420, 0, 1); if (this.box < 1 && this.on) requestAnimationFrame(step); else res(); }; step(); });
+    $('#sayPic').className = 'saypic pop'; $('#sayWord').textContent = stripNiqqud(spec.word); Snd.sfx.magic();
+  },
+  async listen(ms, spec) {
+    if (!Ear.usable) { this.mood = 'listen'; await sleep(Math.min(ms, 3200)); this.mood = 'idle'; return { nomic: true, heard: false, voice: false }; }
+    this.mood = 'listen'; this.bar(true); $('#sayPic').classList.add('turn');
+    const tap = new Promise(r => { this._tap = v => r({ tap: v }); });
+    const r = await Promise.race([Ear.hear(ms, t => { $('#sayLive').textContent = t || ''; }), tap]);
+    if (r && r.tap != null) Ear.stop();
+    this._tap = null; this.bar(false); this.mood = 'idle'; $('#sayPic').classList.remove('turn');
+    return r;
+  },
+  reward(big) {
+    const t = now() / 1000; this.cheer = t + (big ? 1.6 : 0.9);
+    if (big) { Snd.sfx.good(); UI.confetti($('#sayPic')); } else Snd.sfx.coin();
+    const pic = $('#sayPic'); pic.classList.remove('yay'); void pic.offsetWidth; pic.classList.add('yay');
+    this.gain = (this.gain || 0) + (big ? 3 : 1);
+  },
+  async beats(spec) {                                                 // the slow, smooth word with one light per syllable (a cue on Boti's side only)
+    const el = $('#sayBeats'), bs = $$('b', el); el.hidden = false; $('#sayWord').style.visibility = 'hidden';
+    const clip = await Voice.find('~' + spec.word), dur = clip ? clip.duration * 1000 : 1100;
+    bs.forEach((b, i) => setTimeout(() => { bs.forEach(x => x.classList.remove('on')); b.classList.add('on'); Snd.sfx.tick && Snd.sfx.tick(); }, 60 + (dur * i) / bs.length));
+    await this.tell(spec, ['~' + spec.word]);
+    bs.forEach(x => x.classList.remove('on')); await sleep(250); el.hidden = true; $('#sayWord').style.visibility = '';
+  },
+  // ---- one word, start to finish. Returns 'good' | 'partial' | 'other' | 'voice' | 'silent'
+  async item(spec, n, of) {
+    const w = this.rec(spec.key), W = spec.word, close = spec.phrase ? [`${spec.phrase}.`] : [];
+    const wasQuiet = this.quiet > 0, known = w.m >= 6 && Ear.usable && !wasQuiet && spec.kind !== 'sound';
+    this.open(spec, n, of);
+    await sleep(350);
+    let r, j, cue = 'model';
+    const routine = this.sp().routine || 0;
+    if (!known) {
+      // new word (or a quiet stretch): show it, name it three times in short sentences, then wait
+      await this.tell(spec, [spec.lead || 'בקופסה יש...'], 500); await this.openBox(spec); this.sp().routine = routine + 1;
+      await this.tell(spec, [`${W}!`].concat(close, [`${W}.`]));
+      r = await this.listen(wasQuiet ? 2600 : 5000, spec);
+    } else {
+      // a word he has heard many times: leave room for him first (the unfinished sentence, or a choice of two), then give the word
+      const choice = spec.foil && w.n % 3 === 1;
+      await this.tell(spec, ['בקופסה יש...'], 500); await this.openBox(spec); $('#sayWord').textContent = '';
+      if (choice) { cue = 'choice'; r = await this.choice(spec); } else { cue = 'wait'; r = await this.listen(5000, spec); }
+      j = this.judge(spec, r);
+      if (r && r.tap != null) j = { cls: r.tap ? 'good' : 'other', tap: true };
+      if (j.cls !== 'good') {
+        cue = 'model'; $('#sayWord').textContent = stripNiqqud(W); $('#sayChoice').hidden = true;
+        await this.tell(spec, w.n % 2 ? ['ביחד:', `${W}.`] : [`${W}.`]);
+        const r2 = await this.listen(5000, spec), j2 = this.judge(spec, r2);
+        if (j2.cls !== 'silent' || j.cls === 'silent') { r = r2; j = j2; }
+      }
     }
-    if (r && r.parent) res = r.parent === 'said' ? 'parent' : r.parent === 'tried' ? 'attempt' : 'skip';
-    else if (res === 'none' && heard) res = 'attempt';
-    this._parent = null; this.reveal(spec.word); this.mood = 'talk';
-    if (['spont', 'choice', 'imit', 'parent'].includes(res)) {
-      Snd.sfx.good(); UI.confetti($('#sayWord'));
-      await Voice.say([res === 'spont' ? withKid('אמרת לבד!', 0.5) : 'כן!', `${spec.word}!`].concat(spec.expand && spec.kind !== 'two' ? [`${spec.expand}.`] : []));
-    } else if (res === 'attempt') { Snd.sfx.pop(); await Voice.say(['יפה שניסית!', `${spec.word}!`]); }
-    else if (res === 'none') await Voice.say([`${spec.word}.`]);
-    this.log(spec, res, heard);
+    $('#sayWord').textContent = stripNiqqud(W); $('#sayChoice').hidden = true;
+    j = j || this.judge(spec, r);
+    const heard = (r && r.text) || '';
+    if (j.cls === 'good') { this.reward(true); await this.tell(spec, [!j.tap && rnd() < 0.35 ? `אמרת ${W}!` : 'כן!', `${W}.`].concat(spec.phrase ? [`${spec.phrase}!`] : [])); }
+    else if (j.cls === 'partial') j = await this.buildUp(spec, j);
+    else if (j.cls === 'other') { this.reward(false); await this.tell(spec, [spec.kind === 'sound' ? `${W}.` : `זה ${W}.`].concat(close)); }
+    else if (j.cls === 'voice') { this.reward(false); await this.tell(spec, ['שמעתי אותך!', `${W}.`].concat(close)); }
+    else { this.reward(false); await this.tell(spec, known ? [`${W}.`].concat(close) : close.length ? close : [`${W}.`]); }
+    // two silences in a row: stop waiting for a while, just show and tell (three words), then try again
+    if (wasQuiet) this.quiet--;                                       // a show-and-tell item: nothing was expected of him
+    else if (r && r.nomic) { /* no microphone: nothing to count */ } else if (j.cls === 'silent') { if (++this.silentRun >= 2) { this.quiet = 3; this.silentRun = 0; } } else { this.silentRun = 0; }
+    this.log(spec, r && r.nomic ? 'nomic' : j.cls, heard, cue);
+    await sleep(500);
     this.on = false; cancelAnimationFrame(this.raf);
-    return res;
+    return j.cls;
   },
-  // ---- boss fight: say the power word. Any speech counts; a tap button appears if nothing is heard, so he is never stuck.
-  async power(word) {
-    const bar = $('#powerBar'), btn = $('#powerBtn');
-    bar.hidden = false; $('#powerWord').textContent = word + '!'; btn.hidden = true; bar.classList.remove('heard');
-    let res = 'tap', heard = '';
-    await Voice.say(['תגיד חזק:', `${word}!`]);
-    if (Ear.auto) {
-      bar.classList.add('listening');
-      const r = await Ear.hear(3600);
-      bar.classList.remove('listening');
-      if (r.heard) { heard = r.text; res = heardScore(r.alts, [word]) >= 0.5 ? 'said' : 'heard'; }
+  // two pictures; "ball or banana?" - the expected word last, the order swapped one time in three. A tap is a full answer.
+  choice(spec) {
+    const W = spec.word, F = V[spec.foil].n, swap = rnd() < 0.34, el = $('#sayChoice');
+    const opts = swap ? [[spec.pic, true], [{ v: spec.foil }, false]] : [[{ v: spec.foil }, false], [spec.pic, true]];
+    el.innerHTML = opts.map(([p], i) => `<button class="opt" data-i="${i}">${P(p)}</button>`).join(''); hydrate(el); el.hidden = false; $('#sayPic').className = 'saypic hid';
+    $$('button', el).forEach(b => { b.onclick = () => { Snd.init(); Snd.sfx.tap(); if (this._tap) this._tap(opts[+b.dataset.i][1]); }; });
+    return this.tell(spec, [swap ? `${W} או ${F}?` : `${F} או ${W}?`]).then(() => this.listen(5200, spec)).then(r => { $('#sayPic').className = 'saypic pop'; return r; });
+  },
+  // part of the word came out: welcome it, give the whole word back slowly, and (once) build it together from its end
+  async buildUp(spec, j) {
+    const W = spec.word, close = spec.phrase ? [`${spec.phrase}.`] : [], parts = stripNiqqud(W).split(' ');
+    this.reward(false);
+    await this.tell(spec, ['כן!', '~' + W].concat(close));
+    let r = await this.listen(4000, spec), j2 = this.judge(spec, r);
+    const ip = parts.length === 1 ? sylIpa(parts[0]) : null;
+    if (j2.cls === 'silent' && ip && ip.length >= 2) {
+      // the piece he already has is normally the end of the word; start from there
+      const sy = j.hp && j.hp.words[0] ? j.hp.words[0].syl : [];
+      let from = ip.length - 1; while (from > 1 && sy[from - 1] >= 0.6) from--;
+      await this.tell(spec, ['ביחד:', sylClip(ip.slice(from).join(''))], 600);
+      await sleep(1700);
+      await this.beats(spec);
+      await this.tell(spec, [`${W}.`]);
+      r = await this.listen(5000, spec); j2 = this.judge(spec, r);
     }
-    if (res === 'tap') { btn.hidden = false; btn.textContent = word + '!'; await new Promise(r => { btn.onclick = () => { Snd.init(); r(); }; setTimeout(r, 6000); }); }
-    else bar.classList.add('heard');
-    ensureSession().said.push({ t: Date.now(), w: 'pw_' + word, k: 'power', r: res === 'said' ? 'imit' : res === 'heard' ? 'attempt' : 'none', h: heard });
-    bar.hidden = true;
+    const good = j2.cls === 'good';
+    this.reward(good);
+    await this.tell(spec, [good ? 'כן!' : pick(EFFORT), `${W}.`].concat(close));
+    return { cls: good ? 'good' : 'partial', built: true };
+  },
+  // ---- boss fight: Boti invites a shout "together". Any voice fires it; after a silence Boti shouts alone and it fires anyway.
+  async power(word) {
+    const bar = $('#powerBar');
+    bar.hidden = false; $('#powerWord').textContent = word + '!'; bar.classList.remove('heard');
+    let res = 'boti', heard = '';
+    await Voice.say(['ביחד:', `${word}!`], { gap: 500 });
+    if (Ear.usable) {
+      bar.classList.add('listening');
+      const r = await Ear.hear(3400);
+      bar.classList.remove('listening');
+      if (r.heard) { heard = r.text; res = heardParts(r.alts, word).level === 'full' ? 'said' : 'heard'; } else if (r.voice) res = 'heard';
+    } else await sleep(1200);
+    if (res === 'boti') await Voice.say([`${word}!`]); else bar.classList.add('heard');
+    ensureSession().said.push({ t: Date.now(), w: 'pw_' + word, k: 'power', r: res === 'said' ? 'good' : res === 'heard' ? 'voice' : 'silent', c: 'together', h: heard });
+    const w = this.rec('pw_' + word); w.m += 2; w.n++; if (res === 'said') w.g++; else if (res === 'heard') w.v++; else w.q++;
+    await sleep(350); bar.hidden = true;
     return res;
   },
-  // ---- a short lesson (hub, and the "friend on the road" gate): n elicitations in a row
+  // ---- a visit to the friend with the surprise box: n words from today's list
   async lesson(n, intro) {
-    let good = 0;
-    if (intro) await Voice.say(intro);
-    for (let i = 0; i < n; i++) { const r = await this.elicit(this.pick()); if (r === 'skip' && i === 0 && n > 2) break; if (['spont', 'choice', 'imit', 'parent'].includes(r)) good++; }
+    let good = 0; this.gain = 0;
+    if (intro) await Voice.say(intro, { gap: 700 });
+    for (let i = 0; i < n; i++) { const r = await this.item(this.spec(this.nextKey()), i, n); if (r === 'good') good++; }
     return good;
   },
+  bubblePic(key) { return key.startsWith('snd_') ? V[key.slice(4)].e : V[key] ? V[key].e : null; },
+  // every word the album can hold, easiest to say first
+  albumKeys() { return this._album || (this._album = Object.keys(SOUNDS).map(k => 'snd_' + k).concat(VOCAB_ALL.filter(k => EXPAND[k]).sort((a, b) => phonCost(V[a].n) - phonCost(V[b].n)))); },
+  // 0 not met yet, 1 heard, 2 tried (a part, a voice), 3 said
+  stage(key) { const w = this.sp().words[key]; return !w ? 0 : w.g > 0 ? 3 : w.p > 0 || w.v > 0 || w.o > 0 ? 2 : w.m > 0 ? 1 : 0; },
+  // a word bubble caught in a level: one more model of today's word, nothing asked
+  hearWord(key) { const s = this.spec(key, { i: 0 }); this.rec(key).m++; Voice.say([`${s.word}!`], { pri: 0 }); },
+};
+
+// ------------------------------------------------------------------ the catching game (hub: "catch!"). Things fall from the sky and
+// Boti follows the finger. "We are catching apples!" - every apple caught is named ("apple!"), anything else that is caught is
+// named too ("that is a ball") and simply bounces away. Listening and words in the middle of the action; nothing can go wrong.
+const Catch = {
+  on: false, raf: 0, cv: null, c: null, W: 0, H: 0, t: 0, last: 0, bx: 0, tx: 0, dir: 1, items: [], parts: [], got: 0, miss: 0, target: null, round: 0, spawn: 0, left: 0, cheer: 0, world: null, said: 0,
+  pool() {
+    const today = Coach.sessionWords().filter(k => V[k] && V[k].p), boost = ((Store.d.boost || {}).words || []).filter(k => V[k] && V[k].p);
+    const lv = VOCAB_L.slice(0, Math.max(1, sk('vocab').lv)).flat().filter(k => V[k].p);
+    return { first: [...new Set(boost.concat(today))], all: lv };
+  },
+  start() {
+    const P = this.pool();
+    this.cv = $('#catchCv'); this.c = this.cv.getContext('2d'); this.on = true; UI.show('scCatch'); G.mode = 'menu'; this.resize();
+    Object.assign(this, { t: 0, last: now(), bx: this.W / 2, tx: this.W / 2, items: [], parts: [], got: 0, miss: 0, round: 0, spawn: 0.6, left: 45, cheer: 0, said: 0, world: worldFor(Math.floor(rnd() * 3)), queue: shuffle(P.first).concat(shuffle(P.all)), all: P.all });
+    Snd.music(0); this.next(true);
+    const cv = this.cv, move = e => { const r = cv.getBoundingClientRect(), x = ((e.touches ? e.touches[0] : e).clientX - r.left) / r.width * this.W; this.tx = clamp(x, 30, this.W - 30); if (e.cancelable) e.preventDefault(); };
+    cv.onpointerdown = cv.onpointermove = move; cv.ontouchstart = cv.ontouchmove = move;
+    this.key = e => { if (e.key === 'ArrowLeft') this.tx = clamp(this.tx - 60, 30, this.W - 30); if (e.key === 'ArrowRight') this.tx = clamp(this.tx + 60, 30, this.W - 30); }; addEventListener('keydown', this.key);
+    cancelAnimationFrame(this.raf); const loop = () => { if (!this.on) return; const n = now(), dt = Math.min(0.05, (n - this.last) / 1000); this.last = n; this.step(dt); this.draw(); this.raf = requestAnimationFrame(loop); }; loop();
+  },
+  resize() { const r = this.cv.getBoundingClientRect(), d = Math.min(2, window.devicePixelRatio || 1); this.W = Math.max(320, r.width); this.H = Math.max(240, r.height); this.cv.width = this.W * d; this.cv.height = this.H * d; this.c.setTransform(d, 0, 0, d, 0, 0); },
+  next(first) {
+    this.target = this.queue[this.round % this.queue.length]; this.round++; this.need = this.got + 5;
+    $('#catchPic').innerHTML = P({ v: this.target }); $('#catchPic').classList.remove('boing'); void $('#catchPic').offsetWidth; $('#catchPic').classList.add('boing');
+    Voice.say(first ? ['משחק התפיסה!', `תופסים ${V[this.target].p}!`] : [`עכשיו תופסים ${V[this.target].p}!`]);
+  },
+  step(dt) {
+    this.t += dt; this.left -= dt; if (this.cheer > 0) this.cheer -= dt;
+    const gy = this.H - 64, dx = this.tx - this.bx; this.bx += clamp(dx * 9 * dt, -520 * dt, 520 * dt); if (Math.abs(dx) > 4) this.dir = dx > 0 ? 1 : -1; this.moving = Math.abs(dx) > 6;
+    this.spawn -= dt;
+    if (this.spawn <= 0 && this.left > 1.5) {
+      this.spawn = 0.75 + rnd() * 0.45;
+      const k = rnd() < 0.58 ? this.target : pick(this.all.filter(x => x !== this.target));
+      this.items.push({ k, e: V[k].e, x: clamp(this.bx + (rnd() - 0.5) * Math.min(this.W * 0.9, 520), 34, this.W - 34), y: -30, vy: 105 + rnd() * 45 + this.got * 2, vx: 0, r: rnd() * 6, st: 0 });
+    }
+    for (const it of this.items) {
+      it.y += it.vy * dt; it.x += it.vx * dt; it.r += dt * 1.5;
+      if (it.st === 0 && Math.abs(it.x - this.bx) < 46 && it.y > gy - 96 && it.y < gy - 22) {
+        if (it.k === this.target) {
+          it.st = 2; this.got++; this.cheer = 0.5; Snd.sfx.coin(this.got % 8); this.burst(it.x, it.y, '#ffe27a');
+          if (this.said++ % 2 === 0) Voice.say([SAY.name(it.k)], { pri: 0 });
+          if (this.got >= this.need && this.left > 6) this.next();
+        } else { it.st = 1; it.vy = -240; it.vx = (it.x < this.bx ? -1 : 1) * 150; this.miss++; Snd.sfx.pop(); if (this.miss % 2 === 1) Voice.say([SAY.thisIs(it.k)], { pri: 0 }); }
+      }
+      if (it.st === 1) it.vy += 620 * dt;
+    }
+    this.items = this.items.filter(it => it.st !== 2 && it.y < this.H + 40);
+    for (const q of this.parts) { q.x += q.vx * dt; q.y += q.vy * dt; q.vy += 500 * dt; q.life -= dt; }
+    this.parts = this.parts.filter(q => q.life > 0);
+    $('#catchCount').textContent = this.got; $('#catchBar').style.width = clamp(this.left / 45, 0, 1) * 100 + '%';
+    if (this.left <= 0) this.end();
+  },
+  burst(x, y, col) { for (let i = 0; i < 10; i++) { const a = rnd() * 6.28, s = 80 + rnd() * 160; this.parts.push({ x, y, vx: Math.cos(a) * s, vy: Math.sin(a) * s - 80, life: 0.5, c: i % 2 ? col : '#fff' }); } },
+  draw() {
+    const c = this.c, W = this.W, H = this.H, t = this.t, gy = H - 64, L = { world: this.world, stars: [] };
+    drawBackground(c, L, t * 14, W, H, gy, t);
+    c.fillStyle = this.world.top; c.fillRect(0, gy, W, 14); c.fillStyle = this.world.body; c.fillRect(0, gy + 14, W, H - gy);
+    c.fillStyle = this.world.topHi; for (let x = 0; x < W; x += 34) { c.beginPath(); c.arc(x + 17, gy + 2, 17, Math.PI, 0); c.fill(); }
+    for (const it of this.items) { c.fillStyle = 'rgba(10,12,40,0.15)'; const sh = clamp(1 - (gy - it.y) / 320, 0.2, 1); c.beginPath(); c.ellipse(it.x, gy + 6, 18 * sh, 5 * sh, 0, 0, 7); c.fill(); emoji(c, it.e, it.x, it.y, 42, Math.sin(it.r) * 0.25); }
+    const pose = botiPose(this.cheer > 0 ? 'win' : this.moving ? 'run' : 'idle', t, this.moving ? this.dir * 200 : 0, 0);
+    if (this.cheer <= 0) { pose.armL = 2.5; pose.armR = -2.5; pose.eye = 'happy'; }
+    c.fillStyle = 'rgba(10,12,40,0.22)'; c.beginPath(); c.ellipse(this.bx, gy + 6, 26, 6, 0, 0, 7); c.fill();
+    drawBoti(c, this.bx, gy + 6, 1.25, this.dir, pose, Store.d.wear, t);
+    for (const q of this.parts) { c.globalAlpha = clamp(q.life * 2, 0, 1); c.fillStyle = q.c; c.beginPath(); c.arc(q.x, q.y, 4, 0, 7); c.fill(); } c.globalAlpha = 1;
+    if (this.world.tint) { c.fillStyle = this.world.tint; c.fillRect(0, 0, W, H); }
+  },
+  async end() {
+    if (!this.on) return; this.on = false; cancelAnimationFrame(this.raf); removeEventListener('keydown', this.key);
+    const n = this.got; Store.d.wallet += n; ensureSession().catch = (ensureSession().catch || []).concat([{ t: Date.now(), n, miss: this.miss }]); Store.save(true);
+    Snd.sfx.win(); UI.confetti($('#catchPic'));
+    await Voice.say([withKid('תפסת הרבה!'), 'קיבלת מטבעות.']);
+    UI.showHub(true);
+  },
+  quit() { if (!this.on) return; this.on = false; cancelAnimationFrame(this.raf); removeEventListener('keydown', this.key); Voice.stop(); Store.d.wallet += this.got; Store.save(true); UI.showHub(true); },
 };
 
 // ------------------------------------------------------------------ screens, HUD, touch controls
-const SCREENS = ['scTitle', 'scSetup', 'scHub', 'scCard', 'scSay', 'scWin', 'scReward', 'scBreak', 'scShop', 'scParent'];
+const SCREENS = ['scTitle', 'scSetup', 'scHub', 'scCard', 'scSay', 'scWin', 'scReward', 'scBreak', 'scShop', 'scAlbum', 'scCatch', 'scParent'];
 const UI = {
   screen: 'scTitle',
   show(id) {
@@ -3602,7 +4254,8 @@ const UI = {
     }
   },
   showHub(quiet) {
-    G.mode = 'menu'; G.L = null; Snd.music(null); this.show('scHub'); renderHubDom();
+    G.mode = 'menu'; G.L = null; Snd.music('menu'); this.show('scHub'); renderHubDom();
+    if (!quiet && !starsTotal() && !(Store.d.tut || {}).story) { G.story = G.t; [1.2, 2.0, 2.8, 3.6].forEach(d => setTimeout(() => { if (G.story != null) Snd.sfx.fall(); }, d * 1000)); }
     if (!quiet) Voice.say([kid() ? `שלום, ${kid()}!` : 'שלום!', starsTotal() ? 'לאן הולכים?' : 'הכוכבים נפלו מהשמיים! בוא נציל אותם.']);
   },
   showWin() {
@@ -3698,6 +4351,15 @@ function renderShop() {
 }
 
 // ------------------------------------------------------------------ first run: the child's name and the microphone (a grown-up does this once)
+// the sticker album: every word Boti has shown him. Grey = not met yet, pale = heard, bright = tried, gold star = said.
+// Touching a sticker makes Boti say the word again - one more model, chosen by the child.
+function renderAlbum() {
+  const keys = Coach.albumKeys(), grid = $('#albumGrid');
+  $('#albumCount').textContent = keys.filter(k => Coach.stage(k) === 3).length + ' / ' + keys.length;
+  grid.innerHTML = keys.map(k => { const st = Coach.stage(k), s = Coach.spec(k, { i: 0 }); return `<button class="stk st${st}" data-k="${k}" aria-label="${st ? esc(s.word) : 'עוד לא'}">${st ? P(s.pic) : '<b class="qm">?</b>'}${st === 3 ? '<i class="stkstar"></i>' : ''}</button>`; }).join('');
+  hydrate(grid);
+  $$('.stk', grid).forEach(b => { b.onclick = () => { const k = b.dataset.k; if (!Coach.stage(k)) { Snd.sfx.pop(); return; } Snd.sfx.tap(); b.classList.remove('boing'); void b.offsetWidth; b.classList.add('boing'); Coach.hearWord(k); }; });
+}
 function showSetup() {
   UI.show('scSetup');
   const nm = $('#suName'), mic = $('#suMic'), st = $('#suMicState');
@@ -3745,7 +4407,11 @@ function bindInput() {
   $('#btnWinShop').onclick = () => { Snd.sfx.tap(); G.mode = 'menu'; G.L = null; UI.show('scShop'); renderShop(); };
   $('#btnShop').onclick = () => { Snd.init(); Snd.sfx.tap(); UI.show('scShop'); renderShop(); Voice.say('הארון של בוטי! מה נלבש?'); };
   $('#btnShopBack').onclick = () => { Snd.sfx.tap(); UI.showHub(true); };
-  $('#btnTalk').onclick = async () => { Snd.init(); Snd.sfx.tap(); const good = await Coach.lesson(5, [withKid('בוא נדבר!'), 'אני שואל, ואתה עונה.']); Store.d.wallet += 3 + good * 2; Store.save(true); syncSession(); UI.showHub(true); Snd.sfx.buy(); Voice.say([withKid('היה כיף לדבר איתך!'), 'קיבלת מטבעות!']); };
+  $('#btnAlbum').onclick = () => { Snd.init(); Snd.sfx.tap(); UI.show('scAlbum'); renderAlbum(); Voice.say(['האלבום שלי!', 'נוגעים בתמונה.']); };
+  $('#btnAlbumBack').onclick = () => { Snd.sfx.tap(); UI.showHub(true); };
+  $('#btnCatch').onclick = () => { Snd.init(); Snd.sfx.tap(); Catch.start(); };
+  $('#btnCatchBack').onclick = () => { Snd.sfx.tap(); Catch.quit(); };
+  $('#btnTalk').onclick = async () => { Snd.init(); Snd.sfx.tap(); const good = await Coach.lesson(5, [withKid('בוא נשחק!'), 'יש לי קופסת הפתעות.']); Store.d.wallet += 3 + (Coach.gain || 0); Store.save(true); syncSession(); UI.showHub(true); Snd.sfx.buy(); Voice.say([withKid('היה כיף!'), 'קיבלת מטבעות.']); };
   $('#btnBreakHub').onclick = () => { Snd.sfx.tap(); UI.showHub(true); };
   holdButton($('#btnParent'), openParent);
   holdButton($('#btnBreakGo'), () => UI.show('scWin'));
@@ -3777,11 +4443,13 @@ function itemLabel(key) {
   const [p, k] = [key.slice(0, 2), key.slice(2)];
   if (p === 'v_') return VERBS[k] || key; if (p === 'e_') return MOODS[k] || key; if (p === 'b_') return PARTS[k] || key;
   if (p === 'c_') return COLORS[k] ? COLORS[k][0] : key; if (p === 's_') return SHAPES[k] || key;
+  if (key.startsWith('op_')) return OPP[key.slice(3)] ? OPP[key.slice(3)].n : key;
   if (key.startsWith('snd_')) return SOUNDS[key.slice(4)] || key; if (key.startsWith('two_')) return EXPAND[key.slice(4)] || key; if (key.startsWith('pw_')) return key.slice(3);
   if (/^n\d+$/.test(key)) return key.slice(1);
   return key;
 }
-const CUES = { spont: 'אמר לבד', choice: 'אמר אחרי בחירה', imit: 'אמר אחרי הדגמה', parent: 'אמר (סימון הורה)', attempt: 'ניסה', none: 'לא אמר', skip: 'דילוג' };
+const CUES = { good: 'אמר את המילה', partial: 'אמר חלק ממנה', other: 'אמר משהו אחר', voice: 'השמיע קול', silent: 'שתק', nomic: 'בלי מיקרופון' };
+const OLD_CUE = { spont: 'good', choice: 'good', imit: 'good', parent: 'good', attempt: 'partial', none: 'silent', skip: 'silent' };       // results saved by earlier versions
 function analyze(sessions) {
   const ev = sessions.flatMap(s => s.events || []).sort((a, b) => a.t - b.t), said = sessions.flatMap(s => s.said || []).sort((a, b) => a.t - b.t), heard = sessions.flatMap(s => s.heard || []).sort((a, b) => a.t - b.t);
   const levels = sessions.flatMap(s => s.levels || []).sort((a, b) => a.t - b.t);
@@ -3793,8 +4461,8 @@ function analyze(sessions) {
     if (l.length >= 10) { const a = l.slice(-5).filter(e => e.ok).length / 5, b = l.slice(-10, -5).filter(e => e.ok).length / 5; trend = a - b > 0.15 ? 'עולה' : b - a > 0.15 ? 'יורד' : 'יציב'; }
     return { k, n: l.length, acc, trend, lv: sk(k).lv, max: SKILLS[k].max, up: sk(k).up || 0, ms: median(l.slice(-10).map(e => e.ms).filter(Boolean)) };
   });
-  const cue = {}; said.forEach(s => { cue[s.r] = (cue[s.r] || 0) + 1; });
-  const utter = said.filter(s => s.h && ['spont', 'choice', 'imit', 'attempt'].includes(s.r)).map(s => s.h), words = utter.map(s => s.trim().split(/\s+/).filter(Boolean).length);
+  const cue = {}; said.forEach(s => { s.r = OLD_CUE[s.r] || s.r; cue[s.r] = (cue[s.r] || 0) + 1; });
+  const utter = said.filter(s => s.h).map(s => s.h), words = utter.map(s => s.trim().split(/\s+/).filter(Boolean).length);
   const nums = {}; (by.count || []).concat(by.give || []).forEach(e => { const m = /^n(\d+)$/.exec(e.i); if (!m) return; const o = nums[m[1]] = nums[m[1]] || { n: 0, ok: 0 }; o.n++; if (e.ok) o.ok++; });
   const wr = {}; (by.vocab || []).forEach(e => { const o = wr[e.i] = wr[e.i] || { n: 0, ok: 0 }; o.n++; if (e.ok) o.ok++; });
   return {
@@ -3810,7 +4478,7 @@ function analyze(sessions) {
 function suggestBoost(A) {
   const sp = Coach.sp().words, skills = A.rows.filter(r => r.n >= 4 && r.acc < 0.65).sort((a, b) => a.acc - b.acc).slice(0, 3).map(r => r.k);
   const weak = Object.entries(A.wr).filter(([, o]) => o.n >= 2 && o.ok / o.n < 0.5).map(([k]) => k);
-  const unsaid = Object.entries(A.wr).filter(([k, o]) => o.ok >= 1 && !(sp[k] && sp[k].s) && EXPAND[k]).map(([k]) => k);
+  const unsaid = Object.entries(A.wr).filter(([k, o]) => o.ok >= 1 && !(sp[k] && sp[k].g) && EXPAND[k]).map(([k]) => k);
   return { skills, words: [...new Set(weak.concat(unsaid))].slice(0, 8) };
 }
 function buildInsights(A) {
@@ -3825,13 +4493,14 @@ function buildInsights(A) {
   if (cnt.n >= 4 && giv.n >= 4 && cnt.lv >= giv.lv + 2) ins.push('<b>ספירה מול כמות:</b> סופר יפה, אבל "תן לי 3" עוד קשה לו. זה שלב טבעי. בבית: "תן לי 2 קוביות", ועוצרים יחד במספר.');
   const hardN = Object.entries(A.nums).filter(([k, o]) => +k >= 2 && o.n >= 3 && o.ok / o.n < 0.5).map(([k]) => k);
   if (hardN.length) ins.push(`<b>מספרים שעוד מבלבלים:</b> ${hardN.join(', ')}. ספרו יחד בדיוק את הכמות הזאת בחפצים אמיתיים.`);
-  const c = A.cue, spoke = (c.spont || 0) + (c.choice || 0) + (c.imit || 0), asked = spoke + (c.attempt || 0) + (c.none || 0);
-  if (asked >= 4) {
-    ins.push(`<b>דיבור (מאמן הדיבור):</b> מתוך ${asked} פעמים שבוטי ביקש ממנו לומר משהו – ${c.spont || 0} אמר לבד, ${c.choice || 0} אחרי בחירה מתוך שתיים, ${c.imit || 0} אחרי הדגמה, ${c.attempt || 0} ניסה, ${c.none || 0} לא אמר.`);
-    if ((c.spont || 0) < spoke * 0.3 && (c.imit || 0) > 0) ins.push('<b>איך לעזור בבית:</b> הוא מצליח לחזור אחרי הדגמה. לפני שאומרים לו את המילה, חכו 3 שניות ותנו בחירה ("כדור או תפוח?"). זה הצעד הבא אחרי חיקוי.');
-    if (!spoke) ins.push('<b>איך לעזור בבית:</b> עוד לא אומר את המילים. ממשיכים לשיים בקול, מחקים קולות של חיות (הב הב, מו), ומשבחים כל ניסיון.');
+  const c = A.cue, waited = (c.good || 0) + (c.partial || 0) + (c.other || 0) + (c.voice || 0) + (c.silent || 0), voiced = waited - (c.silent || 0);
+  if (waited >= 4) {
+    ins.push(`<b>דיבור (קופסת ההפתעות):</b> בוטי אמר מילה וחיכה ${waited} פעמים. ב-${c.good || 0} מהן הוא אמר את המילה, ב-${c.partial || 0} חלק ממנה, ב-${c.other || 0} מילה אחרת, ב-${c.voice || 0} השמיע קול, וב-${c.silent || 0} שתק.`);
+    if (voiced < waited * 0.3) ins.push('<b>איך לעזור בבית:</b> הוא עוד מקשיב יותר משמדבר, וזה בסדר. אומרים מילה אחת ברורה על מה שהוא מסתכל עליו, מחכים 5 שניות בשקט, ולא מבקשים "תגיד". קולות של חיות (מו, הב הב) הם התחלה טובה.');
+    else if ((c.good || 0) < voiced * 0.4) ins.push('<b>איך לעזור בבית:</b> הוא מנסה, וזה העיקר. כשיוצא חלק מהמילה ("דול") אומרים "כן! גדול. פיל גדול" בלי לבקש שוב. לא מתקנים ר, ס, ש: הן מגיעות מאוחר.');
+    else ins.push('<b>איך לעזור בבית:</b> הוא אומר מילים. מחזירים לו את המילה ומוסיפים אחת: "כדור" ← "כדור גדול". ממשיכים לחכות 5 שניות לפני שעוזרים.');
   }
-  ins.push(`<b>רמת הדיבור במשחק:</b> ${['מילים בודדות וקולות', 'צירופים של שתי מילים', 'משפטים קצרים עם פועל'][sp.lv - 1]}.`);
+  ins.push(`<b>שלב הדיבור במשחק:</b> ${['מילים בודדות וקולות', 'צירופים של שתי מילים', 'משפטים קצרים עם פועל'][Math.min(2, sp.lv - 1)]}.`);
   if (A.utter.length >= 3) ins.push(`<b>אורך מבע:</b> ב-${A.utter.length} הפעמים שהמיקרופון שמע אותו, בממוצע ${A.mlu.toFixed(1)} מילים. ${A.mlu < 1.6 ? 'כדי להאריך: חזרו על מה שאמר והוסיפו מילה אחת ("כלב" ← "כלב גדול").' : 'המשיכו להוסיף מילה לכל משפט שלו.'}`);
   if (A.levels.length >= 2) {
     const l = A.levels.slice(-4), falls = sum(l.map(x => x.falls || 0)), br = sum(l.map(x => x.bridges || 0)), bm = Math.round(sum(l.map(x => x.bossMs || 0)) / l.length / 1000);
@@ -3847,9 +4516,11 @@ function reportText(A) {
   L.push(`דוח בוטי – ${new Date().toLocaleDateString('he-IL')}${kid() ? ' – ' + kid() : ''}`);
   L.push(`משחק: ${A.totalMin} דקות, ${A.days7} ימים השבוע, ${starsTotal()}/${LEVEL_COUNT * 3} כוכבים. נכון בניסיון ראשון: ${pct(A.firstTry)}% (${A.ev.length} שאלות).`);
   L.push('מיומנויות (רמה, אחוז ב-12 האחרונות, כמה): ' + A.rows.filter(r => r.n).map(r => `${SKILLS[r.k].n} ${r.lv}/${r.max} ${pct(r.acc)}% (${r.n})`).join('; '));
-  L.push('דיבור: ' + Object.entries(A.cue).map(([k, n]) => `${CUES[k] || k} ${n}`).join(', ') + `. רמה ${sp.lv}.`);
-  L.push('מילים שאמר לבד: ' + (Object.entries(sp.words).filter(([, v]) => v.s).map(([k]) => itemLabel(k)).join(', ') || 'עוד אין'));
-  L.push('מה המיקרופון שמע: ' + (A.heard.filter(h => h.h).slice(-15).map(h => `"${h.h}"`).join(', ') || 'אין'));
+  L.push('דיבור: ' + Object.entries(A.cue).map(([k, n]) => `${CUES[k] || k} ${n}`).join(', ') + `. שלב ${sp.lv}.`);
+  L.push('המילים של היום (כמה פעמים שמע): ' + (((sp.set || {}).words || []).map(k => `${itemLabel(k)} ${(sp.words[k] || {}).m || 0}`).join(', ') || 'עוד אין'));
+  L.push('מילים שאמר: ' + (Object.entries(sp.words).filter(([, v]) => v.g).map(([k, v]) => `${itemLabel(k)} ×${v.g}`).join(', ') || 'עוד אין'));
+  L.push('מילים שאמר חלק מהן: ' + (Object.entries(sp.words).filter(([, v]) => !v.g && v.p).map(([k]) => itemLabel(k)).join(', ') || 'אין'));
+  L.push('מה המיקרופון שמע: ' + (A.said.filter(h => h.h).slice(-15).map(h => `${itemLabel(h.w)} ← "${h.h}"`).join(', ') || 'אין'));
   L.push('מילים שלא מבין עדיין: ' + (Object.entries(A.wr).filter(([, o]) => o.n >= 2 && o.ok / o.n < 0.5).map(([k]) => itemLabel(k)).join(', ') || 'אין'));
   L.push('שלבים אחרונים: ' + A.levels.slice(-5).map(l => `שלב ${l.lv + 1}: ${Math.round((l.ms || 0) / 6000) / 10} דק׳, ${l.falls || 0} נפילות, בוס ${Math.round((l.bossMs || 0) / 1000)} שנ׳`).join('; '));
   L.push('תוכנית חיזוק פעילה: ' + JSON.stringify(Store.d.boost));
@@ -3888,7 +4559,7 @@ function renderInsights(A) {
     <div class="kpi"><b>${starsTotal()}<small> / ${LEVEL_COUNT * 3}</small></b><span>כוכבים שהציל</span></div>
     <div class="kpi"><b>${A.totalMin}</b><span>דקות משחק בסך הכול</span></div>
     <div class="kpi"><b>${A.days7}</b><span>ימים עם משחק השבוע</span></div>
-    <div class="kpi"><b>${A.cue.spont || 0}</b><span>פעמים שאמר מילה לבד</span></div></div>`;
+    <div class="kpi"><b>${A.cue.good || 0}</b><span>פעמים שאמר מילה</span></div></div>`;
   const skillRows = dom => A.rows.filter(r => SKILLS[r.k].d === dom).map(r => {
     const [cls, lbl] = statusOf(r.n, r.acc);
     return `<div class="skill"><span class="sn">${SKILLS[r.k].n}</span><span class="lvl" title="רמה">${'●'.repeat(r.lv)}${'○'.repeat(r.max - r.lv)}</span><span class="bar"><i style="width:${r.n ? Math.max(4, pct(r.acc)) : 0}%;background:${STATUS_COLOR[cls]}"></i></span><span class="pctv">${r.n ? pct(r.acc) + '%' : '–'}</span><span class="chip ${cls}">${lbl}</span></div>`;
@@ -3898,8 +4569,9 @@ function renderInsights(A) {
   const numsHTML = Array.from({ length: 10 }, (_, i) => { const o = A.nums[i + 1]; return `<div><b>${i + 1}</b><span>${o ? `${pct(o.ok / o.n)}%` : '–'}</span></div>`; }).join('');
   const rx = Object.entries(A.wr).sort((a, b) => a[1].ok / a[1].n - b[1].ok / b[1].n).map(([k, o]) => `<span class="${o.ok / o.n < 0.5 ? 'w' : o.ok === o.n ? 's' : ''}">${esc(itemLabel(k))} ${o.ok}/${o.n}</span>`).join('') || '<span>עוד אין</span>';
   const W = Object.entries(sp.words), wl = (f, cls) => W.filter(f).map(([k, v]) => `<span class="${cls}">${esc(itemLabel(k))}${v.n > 1 ? ' ×' + v.n : ''}</span>`).join('') || '<span>עוד אין</span>';
-  const heardHTML = A.heard.filter(h => h.h).slice(-14).reverse().map(h => `<span>${h.w && h.w !== 'talk' ? esc(itemLabel(h.w)) + ' ← ' : ''}"${esc(h.h)}"</span>`).join('') || '<span>עוד לא</span>';
-  const lvRows = A.levels.slice(-6).reverse().map(l => `<tr><td>${esc(WORLDS[Math.floor(l.lv / LEVELS_PER_WORLD)].name)} ${l.lv % LEVELS_PER_WORLD + 1}</td><td>${Math.round((l.ms || 0) / 6000) / 10}</td><td>${l.falls || 0}</td><td>${l.bumps || 0}</td><td>${l.stomps || 0}</td><td>${Math.round((l.bossMs || 0) / 1000)}</td><td>${{ said: 'אמר', heard: 'דיבר', tap: 'לחץ' }[l.pw] || '–'}</td></tr>`).join('');
+  const heardHTML = A.said.filter(h => h.h).slice(-14).reverse().map(h => `<span class="${h.r === 'good' ? 's' : ''}">${esc(itemLabel(h.w))} ← "${esc(h.h)}"</span>`).join('') || '<span>עוד לא</span>';
+  const todayW = ((sp.set || {}).words || []).map(k => `<span>${esc(itemLabel(k))} · שמע ${(sp.words[k] || {}).m || 0}</span>`).join('') || '<span>ייבחרו במשחק הבא</span>';
+  const lvRows = A.levels.slice(-6).reverse().map(l => `<tr><td>${esc(WORLDS[Math.floor(l.lv / LEVELS_PER_WORLD)].name)} ${l.lv % LEVELS_PER_WORLD + 1}</td><td>${Math.round((l.ms || 0) / 6000) / 10}</td><td>${l.falls || 0}</td><td>${l.bumps || 0}</td><td>${l.stomps || 0}</td><td>${Math.round((l.bossMs || 0) / 1000)}</td><td>${{ said: 'אמר', heard: 'השמיע קול', boti: 'בוטי אמר', tap: 'לחץ' }[l.pw] || '–'}</td></tr>`).join('');
   const draws = (Store.d.drawings || []).slice().reverse().map(d => `<figure><img src="${d.u}" alt="ציור פרצוף"><figcaption>${new Date(d.t).toLocaleDateString('he-IL', { day: 'numeric', month: 'numeric' })} · רמה ${d.lv}${d.helped ? ' · עם עזרה' : ''}</figcaption></figure>`).join('');
   return `${kpis}
     <div class="pcard"><h3>מה רואים</h3><ul class="ins">${ins.map(x => `<li>${x}</li>`).join('')}</ul></div>
@@ -3907,10 +4579,12 @@ function renderInsights(A) {
     ${can ? `<div class="pcard"><h3>מה הוא כבר יודע (לפי המשחק)</h3><ul class="ins">${can}</ul></div>` : ''}
     <p class="note legend">העיגולים ●○ = הרמה שהגיע אליה. הפס = אחוז נכון בניסיון ראשון ב-12 השאלות האחרונות.</p>
     ${domCards}
-    <div class="pcard"><h3>דיבור: מה אמר ואיך</h3>
-      <h4>אמר לבד</h4><div class="words">${wl(([, v]) => v.s, 's')}</div>
-      <h4>אמר אחרי בחירה או הדגמה</h4><div class="words">${wl(([, v]) => !v.s && (v.c || v.i), '')}</div>
-      <h4>ניסה / עוד לא אמר</h4><div class="words">${wl(([, v]) => !v.s && !v.c && !v.i, 'w')}</div>
+    <div class="pcard"><h3>דיבור: המילים שלו</h3>
+      <p class="note">כמו אצל קלינאית: בוטי אומר את המילה כמה פעמים ומחכה 5 שניות. הוא לא מבקש "תגיד", לא אומר "לא נכון", ומשבח כל ניסיון. אותן 3–4 מילים חוזרות כמה ימים. בבית עושים אותו דבר: אומרים, מחכים, ומוסיפים מילה אחת.</p>
+      <h4>המילים של היום</h4><div class="words">${todayW}</div>
+      <h4>אמר</h4><div class="words">${wl(([, v]) => v.g, 's')}</div>
+      <h4>אמר חלק מהמילה</h4><div class="words">${wl(([, v]) => !v.g && v.p, '')}</div>
+      <h4>שמע הרבה, עוד לא אמר</h4><div class="words">${wl(([, v]) => !v.g && !v.p && v.m >= 6, 'w')}</div>
       <h4>מה המיקרופון שמע</h4><div class="words">${heardHTML}</div></div>
     <div class="pcard"><h3>ספירה וכמות לפי מספר</h3><div class="nums">${numsHTML}</div></div>
     <div class="pcard"><h3>הבנת מילים (נכון / פעמים)</h3><div class="words">${rx}</div></div>
@@ -3930,7 +4604,7 @@ async function openParent() {
   $('#pBody').innerHTML = renderInsights(A);
   const set = Store.d.set, bo = Store.d.boost, again = () => Store.save(true);
   const tog = (id, get, put) => { const b = $('#' + id); if (b) b.onclick = () => { put(!get()); b.setAttribute('aria-pressed', get()); again(); }; };
-  tog('tSound', () => set.sound, v => { set.sound = v; }); tog('tMusic', () => set.music, v => { set.music = v; Snd.duck(false); }); tog('tMic', () => set.mic, v => { set.mic = v; }); tog('tRobot', () => set.robot, v => { set.robot = v; });
+  tog('tSound', () => set.sound, v => { set.sound = v; Snd.duck(false); }); tog('tMusic', () => set.music, v => { set.music = v; Snd.duck(false); }); tog('tMic', () => set.mic, v => { set.mic = v; }); tog('tRobot', () => set.robot, v => { set.robot = v; });
   tog('fNum', () => set.focus.num !== false, v => { set.focus.num = v; }); tog('fLang', () => set.focus.lang !== false, v => { set.focus.lang = v; }); tog('fThink', () => set.focus.think !== false, v => { set.focus.think = v; });
   const segBind = (id, put) => $$(`#${id} button`).forEach(b => b.onclick = () => { put(b.dataset.v); $$(`#${id} button`).forEach(x => x.setAttribute('aria-pressed', x === b)); again(); });
   segBind('sEase', v => { set.ease = +v; }); segBind('sLimit', v => { set.limit = +v; });
