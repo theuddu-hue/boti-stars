@@ -375,6 +375,22 @@ body.portrait .hubtop .tbtn span { display: none; } body.portrait .hubtop .tbtn 
 
 /* ---------- boss name: a tilted ribbon instead of a plain box ---------- */
 #bossBanner { background: linear-gradient(#ff8a5c, #ff4a2a); border: 0.28rem solid var(--ink); border-radius: 1.1rem; padding: 0.02em 0.75em 0.14em; box-shadow: 0 0.45rem 0 rgba(29, 35, 64, .38), 0 0 0 0.22rem rgba(255, 255, 255, .55) inset; rotate: -3deg; -webkit-text-stroke: 0; text-shadow: 0 0.09em 0 rgba(29, 35, 64, .6); }
+
+/* ---------- hub: the world map ---------- */
+.hubmid { visibility: hidden; min-height: 0; flex: 1 1 0; } #hubBoti { display: none; }
+#worlds { padding: 0; gap: 0; align-items: flex-end; scroll-snap-type: none; }
+.map { position: relative; flex: none; }
+#mapCv { position: absolute; inset: 0; width: 100%; height: 100%; }
+.map .node { position: absolute; width: 3.3rem; height: 3.3rem; margin: -1.65rem 0 0 -1.65rem; border-width: 0.24rem; box-shadow: 0 0.28rem 0 rgba(29, 35, 64, .4); background: #fff; }
+.map .node.king { width: 3.9rem; height: 3.9rem; margin: -1.95rem 0 0 -1.95rem; background: #fff3c4; }
+.map .node.done { background: color-mix(in srgb, var(--wc) 26%, #fff); }
+.map .node.cur { background: #fff6c7; box-shadow: 0 0.28rem 0 rgba(29, 35, 64, .4), 0 0 0 0.35rem rgba(255, 214, 80, .55); }
+.map .node.locked { opacity: 0.62; filter: grayscale(0.8); }
+.mapname { position: absolute; transform: translate(-50%, -50%); font-family: var(--f-display); color: #fff; font-size: clamp(1rem, 4vmin, 1.3rem); -webkit-text-stroke: 0.16em var(--ink); paint-order: stroke fill; white-space: nowrap; pointer-events: none; margin: 0; }
+.mapname.closed { opacity: 0.75; }
+.mapboti { position: absolute; width: 3.5rem; height: 3.8rem; margin: -5.3rem 0 0 -1.75rem; pointer-events: none; filter: drop-shadow(0 0.25rem 0 rgba(8, 10, 40, .35)); }
+
+#bossBanner.lv { background: linear-gradient(#4fc3f7, #1e88e5); rotate: 2deg; font-size: clamp(1.3rem, 6.4vmin, 2.5rem); top: 16%; }
 </style>
 </head>
 <body>
@@ -549,8 +565,8 @@ body.portrait .hubtop .tbtn span { display: none; } body.portrait .hubtop .tbtn 
   </section>
 </div>
 
-<script>/* build 202611120536 */
-const BUILD = '202611120536';
+<script>/* build 202611120606 */
+const BUILD = '202611120606';
 'use strict';
 /* בוטי והכוכבים האבודים – platformer + learning stations for a 3-year-old gamer.
    File order (see build.py): core → audio/voice → data → art → engine → stations → ui → parent → boot. */
@@ -2164,6 +2180,31 @@ function drawWeather(c, L, cam, VW, VH, t) {
   }
 }
 
+// ---- the world map on the hub: a floating island for each world, dressed with that world's own plants and rocks
+function drawMapIsland(c, W, cx, by, w, open, t, depth) {
+  const dk = (depth || 86) / 86;
+  c.save(); c.lineJoin = 'round';
+  if (!open) c.filter = 'grayscale(0.9) brightness(0.78)';
+  c.fillStyle = 'rgba(8,10,40,0.28)'; c.beginPath(); c.ellipse(cx, by + 96 * dk, w * 0.36, 8, 0, 0, 7); c.fill();
+  c.beginPath(); c.moveTo(cx - w / 2, by); c.bezierCurveTo(cx - w * 0.42, by + 58 * dk, cx - w * 0.16, by + 62 * dk, cx - w * 0.06, by + 86 * dk); c.bezierCurveTo(cx + w * 0.02, by + 60 * dk, cx + w * 0.4, by + 62 * dk, cx + w / 2, by); c.closePath(); fillStroke(c, W.body, 3);
+  c.fillStyle = W.dot; [[-0.3, 20, 6], [0.28, 22, 7], [0.36, 10, 5], [-0.08, 56, 5], [-0.38, 8, 4]].forEach(([dx, dy, r]) => { c.beginPath(); c.arc(cx + dx * w, by + dy * dk, r, 0, 7); c.fill(); });
+  c.beginPath(); c.ellipse(cx, by, w / 2, 22, 0, 0, 7); fillStroke(c, W.top, 3);
+  c.beginPath(); c.ellipse(cx, by - 4, w / 2 - 9, 14, 0, Math.PI, 0); c.fillStyle = W.topHi; c.fill();
+  if (W.key === 'beach') { c.strokeStyle = 'rgba(255,255,255,0.75)'; c.lineWidth = 3; c.beginPath(); c.ellipse(cx, by + 2, w / 2 + 9, 27, 0, 0.15, Math.PI - 0.15); c.stroke(); }
+  [[-0.38, 2, 0.12, 0.9], [-0.2, -8, 0.62, 0.8], [0.02, -11, 0.2, 1], [0.22, -8, 0.45, 0.85], [0.39, 2, 0.7, 0.8]].forEach(([dx, dy, k, sc], i) => drawDecor(c, { x: cx + dx * w, y: by + dy, k: (k + hash2(i, W.key.length)) % 1, s: sc }, W, 0, t || 0.4));
+  c.restore();
+}
+function drawMapPath(c, pts, upTo) {
+  c.lineCap = 'round'; c.lineJoin = 'round';
+  for (let pass = 0; pass < 2; pass++) for (let i = 0; i < pts.length - 1; i++) {
+    const [x0, y0] = pts[i], [x1, y1] = pts[i + 1], mx = (x0 + x1) / 2, my = Math.min(y0, y1) - 20;
+    c.beginPath(); c.moveTo(x0, y0); c.quadraticCurveTo(mx, my, x1, y1);
+    if (pass === 0) { c.setLineDash([]); c.strokeStyle = 'rgba(8,10,40,0.45)'; c.lineWidth = 9; } else { c.setLineDash([2, 13]); c.strokeStyle = i < upTo ? '#ffd54f' : 'rgba(255,255,255,0.85)'; c.lineWidth = 6; }
+    c.stroke();
+  }
+  c.setLineDash([]);
+}
+
 // ------------------------------------------------------------------ pictures for the opposites (drawn on the 220 x 190 scene canvas).
 // One picture shows ONE pole on one thing: hot soup, a wet dog, an open box, a balloon up on the tree.
 function drawOppPic(c, o, t) {
@@ -2603,6 +2644,7 @@ function startLevel(idx) {
   G.stats = { lv: idx, t: Date.now(), coins: 0, jumps: 0, dbl: 0, falls: 0, bumps: 0, stomps: 0, bridges: 0, ms: 0, boss: 0, bossMs: 0, pw: 0 };
   UI.showGame(); Snd.music(L.wi);
   const sub = idx % LEVELS_PER_WORLD;
+  if (!G.bot) UI.bossBanner(`${L.world.name} · ${sub + 1}`, 'lv');
   Voice.say([withKid('יוצאים!'), `${L.world.name}.`, LEVEL_ORD[sub]]).then(() => { if (idx === 0 && G.mode === 'run') hint('move', 'לוחצים על החץ כדי ללכת.', { btn: '#stick', max: 3 }); });
 }
 const LEVEL_ORD = ['שלב ראשון.', 'שלב שני.', 'שלב שלישי.'];
@@ -2654,7 +2696,7 @@ function collect(c) {
 function addCoins(n, x, y) { G.coins += n; G.stats.coins += n; UI.setCoins(G.coins); if (x != null) pop(x, y, '+' + n, '#ffe27a'); }
 function doJump(v) {
   const p = G.p;
-  p.vy = -(v || JUMP); p.onGround = false; p.ground = null; p.coy = 0; p.buf = 0; p.jumping = true;
+  p.vy = -(v || JUMP); p.onGround = false; p.ground = null; p.coy = 0; p.buf = 0; p.jumping = true; p.jumpT = 0.13;
   Snd.sfx.jump(); dust(p.x, p.y, 4); G.stats.jumps++;
 }
 function hurt(fromX) {
@@ -2695,7 +2737,9 @@ function stepRun(dt) {
   for (const s of L.springs) s.t = Math.max(0, s.t - dt);
   for (const b of L.balloons) if (b.pop > 0) b.pop = Math.max(0, b.pop - dt);
   for (const s of L.launchers) s.t = Math.max(0, s.t - dt);
-  for (const k of ['inv', 'land', 'coy', 'buf', 'jetT', 'lock', 'turnT']) p[k] = Math.max(0, p[k] - dt);
+  for (const k of ['inv', 'land', 'coy', 'buf', 'jetT', 'lock', 'turnT', 'jumpT', 'stepT']) p[k] = Math.max(0, (p[k] || 0) - dt);
+  // little clouds under the feet while running
+  if (p.onGround && Math.abs(p.vx) > 150 && !p.water && p.stepT <= 0) { p.stepT = 0.2; if (G.parts.length < 80) burst(p.x - p.dir * 12, p.y - 2, 1, ['rgba(255,255,255,0.75)'], 40, 0.32, 3.4, 40); }
   for (const k of ['giant', 'magnet', 'rocket']) if (p.pow[k] > 0) { p.pow[k] = Math.max(0, p.pow[k] - dt); if (p.pow[k] === 0) { Snd.sfx.powerEnd(); UI.setPower(); } }
   // --- zones
   const cy = p.y - PH / 2;
@@ -2775,7 +2819,7 @@ function stepRun(dt) {
       if (p.conv) hint('conveyor', HINTS.conveyor, { max: 1 });
       if (!(p.ground && p.ground.dx != null)) p.carry = 0;
       if (!wasGround) {
-        p.land = 0.12; dust(p.x, p.y, 5);
+        p.landK = clamp(impact / 820, 0.45, 1.35); p.land = 0.1 + 0.05 * p.landK; dust(p.x, p.y, 3 + Math.round(p.landK * 4));
         if ((p.pow.giant > 0 || (hasPower('stomp') && drop > 2.2 * T)) && impact > 500) superStomp();
       }
       if (landed !== 'tile' && landed.st === 0) landed.st = 1;
@@ -3201,7 +3245,11 @@ function render() {
     else if (p.water) st = 'swim'; else if (p.lock > 0) st = 'fly';
     else if (!p.onGround) st = p.jetT > 0 ? 'jet' : p.vy < 0 ? 'jump' : 'fall'; else if (Math.abs(p.vx) > 25) st = 'run';
     const pose = botiPose(st, t, p.vx, p.vy), giant = p.pow.giant > 0 ? 1.75 - (p.pow.giant < 1.5 && Math.floor(t * 10) % 2 ? 0.3 : 0) : 1;
-    if (p.land > 0) { pose.sqy = 0.84; pose.sqx = 1.14; }
+    if (p.land > 0) { const k = clamp(p.land / 0.12, 0, 1) * (p.landK || 1); pose.sqy = 1 - 0.17 * k; pose.sqx = 1 + 0.15 * k; }
+    else if (p.jumpT > 0) { const k = p.jumpT / 0.13; pose.sqy = (pose.sqy || 1) * (1 + 0.13 * k); pose.sqx = (pose.sqx || 1) * (1 - 0.1 * k); }
+    else if (st === 'fall') { const k = clamp((p.vy - 250) / 900, 0, 1); pose.sqy = 1 + 0.1 * k; pose.sqx = 1 - 0.07 * k; }
+    if (st === 'run') pose.tilt = 0.06 + Math.min(0.1, Math.abs(p.vx) / 2600);
+    if (st === 'idle' && !G.hold && !Voice.speaking) { const lk = Math.sin(t * 0.9); pose.look = lk > 0.55 ? 1 : lk < -0.55 ? -1 : 0; pose.head = Math.sin(t * 1.3) * 0.035; }
     if (p.turnT > 0) pose.sqx = (pose.sqx || 1) * (0.7 + 0.3 * (1 - p.turnT / 0.14));
     if (Voice.speaking && Voice.curPri > 0 && (st === 'idle' || G.hold)) { pose.mouth = 'talk'; pose.talk = Snd.level(); }
     if (G.hold && st === 'idle') { pose.head = Math.sin(t * 3) * 0.06; pose.eye = 'surprised'; }
@@ -3267,6 +3315,16 @@ function renderHub(c) {
     }
     if (i < have && st < 0) drawStar(c, x, y, 8 + hash2(i, 3) * 5, t + i, { plain: true });
     else { c.globalAlpha = 0.4; starPath(c, x, y, 6, 3); c.strokeStyle = '#8f9bd8'; c.lineWidth = 1.2; c.stroke(); c.globalAlpha = 1; }
+  }
+  if (G.finale != null) {                                          // fireworks over the full sky
+    const ft = t - G.finale; if (ft > 14) G.finale = null;
+    c.save(); c.globalCompositeOperation = 'lighter';
+    for (let k = 0; k < 24; k++) {
+      const age = ft - k * 0.55; if (age < 0 || age > 1.5) continue;
+      const fx = 40 + hash2(k, 17) * (VW - 80), fy = top + hash2(k, 23) * span * 1.1, col = ['#ffd54f', '#ff7aa8', '#7ee0ff', '#a5f58c', '#ffb347'][k % 5], a = 1 - age / 1.5;
+      for (let i = 0; i < 16; i++) { const an = i * Math.PI / 8 + k, r = (1 - Math.pow(1 - age / 1.5, 3)) * (70 + (i % 2) * 26); c.globalAlpha = a; c.fillStyle = col; c.beginPath(); c.arc(fx + Math.cos(an) * r, fy + Math.sin(an) * r + age * age * 18, 3.2 - age, 0, 7); c.fill(); }
+    }
+    c.restore(); c.globalAlpha = 1;
   }
   c.beginPath(); c.arc(VW - 70, top + 10, 26, 0, 7); c.fillStyle = '#fff6c7'; c.fill(); c.beginPath(); c.arc(VW - 58, top + 2, 23, 0, 7); c.fillStyle = '#131a4a'; c.fill();
   waveBand(c, t * 6, 1, VH - 30, 16, 0.008, '#1b2260', VW, VH);
@@ -4243,7 +4301,7 @@ const UI = {
   setPower() { const p = G.p.pow; $('#hudPower').innerHTML = Object.keys(POWER_ART).filter(k => p[k] > 0).map(k => `<span class="em">${POWER_ART[k][1]}</span>`).join(''); },
   pulse(sel) { const el = $(sel); if (!el) return; el.classList.remove('pulse'); void el.offsetWidth; el.classList.add('pulse'); setTimeout(() => el.classList.remove('pulse'), 3200); },
   wipe() { const w = $('#wipe'); w.classList.remove('go'); void w.offsetWidth; w.classList.add('go'); },
-  bossBanner(name) { const b = $('#bossBanner'); b.textContent = name; b.hidden = false; b.classList.remove('go'); void b.offsetWidth; b.classList.add('go'); setTimeout(() => { b.hidden = true; }, 2600); },
+  bossBanner(name, cls) { const b = $('#bossBanner'); b.className = cls || ''; b.textContent = name; b.hidden = false; b.classList.remove('go'); void b.offsetWidth; b.classList.add('go'); setTimeout(() => { b.hidden = true; }, 2600); },
   confetti(el) {
     const r = el.getBoundingClientRect(), x = r.left + r.width / 2, y = r.top + r.height / 2, app = $('#app'), cols = ['#ff5a36', '#ffc83d', '#2ec4a6', '#3fa9f5', '#ab47bc'];
     for (let i = 0; i < 20; i++) {
@@ -4255,6 +4313,10 @@ const UI = {
   },
   showHub(quiet) {
     G.mode = 'menu'; G.L = null; Snd.music('menu'); this.show('scHub'); renderHubDom();
+    if (starsTotal() >= LEVEL_COUNT * 3 && !(Store.d.tut || {}).finale) {            // every star is back in the sky: the ending
+      Store.d.tut.finale = true; Store.save(true); G.finale = G.t; quiet = true; Snd.sfx.win(); setTimeout(() => this.confetti($('#hubStars')), 400);
+      Voice.say([withKid('הצלת את כל הכוכבים!'), 'השמיים מאירים שוב.', 'תודה!'], { gap: 800 });
+    }
     if (!quiet && !starsTotal() && !(Store.d.tut || {}).story) { G.story = G.t; [1.2, 2.0, 2.8, 3.6].forEach(d => setTimeout(() => { if (G.story != null) Snd.sfx.fall(); }, d * 1000)); }
     if (!quiet) Voice.say([kid() ? `שלום, ${kid()}!` : 'שלום!', starsTotal() ? 'לאן הולכים?' : 'הכוכבים נפלו מהשמיים! בוא נציל אותם.']);
   },
@@ -4297,23 +4359,28 @@ function paintMini(cvs, fn, w, h) { cvs.width = (w || SCENE_W) * 2; cvs.height =
 function renderHubDom() {
   $('#wallet').textContent = Store.d.wallet;
   $('#hubStars').textContent = `${starsTotal()} / ${LEVEL_COUNT * 3}`;
-  const wrap = $('#worlds');
-  wrap.innerHTML = WORLDS.map((W, wi) => {
-    const open = wi * LEVELS_PER_WORLD <= Store.d.unlocked;
-    const nodes = Array.from({ length: LEVELS_PER_WORLD }, (_, s) => {
-      const idx = wi * LEVELS_PER_WORLD + s, locked = idx > Store.d.unlocked, st = Store.d.stars[idx] || 0, cur = idx === Store.d.unlocked && !st, king = s === LEVELS_PER_WORLD - 1;
-      return `<button class="node${locked ? ' locked' : ''}${cur ? ' cur' : ''}" data-i="${idx}" aria-label="${W.name} שלב ${s + 1}${locked ? ' (נעול)' : ''}"><b>${king ? '👑' : s + 1}</b><span class="nstars">${[0, 1, 2].map(i => `<i class="${i < st ? 'on' : ''}"></i>`).join('')}</span></button>`;
-    }).join('');
-    return `<div class="world${open ? '' : ' closed'}" style="--wc:${W.node}"><h3>${W.name}</h3><div class="nodes">${nodes}</div></div>`;
+  // the map: five islands side by side (the first one on the right, as Hebrew reads), a dotted path through all fifteen levels
+  const wrap = $('#worlds'), WW = 300, H = clamp(Math.round(innerHeight * (PORTRAIT ? 0.36 : 0.56)), 180, 290), total = WORLDS.length * WW + 30, n = LEVEL_COUNT;
+  const pos = i => { const wi = Math.floor(i / 3), sIdx = i % 3; return [total - (15 + wi * WW + [0.2, 0.5, 0.8][sIdx] * WW), H * [0.6, 0.4, 0.58][sIdx] + (wi % 2 ? 6 : -4)]; };
+  const by = Math.round(H * 0.6), depth = Math.min(86, H - by - 12);
+  const pts = Array.from({ length: n }, (_, i) => pos(i)), curIdx = Math.min(Store.d.unlocked, n - 1);
+  const names = WORLDS.map((W, wi) => `<h3 class="mapname${wi * 3 <= Store.d.unlocked ? '' : ' closed'}" style="left:${total - (15 + wi * WW + WW / 2)}px;top:${by + Math.round(depth * 0.3)}px">${wi * 3 <= Store.d.unlocked ? '' : '🔒 '}${W.name}</h3>`).join('');
+  const nodes = pts.map(([x, y], idx) => {
+    const sIdx = idx % 3, W = WORLDS[Math.floor(idx / 3)], locked = idx > Store.d.unlocked, st = Store.d.stars[idx] || 0, cur = idx === Store.d.unlocked && !st, king = sIdx === 2;
+    return `<button class="node${locked ? ' locked' : ''}${cur ? ' cur' : ''}${king ? ' king' : ''}${st ? ' done' : ''}" data-i="${idx}" style="left:${x}px;top:${y}px;--wc:${W.node}" aria-label="${W.name} שלב ${sIdx + 1}${locked ? ' (נעול)' : ''}"><b>${king ? '👑' : sIdx + 1}</b><span class="nstars">${[0, 1, 2].map(i => `<i class="${i < st ? 'on' : ''}"></i>`).join('')}</span></button>`;
   }).join('');
+  wrap.innerHTML = `<div class="map" style="width:${total}px;height:${H}px"><canvas id="mapCv"></canvas>${names}${nodes}<canvas id="mapBoti" class="mapboti bob" style="left:${pts[curIdx][0]}px;top:${pts[curIdx][1]}px"></canvas></div>`;
+  { const cv = $('#mapCv'), c = cv.getContext('2d'); cv.width = total * 2; cv.height = H * 2; c.scale(2, 2);
+    WORLDS.forEach((W, wi) => drawMapIsland(c, W, total - (15 + wi * WW + WW / 2), by, WW - 46, wi * 3 <= Store.d.unlocked, 0.4, depth));
+    drawMapPath(c, pts, Store.d.unlocked); }
+  paintMini($('#mapBoti'), c => { drawBoti(c, 60, 124, 1.45, 1, { armL: 0.2, armR: -2.6, eye: 'happy', mouth: 'open' }, Store.d.wear, 0.4); if (Store.d.pet) drawPet(c, Store.d.pet, 100, 40, 0.4, -1); }, 120, 130);
   $$('.node', wrap).forEach(b => b.onclick = () => {
     Snd.init(); const i = +b.dataset.i;
     if (i > Store.d.unlocked) { Snd.sfx.bad(); Voice.say('קודם מסיימים את השלב שלפני.'); return; }
     Snd.sfx.tap(); startLevel(i);
   });
-  const cur = $('.node.cur', wrap) || $$('.node:not(.locked)', wrap).pop();
+  const cur = $(`.node[data-i="${curIdx}"]`, wrap);
   if (cur) setTimeout(() => cur.scrollIntoView({ inline: 'center', block: 'nearest', behavior: 'smooth' }), 60);
-  paintMini($('#hubBoti'), c => { drawBoti(c, 60, 124, 1.45, 1, { armL: 0.2, armR: -2.6, eye: 'happy', mouth: 'open' }, Store.d.wear, 0.4); if (Store.d.pet) drawPet(c, Store.d.pet, 100, 40, 0.4, -1); }, 120, 130);
 }
 
 // ------------------------------------------------------------------ Boti's closet: costumes and pets won from bosses, colours and hats bought with coins
