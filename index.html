@@ -409,6 +409,13 @@ body.portrait .hubtop .tbtn span { display: none; } body.portrait .hubtop .tbtn 
 .map .node { overflow: visible; }
 .nfr { position: absolute; bottom: -0.62rem; left: 50%; transform: translateX(-50%); display: flex; gap: 0.14rem; direction: ltr; }
 .nfr i { width: 0.6rem; height: 0.6rem; border-radius: 50%; background: #d9deee; border: 0.1rem solid var(--ink); } .nfr i.on { background: #ff8fb3; }
+
+/* ---------- busy picture: one wide scene, a touch area over each figure ---------- */
+.busy { position: relative; width: min(100%, clamp(16rem, 118vmin, 40rem)); direction: ltr; }
+#busyCv { width: 100%; height: 100%; display: block; }
+.bfig { position: absolute; top: 0; height: 100%; background: none; border: 0.3rem solid transparent; border-radius: 1.2rem; padding: 0; }
+.bfig.glow { border-color: var(--gold); background: rgba(255, 214, 80, .22); box-shadow: 0 0 1rem rgba(255, 214, 80, .8); }
+.bfig.bad { animation: shake .35s; border-color: #c5cbe0; } .bfig.hint { border-color: var(--sky); border-style: dashed; }
 </style>
 </head>
 <body>
@@ -586,8 +593,8 @@ body.portrait .hubtop .tbtn span { display: none; } body.portrait .hubtop .tbtn 
   </section>
 </div>
 
-<script>/* build 202611120640 */
-const BUILD = '202611120640';
+<script>/* build 202611121355 */
+const BUILD = '202611121355';
 'use strict';
 /* בוטי והכוכבים האבודים – platformer + learning stations for a 3-year-old gamer.
    File order (see build.py): core → audio/voice → data → art → engine → stations → ui → parent → boot. */
@@ -1382,9 +1389,21 @@ const SKILLS = {
   shape: { n: 'צורות', d: 'think', max: 3, pg: '', can: ['עיגול / ריבוע / משולש', 'גם כוכב ולב', 'צורה + צבע'], tip: 'מחפשים צורות בבית: צלחת עגולה, חלון מרובע.' },
   draw: { n: 'ציור פרצוף', d: 'draw', max: 3, pg: '6–7', can: ['עובר על קווים מנוקדים', 'מצייר עיגול ופה לבד', 'מצייר פרצוף שלם לבד'], tip: 'מציירים יחד על דף גדול: עיגול, עיניים, אף, פה. גם בחול ובאדים על המראה.' },
   opp: { n: 'הפכים (חם, קר, למעלה...)', d: 'lang', max: 4, pg: '12', can: ['חם / קר, גדול / קטן, למעלה / למטה', 'גם בפנים / בחוץ, רטוב / יבש', 'גם נקי / מלוכלך, פתוח / סגור', 'גם מהר / לאט, מלא / ריק, יום / לילה, ארוך / קצר'], tip: 'מילה אחת בכל פעם: "חם" מול "לא חם" על הרבה דברים (מרק, תה, אמבטיה). רק אחרי כמה ימים מוסיפים "קר".' },
+  season: { n: 'עונות השנה', d: 'lang', max: 3, pg: '', can: ['מבדיל חורף מקיץ', 'מזהה את ארבע העונות', 'יודע מה קורה ומה מתאים בכל עונה'], tip: 'מסתכלים מהחלון: "עכשיו חורף, יורד גשם, לובשים מעיל". בספרים: "איזו עונה כאן? איך יודעים?".' },
+  scene: { n: 'ניתוח תמונה: מי עושה מה', d: 'lang', max: 3, pg: '9, 10', can: ['מוצא פעולה בתמונה עם שתי דמויות', 'בתמונה עם שלוש דמויות', 'עונה על שתי שאלות על אותה תמונה'], tip: 'בספר או בתמונה משפחתית: "מי אוכל? מי ישן? מה עוד קורה כאן?". מתארים יחד שתי פעולות: "אבא קורא, והתינוק ישן".' },
   body: { n: 'חלקי גוף', d: 'lang', max: 2, pg: '6–7', can: ['חלקי הפנים', 'חלקי הגוף'], tip: 'במקלחת ובהתלבשות: "איפה הבטן? איפה הרגל?".' },
 };
 const DOMAINS = { num: 'מספרים', lang: 'שפה והבנה', think: 'חשיבה וזיכרון', draw: 'ציור' };
+// ------------------------------------------------------------------ the four seasons: name, a short true sentence, a "when ...?" question, things that go with it
+const SEASONS = {
+  winter: { n: 'חורף', say: 'בחורף יורד גשם.', when: ['מתי יורד גשם?', 'מתי לובשים מעיל?'], things: ['coat', 'umbrella', 'glove', 'rain'] },
+  summer: { n: 'קיץ', say: 'בקיץ חם.', when: ['מתי הולכים לים?', 'מתי אוכלים גלידה?'], things: ['icecream', 'watermelon', 'sea', 'hat'] },
+  autumn: { n: 'סתיו', say: 'בסתיו העלים נושרים.', when: ['מתי העלים נושרים?'], things: [] },
+  spring: { n: 'אביב', say: 'באביב הפרחים פורחים.', when: ['מתי הפרחים פורחים?'], things: ['flower', 'butterfly', 'bee'] },
+};
+// the colours of the figures in a busy picture (each one is a little robot of its own)
+const SCENE_COLS = ['col_blue', 'col_orange', 'col_green', 'col_pink', 'col_purple'];
+
 // praise names what he did (found, listened, tried) and changes every time; a miss is never called a mistake - Boti just shows the way
 const PRAISE = ['מצאת!', 'נכון!', 'יופי!', 'הקשבת יפה!', 'חשבת טוב!', 'וואו!', 'איזה יופי!', 'כל הכבוד!'];
 const OOPS = ['בוא נראה יחד.', 'הנה, תסתכל.', 'נסתכל שוב.'];
@@ -1895,16 +1914,16 @@ function thought(c, e, x, y) {
   c.beginPath(); c.arc(x - 26, y + 26, 6, 0, 7); c.fill(); c.stroke(); c.beginPath(); c.arc(x - 36, y + 38, 3.5, 0, 7); c.fill(); c.stroke();
   emoji(c, e, x, y, 30);
 }
-function drawScene(c, key, t) {
-  t = t || 0.4;
-  const B = (p, x, y, s, dir) => drawBoti(c, x == null ? 110 : x, y == null ? 166 : y, s || 2, dir || 1, Object.assign({ legL: 0, legR: 0, armL: 0.18, armR: -0.18 }, p), null, t);
+function drawScene(c, key, t, wear) {
+  t = t || 0.4; wear = wear || null;
+  const B = (p, x, y, s, dir) => drawBoti(c, x == null ? 110 : x, y == null ? 166 : y, s || 2, dir || 1, Object.assign({ legL: 0, legR: 0, armL: 0.18, armR: -0.18 }, p), wear, t);
   const lines = (pts) => { c.strokeStyle = 'rgba(29,35,64,0.35)'; c.lineWidth = 3; c.lineCap = 'round'; pts.forEach(([a, b, d, e]) => { c.beginPath(); c.moveTo(a, b); c.lineTo(d, e); c.stroke(); }); };
   if (key === 'eat') { sceneGround(c); B({ armR: -2.25, eye: 'happy', mouth: 'open' }); emoji(c, '🍎', 142, 84, 40); }
   else if (key === 'drink') { sceneGround(c); B({ armR: -2.25, eye: 'closed', mouth: 'o' }); emoji(c, '🥤', 142, 82, 40); }
   else if (key === 'sleep') {
     rrect(c, 22, 126, 180, 22, 8); fillStroke(c, '#a1887f', 2); rrect(c, 18, 86, 16, 76, 6); fillStroke(c, '#8d6e63', 2); rrect(c, 190, 120, 12, 42, 5); fillStroke(c, '#8d6e63', 2);
     rrect(c, 34, 112, 160, 18, 8); fillStroke(c, '#fff', 2); c.beginPath(); c.ellipse(64, 108, 28, 12, 0, 0, 7); fillStroke(c, '#fff', 2);
-    c.save(); c.translate(70, 122); c.rotate(-Math.PI / 2); drawBoti(c, 0, 0, 1.25, 1, { eye: 'closed', mouth: 'smile', armL: 0.1, armR: -0.1 }, null, 0.4); c.restore();
+    c.save(); c.translate(70, 122); c.rotate(-Math.PI / 2); drawBoti(c, 0, 0, 1.25, 1, { eye: 'closed', mouth: 'smile', armL: 0.1, armR: -0.1 }, wear, 0.4); c.restore();
     rrect(c, 84, 98, 112, 34, 12); fillStroke(c, '#64b5f6', 2); emoji(c, '💤', 150, 50, 44);
   }
   else if (key === 'jump') { c.fillStyle = 'rgba(29,35,64,0.1)'; c.beginPath(); c.ellipse(110, 172, 40, 6, 0, 0, 7); c.fill(); B({ armL: 2.7, armR: -2.7, legL: 0.45, legR: -0.3, eye: 'happy', mouth: 'open' }, 110, 128, 1.9); lines([[90, 150, 90, 166], [110, 154, 110, 172], [130, 150, 130, 166]]); }
@@ -1915,7 +1934,7 @@ function drawScene(c, key, t) {
   else if (key === 'draw') { sceneGround(c); rrect(c, 136, 60, 62, 76, 5); fillStroke(c, '#fff', 2); c.strokeStyle = '#e53935'; c.lineWidth = 3; c.beginPath(); c.arc(167, 92, 14, 0, 7); c.stroke(); c.strokeStyle = '#1e88e5'; c.beginPath(); c.moveTo(150, 122); c.lineTo(184, 122); c.stroke(); B({ armR: -1.75, eye: 'open', mouth: 'smile', look: 1 }, 86); emoji(c, '✏️', 128, 96, 28); }
   else if (key === 'kick') { sceneGround(c); B({ legR: -1.15, armL: -0.7, armR: 0.8, look: 1, mouth: 'open' }, 84); emoji(c, '⚽', 172, 128, 36); lines([[128, 132, 148, 130], [130, 144, 146, 144]]); }
   else if (key === 'wash') { c.save(); c.beginPath(); c.rect(0, 0, 220, 118); c.clip(); B({ eye: 'happy', mouth: 'open', armL: 1.9, armR: -1.9 }, 110, 172, 1.9); c.restore(); emoji(c, '🛁', 110, 138, 104); c.fillStyle = 'rgba(255,255,255,0.9)'; c.strokeStyle = '#7cc8f5'; c.lineWidth = 2; [[58, 62, 9], [164, 50, 12], [176, 84, 7], [44, 92, 6]].forEach(([a, b, r]) => { c.beginPath(); c.arc(a, b, r, 0, 7); c.fill(); c.stroke(); }); }
-  else if (key === 'fly') { emoji(c, '☁️', 52, 150, 50); emoji(c, '☁️', 172, 164, 40); c.save(); c.translate(104, 104); c.rotate(0.9); drawBoti(c, 0, 30, 1.8, 1, { jets: true, armL: 2.9, armR: -2.9, eye: 'happy', mouth: 'open' }, null, 0.3); c.restore(); }
+  else if (key === 'fly') { emoji(c, '☁️', 52, 150, 50); emoji(c, '☁️', 172, 164, 40); c.save(); c.translate(104, 104); c.rotate(0.9); drawBoti(c, 0, 30, 1.8, 1, { jets: true, armL: 2.9, armR: -2.9, eye: 'happy', mouth: 'open' }, wear, 0.3); c.restore(); }
   else if (key === 'sit') { sceneGround(c); rrect(c, 78, 118, 64, 12, 4); fillStroke(c, '#a1887f', 2); rrect(c, 84, 130, 8, 38, 3); fillStroke(c, '#8d6e63', 2); rrect(c, 128, 130, 8, 38, 3); fillStroke(c, '#8d6e63', 2); rrect(c, 78, 66, 10, 56, 4); fillStroke(c, '#8d6e63', 2); B({ sit: true, eye: 'open', mouth: 'smile', armL: 0.5, armR: -0.5 }, 112, 146, 1.9); }
   else if (key === 'dance') { sceneGround(c); B({ armL: 2.5, armR: -0.9, legL: 0.5, legR: -0.2, tilt: -0.13, eye: 'happy', mouth: 'open' }); emoji(c, '🎵', 44, 52, 34); emoji(c, '🎶', 180, 70, 34); }
   else if (key === 'hug') { sceneGround(c); B({ eye: 'happy', mouth: 'smile' }); emoji(c, '🧸', 110, 112, 50); c.save(); c.translate(110, 166); c.scale(2, 2); for (const sx of [-1, 1]) { c.beginPath(); c.moveTo(sx * 12, -31); c.lineTo(sx * 5, -22); c.lineWidth = 8.5; c.strokeStyle = INK; c.lineCap = 'round'; c.stroke(); c.lineWidth = 5; c.strokeStyle = '#29B6F6'; c.stroke(); c.beginPath(); c.arc(sx * 5, -22, 4.4, 0, 7); fillStroke(c, '#f7f9fc', 2); } c.restore(); }
@@ -2406,6 +2425,66 @@ function drawOppPic(c, o, t) {
 }
 // the same picture as a small sign on a listening pad (54 x 54)
 function drawOppSign(c, o, t) { c.save(); c.translate(-25, -64); c.scale(50 / 220, 50 / 220); c.translate(0, 14); drawOppPic(c, o, t); c.restore(); }
+
+// ------------------------------------------------------------------ the four seasons (220 x 190). Each picture says the season several ways:
+// the sky, the tree, what falls from the air, and what Boti wears or holds.
+function drawSeason(c, key, t) {
+  t = t || 0.4;
+  c.save(); rrect(c, 0, 0, 220, 190, 16); c.clip();
+  const sky = { winter: ['#7f93a8', '#c7d3df'], summer: ['#35a8ff', '#c9efff'], autumn: ['#ffb873', '#ffe6bf'], spring: ['#86d6ff', '#e8fbff'] }[key];
+  const g = c.createLinearGradient(0, 0, 0, 190); g.addColorStop(0, sky[0]); g.addColorStop(1, sky[1]); c.fillStyle = g; c.fillRect(0, 0, 220, 190);
+  const tree = (x, crown, bare) => {
+    c.strokeStyle = INK; c.lineCap = 'round'; c.lineWidth = 11; c.beginPath(); c.moveTo(x, 160); c.lineTo(x, 96); c.stroke(); c.strokeStyle = '#8d5a34'; c.lineWidth = 7; c.stroke();
+    if (bare) { c.strokeStyle = '#8d5a34'; c.lineWidth = 4; [[-22, 70], [20, 62], [-10, 52], [12, 44], [-28, 88], [26, 84]].forEach(([dx, y]) => { c.beginPath(); c.moveTo(x, y + 30); c.lineTo(x + dx, y); c.stroke(); }); return; }
+    [[0, 62, 30], [-22, 80, 21], [23, 78, 22], [0, 40, 20]].forEach(([dx, y, r], i) => { c.beginPath(); c.arc(x + dx, y, r, 0, 7); c.fillStyle = crown[i % crown.length]; c.fill(); });
+  };
+  if (key === 'winter') {
+    c.fillStyle = '#8a9a88'; c.fillRect(0, 158, 220, 32);
+    c.fillStyle = '#7fb6e6'; c.beginPath(); c.ellipse(64, 174, 44, 8, 0, 0, 7); c.fill(); c.strokeStyle = 'rgba(255,255,255,0.7)'; c.lineWidth = 2; c.beginPath(); c.ellipse(64, 174, 24, 4, 0, 0, 7); c.stroke();
+    tree(40, null, true);
+    [[60, 30, 1.1], [150, 22, 1.3], [104, 40, 0.9]].forEach(([x, y, k]) => { c.fillStyle = '#5d6b7a'; [[0, 0, 22], [-20, 6, 15], [21, 5, 16]].forEach(([dx, dy, r]) => { c.beginPath(); c.arc(x + dx * k, y + dy * k, r * k, 0, 7); c.fill(); }); });
+    c.strokeStyle = '#3f8fd6'; c.lineWidth = 3; c.lineCap = 'round';
+    for (let i = 0; i < 16; i++) { const x = 12 + (i * 53) % 200, y = 52 + (i * 37) % 96; c.beginPath(); c.moveTo(x, y); c.lineTo(x - 5, y + 13); c.stroke(); }
+    drawBoti(c, 146, 168, 1.45, 1, { armR: -2.35, armL: 0.2, eye: 'open', mouth: 'smile' }, null, t);
+    emoji(c, '☂️', 166, 66, 74);
+  } else if (key === 'summer') {
+    glow(c, 172, 40, 70, 'rgba(255,246,170,0.95)', 0.9); emoji(c, '☀️', 172, 40, 58);
+    c.fillStyle = '#2f9be8'; c.fillRect(0, 104, 220, 40); c.strokeStyle = 'rgba(255,255,255,0.75)'; c.lineWidth = 2.4; for (let r = 0; r < 3; r++) { c.beginPath(); for (let x = 0; x <= 220; x += 14) c.lineTo(x, 112 + r * 11 + Math.sin(x * 0.09 + r) * 2.5); c.stroke(); }
+    c.fillStyle = '#f7dc8c'; c.fillRect(0, 140, 220, 50); c.fillStyle = '#ecc86a'; [[30, 160], [90, 176], [190, 158], [140, 182]].forEach(([x, y]) => { c.beginPath(); c.arc(x, y, 3, 0, 7); c.fill(); });
+    emoji(c, '⛱️', 50, 118, 78); emoji(c, '🏖️', 0, 0, 0);
+    drawBoti(c, 138, 172, 1.45, 1, { armR: -2.2, armL: 0.3, eye: 'happy', mouth: 'open' }, null, t);
+    emoji(c, '🕶️', 138, 98, 36); emoji(c, '🍦', 170, 104, 34);
+  } else if (key === 'autumn') {
+    c.fillStyle = '#c98a4b'; c.fillRect(0, 158, 220, 32);
+    tree(46, ['#e67e22', '#d35400', '#f1c40f', '#e74c3c']);
+    c.fillStyle = '#d98a2b'; [[26, 166, 20, 7], [70, 172, 26, 8], [182, 170, 22, 7]].forEach(([x, y, a, b]) => { c.beginPath(); c.ellipse(x, y, a, b, 0, 0, 7); c.fill(); });
+    c.strokeStyle = 'rgba(255,255,255,0.85)'; c.lineWidth = 3; c.lineCap = 'round'; [[96, 40], [140, 74], [100, 108]].forEach(([x, y]) => { c.beginPath(); c.moveTo(x, y); c.bezierCurveTo(x + 22, y - 10, x + 44, y + 10, x + 62, y - 2); c.stroke(); c.beginPath(); c.arc(x + 62, y - 8, 6, 0.4, Math.PI * 1.6); c.stroke(); });
+    [['🍂', 92, 66, 26, 0.5], ['🍁', 124, 28, 24, -0.4], ['🍂', 186, 52, 26, 1.1], ['🍁', 80, 120, 22, 0.2], ['🍂', 196, 112, 22, -0.8], ['🍁', 30, 150, 20, 0.6]].forEach(([e, x, y, sz, r]) => emoji(c, e, x, y, sz, r));
+    drawBoti(c, 146, 170, 1.45, 1, { armR: -2.5, armL: 2.2, eye: 'open', mouth: 'open' }, null, t);
+    emoji(c, '🧣', 146, 119, 24);
+  } else {
+    c.fillStyle = '#7ccf6b'; c.beginPath(); c.moveTo(0, 190); c.lineTo(0, 150); c.quadraticCurveTo(110, 128, 220, 150); c.lineTo(220, 190); c.closePath(); c.fill();
+    emoji(c, '🌤️', 176, 36, 50);
+    tree(44, ['#58c26b', '#49b45c', '#63cc76', '#58c26b']);
+    c.fillStyle = '#ff9ec4'; [[30, 58], [50, 44], [62, 70], [40, 78], [22, 82], [58, 90], [44, 30]].forEach(([x, y]) => { c.beginPath(); c.arc(x, y, 4.5, 0, 7); c.fill(); });
+    [['🌷', 96, 158, 30], ['🌼', 124, 170, 24], ['🌸', 198, 162, 26], ['🌷', 18, 166, 24], ['🦋', 104, 70, 30], ['🐝', 198, 96, 22]].forEach(([e, x, y, sz]) => emoji(c, e, x, y, sz));
+    drawBoti(c, 152, 170, 1.45, 1, { armR: -2.6, armL: 2.6, eye: 'happy', mouth: 'open' }, null, t);
+  }
+  c.restore();
+}
+
+// ------------------------------------------------------------------ a busy picture: two or three little robots, each doing its own thing, on one lawn.
+// figs = [{ v: verb key, col: shop colour id }]; the canvas is n * 200 wide and 190 high.
+function drawBusyScene(c, figs, t) {
+  const n = figs.length, W = n * 200;
+  c.save(); rrect(c, 0, 0, W, 190, 18); c.clip();
+  const g = c.createLinearGradient(0, 0, 0, 190); g.addColorStop(0, '#bfe6ff'); g.addColorStop(1, '#eefaff'); c.fillStyle = g; c.fillRect(0, 0, W, 190);
+  emoji(c, '☁️', W * 0.2, 26, 40); emoji(c, '☁️', W * 0.72, 20, 34);
+  c.fillStyle = '#9bdc86'; c.beginPath(); c.moveTo(0, 190); c.lineTo(0, 150); c.quadraticCurveTo(W / 2, 134, W, 150); c.lineTo(W, 190); c.closePath(); c.fill();
+  c.fillStyle = '#7fcf6c'; for (let x = 12; x < W; x += 46) { c.beginPath(); c.ellipse(x, 182, 16, 5, 0, 0, 7); c.fill(); }
+  figs.forEach((f, i) => { c.save(); c.translate(i * 200 + 10, 6); c.scale(180 / 220, 180 / 220); drawScene(c, f.v, t || 0.4, { col: f.col }); c.restore(); });
+  c.restore();
+}
 
 // ------------------------------------------------------------------ platformer engine
 const T = 40, LH = 14, GR = 12, PW = 22, PH = 40;       // tile, level rows, ground row, player box
@@ -3461,7 +3540,7 @@ function P(s) {
   let inner = '';
   if (s.v) inner = `<span class="em">${V[s.v].e}</span>`;
   else if (s.e) inner = `<span class="em">${s.e}</span>`;
-  else if (s.scene || s.mood || s.need || s.feel || s.opp) inner = `<canvas class="sc" data-d="${esc(JSON.stringify(s))}"></canvas>`;
+  else if (s.scene || s.mood || s.need || s.feel || s.opp || s.season) inner = `<canvas class="sc" data-d="${esc(JSON.stringify(s))}"></canvas>`;
   else if (s.num != null) inner = `<b class="dg">${s.num}</b><span class="pips">${'<i></i>'.repeat(s.num)}</span>`;
   else if (s.digit != null) inner = `<b class="dg big">${s.digit}</b>`;
   else if (s.dot) inner = `<i class="dot" style="background:${COLORS[s.dot][1]}"></i>`;
@@ -3477,7 +3556,7 @@ function hydrate(root) {
     if (cvs.dataset.done) return; cvs.dataset.done = 1;
     const d = JSON.parse(cvs.dataset.d); cvs.width = SCENE_W * 2; cvs.height = SCENE_H * 2;
     const c = cvs.getContext('2d'); c.scale(2, 2);
-    if (d.opp) drawOppPic(c, d.opp); else if (d.scene) drawScene(c, d.scene); else if (d.mood) drawMoodBust(c, d.mood); else if (d.need) drawNeedScene(c, d.need); else if (d.feel) drawNeedScene(c, { mood: 'q', prop: d.feel });
+    if (d.opp) drawOppPic(c, d.opp); else if (d.season) drawSeason(c, d.season); else if (d.scene) drawScene(c, d.scene); else if (d.mood) drawMoodBust(c, d.mood); else if (d.need) drawNeedScene(c, d.need); else if (d.feel) drawNeedScene(c, { mood: 'q', prop: d.feel });
   });
 }
 const picOpt = (pic, label, cls) => ({ pic, label, cls });
@@ -3633,6 +3712,24 @@ const MAKE = {
   body(lv) {
     const face = lv === 1 || rnd() < 0.3, t = pick(face ? FACE_PARTS : BODY_PARTS);
     return { type: 'zones', skill: 'body', item: (face ? 'f_' : 'b_') + t, face, part: t, q: face ? `איפה ה${PARTS[t]}?` : `איפה ה${PARTS[t]} של בוטי?`, praise: ['כן!', `ה${PARTS[t]}!`], say: { key: 'b_' + t, word: PARTS[t], pic: face ? { e: { eyes: '👀', nose: '👃', mouth: '👄', ears: '👂', hair: '💇' }[t] } : { scene: 'laugh' } } };
+  },
+  // the seasons: find the season; later "when does it rain?" and "what goes with winter?"
+  season(lv) {
+    const all = Object.keys(SEASONS), pool = lv === 1 ? ['winter', 'summer'] : all, t = pick(pool), S = SEASONS[t], nOpt = lv === 1 ? 2 : lv === 2 ? 3 : 4, roll = rnd();
+    if (lv === 3 && roll < 0.3 && S.things.length) {                  // what goes with the season
+      const good = pick(S.things), foils = others(all.filter(k => k !== t).flatMap(k => SEASONS[k].things), S.things, 2), items = shuffle([good, ...foils]);
+      return { skill: 'season', item: t + '_thing', q: `מה מתאים ל${S.n}?`, stage: [{ season: t }], stageCls: 'scene', options: items.map(k => picOpt({ v: k }, V[k].n)), correct: items.indexOf(good), praise: ['כן!', SAY.nameDot(good), S.say], hint: [SAY.nameDot(good)], wrong: i => [SAY.thisIs(items[i]), `מה מתאים ל${S.n}?`] };
+    }
+    const items = shuffle([t, ...others(pool, [t], nOpt - 1)]), q = lv === 3 && roll > 0.6 ? pick(S.when) : `איפה ה${S.n}?`;
+    return { skill: 'season', item: t, q, options: items.map(k => picOpt({ season: k }, SEASONS[k].n, 'scn')), correct: items.indexOf(t), praise: ['כן!', `${S.n}.`, S.say], hint: [`הנה. ${S.n}.`], wrong: i => [`זה ${SEASONS[items[i]].n}.`, q] };
+  },
+  // one busy picture: "who is sleeping?" - touch that figure. Level 3 asks a second question about the same picture.
+  scene(lv) {
+    const pool = VERB_L.slice(0, lv === 1 ? 1 : 2).flat().concat(lv === 3 ? VERB_L[2] : []).filter(v => v !== 'fly' && v !== 'wash'), n = lv === 1 ? 2 : 3;
+    const vs = others(pool, [], n), cols = others(SCENE_COLS, [], n), figs = vs.map((v, i) => ({ v, col: cols[i] })), order = shuffle(vs.map((_, i) => i)), t1 = order[0], t2 = order[1];
+    const ask1 = `מי ${VERBS[vs[t1]]}?`, ask2 = `מי ${VERBS[vs[t2]]}?`;
+    return { type: 'scene', skill: 'scene', item: vs[t1], figs, targets: lv === 3 ? [t1, t2] : [t1], q: ask1, asks: [ask1, ask2], praise: ['כן!', `הוא ${VERBS[vs[t1]]}.`],
+      tell: [`אחד ${VERBS[vs[t1]]},`, `ואחד ${VERBS[vs[t2]]}.`], tellIdx: [t1, t2] };
   },
   // opposites, one pole at a time: "what is hot?" between a hot thing and things that are not hot. A miss is answered with
   // "that is not hot" (never with the other word) until the pair has reached the stage where both words are known.
@@ -3881,6 +3978,27 @@ const ENG = {
       el.classList.add('up');
       if (i === star) api.success(el);
       else { await api.fail(el, 'ריק! איפה הכוכב?', els[star]); el.classList.remove('up', 'bad'); if (api.R.tries >= 2) els[star].classList.add('peek'); }
+    });
+  },
+  // one wide picture with a touch area over every figure
+  scene(rd, api, stage, opts) {
+    const n = rd.figs.length; let step = 0;
+    opts.classList.add('zoneswrap');
+    opts.innerHTML = `<div class="busy" style="aspect-ratio:${n * 200} / 190"><canvas id="busyCv"></canvas>${rd.figs.map((f, i) => `<button class="bfig" data-i="${i}" style="left:${i * 100 / n}%;width:${100 / n}%" aria-label="${VERBS[f.v]}"></button>`).join('')}</div>`;
+    const cvs = $('#busyCv'); cvs.width = n * 400; cvs.height = 380; const c = cvs.getContext('2d'); c.scale(2, 2); drawBusyScene(c, rd.figs, 0.4);
+    const btn = i => $(`.bfig[data-i="${i}"]`, opts);
+    rd.replay = () => Voice.say(rd.asks[step]);
+    // after the last answer Boti describes two things that happen in the picture, pointing at each
+    rd.after = async () => { $$('.bfig', opts).forEach(b => b.classList.remove('good', 'glow')); btn(rd.tellIdx[0]).classList.add('glow'); setTimeout(() => { btn(rd.tellIdx[0]).classList.remove('glow'); btn(rd.tellIdx[1]).classList.add('glow'); }, 1500); await Voice.say(rd.tell, { gap: 250 }); };
+    opts.firstElementChild.addEventListener('click', async e => {
+      Snd.init(); const b = e.target.closest('.bfig'); if (!b || api.R.busy || api.R.over) return;
+      const i = +b.dataset.i, want = rd.targets[step];
+      if (i !== want) { api.fail(b, [`הוא ${VERBS[rd.figs[i].v]}.`, rd.asks[step]], btn(want)); return; }
+      if (step < rd.targets.length - 1) {                              // a second question about the same picture
+        api.R.busy = true; b.classList.add('glow'); Snd.sfx.good();
+        await Voice.say(['כן!', `הוא ${VERBS[rd.figs[i].v]}.`]);
+        b.classList.remove('glow'); step++; $('#qText').textContent = rd.asks[step]; api.R.busy = false; Voice.say(rd.asks[step]);
+      } else { b.classList.add('glow'); rd.praise = ['כן!', `הוא ${VERBS[rd.figs[i].v]}.`]; api.success(b); }
     });
   },
   zones(rd, api, stage, opts) {
@@ -4628,6 +4746,7 @@ const STATUS_COLOR = { s: '#2ec4a6', m: '#ffc83d', w: '#ff7a59', n: '#c5cbe0' };
 function statusOf(n, acc) { return n < 4 ? ['n', 'מעט נתונים'] : acc >= 0.8 ? ['s', 'חזק'] : acc >= 0.55 ? ['m', 'בדרך'] : ['w', 'לתרגל']; }
 function itemLabel(key) {
   if (V[key]) return V[key].n;
+  if (SEASONS[key.replace('_thing', '')]) return SEASONS[key.replace('_thing', '')].n;
   const [p, k] = [key.slice(0, 2), key.slice(2)];
   if (p === 'v_') return VERBS[k] || key; if (p === 'e_') return MOODS[k] || key; if (p === 'b_') return PARTS[k] || key;
   if (p === 'c_') return COLORS[k] ? COLORS[k][0] : key; if (p === 's_') return SHAPES[k] || key;
