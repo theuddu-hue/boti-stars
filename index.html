@@ -429,6 +429,16 @@ body.portrait .hubtop .tbtn span { display: none; } body.portrait .hubtop .tbtn 
 /* copying shapes: the model beside the page */
 .copymodel { width: clamp(4.5rem, 24vmin, 7.5rem); height: clamp(4.5rem, 24vmin, 7.5rem); border: 0.2rem solid var(--ink); border-radius: 1rem; overflow: hidden; background: #fff; }
 .copymodel canvas { width: 100%; height: 100%; display: block; }
+
+/* a word in two pieces: the new piece in yellow, the piece he has in red (as the old reading programme coloured them) */
+.saybeats.stones { gap: 0.5rem; align-items: center; }
+.saybeats .stone { font-family: var(--f-display); font-size: clamp(1.5rem, 8vmin, 2.6rem); line-height: 1.15; border: 0.22rem solid var(--ink); border-radius: 1.1rem; padding: 0.02em 0.55em 0.08em; box-shadow: 0 0.3rem 0 rgba(29, 35, 64, .3); transition: transform .12s, filter .12s, margin .25s; color: var(--ink); }
+.saybeats .stone.a { background: #ffe066; } .saybeats .stone.b { background: #ff8a80; }
+.saybeats .stone.on { transform: translateY(-0.45rem) scale(1.14); filter: brightness(1.08); }
+.saybeats .pre { font-family: var(--f-display); font-style: normal; font-size: clamp(1.1rem, 5.4vmin, 1.8rem); color: var(--ink-soft); opacity: .55; }
+.saybeats.stones.free .stone { animation: stonehint 0.65s ease-in-out infinite alternate; } .saybeats.stones.free .stone.b { animation-delay: .32s; }
+@keyframes stonehint { to { transform: translateY(-0.18rem); } }
+#powerBar.listening { border-color: var(--sky); }
 </style>
 </head>
 <body>
@@ -607,8 +617,8 @@ body.portrait .hubtop .tbtn span { display: none; } body.portrait .hubtop .tbtn 
   </section>
 </div>
 
-<script>/* build 202611131724 */
-const BUILD = '202611131724';
+<script>/* build 202611131823 */
+const BUILD = '202611131823';
 'use strict';
 /* בוטי והכוכבים האבודים – platformer + learning stations for a 3-year-old gamer.
    File order (see build.py): core → audio/voice → data → art → engine → stations → ui → parent → boot. */
@@ -872,12 +882,12 @@ const Snd = (() => {
       try { track = ac.createBufferSource(); track.buffer = bf; track.loop = true; track.connect(musicGain); track.start(); } catch (e) { track = null; synth(); }
     });
   }
-  function duck(on) { if (ac && musicGain) musicGain.gain.setTargetAtTime(Store.d.set.music && Store.d.set.sound ? (on ? 0.09 : track ? 0.62 : 0.4) : 0, ac.currentTime, 0.15); }
+  function duck(on, mute) { if (ac && musicGain) musicGain.gain.setTargetAtTime(Store.d.set.music && Store.d.set.sound ? (on ? (mute ? 0 : 0.09) : track ? 0.62 : 0.4) : 0, ac.currentTime, 0.15); }
   // play one decoded voice clip; resolves when it ends (or is stopped)
-  function playBuf(buf) {
+  function playBuf(buf, rate) {
     let src = null, done;
     const ended = new Promise(r => { done = r; });
-    try { src = ac.createBufferSource(); src.buffer = buf; src.connect(voiceGain); src.onended = () => done(true); src.start(); } catch (e) { done(false); }
+    try { src = ac.createBufferSource(); src.buffer = buf; if (rate) src.playbackRate.value = rate; src.connect(voiceGain); src.onended = () => done(true); src.start(); } catch (e) { done(false); }
     return { ended, stop() { try { if (src) src.stop(); } catch (e) { /* already stopped */ } done(false); } };
   }
   function level() {            // 0..1 loudness of the voice right now (drives Boti's mouth)
@@ -891,7 +901,7 @@ const Snd = (() => {
 
 // ------------------------------------------------------------------ subtitles (what the voice says, so a parent can read along)
 let subTimer = 0;
-function showSub(t) { const el = $('#sub'); if (!el) return; el.textContent = stripNiqqud(t); el.hidden = false; clearTimeout(subTimer); }
+function showSub(t) { const el = $('#sub'); if (!el) return; clearTimeout(subTimer); if (!String(t).trim()) { el.hidden = true; return; } el.textContent = stripNiqqud(t); el.hidden = false; }
 function hideSubSoon(ms) { clearTimeout(subTimer); subTimer = setTimeout(() => { const el = $('#sub'); if (el) el.hidden = true; }, ms || 1500); }
 
 // ------------------------------------------------------------------ voice out: recorded Hebrew clips (voice/*.pack). Every line the game says is
@@ -956,7 +966,7 @@ const Voice = {
     if (pri === 0 && this.speaking && this.curPri > 0) return Promise.resolve(false);
     if (this.cur) { this.cur.stop(); this.cur = null; }
     const tok = ++this.tok;
-    showSub(segs.join(' '));
+    showSub(segs.filter(q => !/^[§‖]/.test(q)).map(q => q.replace(/^~/, '')).join(' '));          // pieces of words are sounds, not text to read
     this.speaking = true; this.curPri = pri;
     const run = async () => {
       for (let si = 0; si < segs.length; si++) {
@@ -967,7 +977,7 @@ const Voice = {
         if (!Store.d.set.sound || Ear.listening) { await sleep(est); continue; }
         const b = await this.find(seg);
         if (tok !== this.tok) return false;
-        if (b) { Snd.duck(true); this.cur = Snd.playBuf(b); await this.cur.ended; this.cur = null; }
+        if (b) { Snd.duck(true); this.cur = Snd.playBuf(b, o.rate); await this.cur.ended; this.cur = null; }
         else {
           if (this.man) this.missing[seg] = (this.missing[seg] || 0) + 1;
           if ((!this.man || Store.d.set.robot) && 'speechSynthesis' in window) { Snd.duck(true); await this.robot(seg); } else await sleep(est);
@@ -1000,7 +1010,7 @@ const Ear = {
   // resolves {text, alts, heard, reason}; never rejects. In 'tap' mode it must be called straight from a click.
   hear(ms, onLive) {
     if (!this.usable || this.listening) return Promise.resolve({ text: '', alts: [], heard: false, voice: false, reason: this.listening ? 'busy' : 'unavailable' });
-    Voice.stop();
+    Voice.stop(); if (typeof Mic !== 'undefined') Mic.release();          // recognition needs the microphone to itself
     return this.mode === 'web' ? this.hearWeb(ms || 5500, onLive) : this.hearTap(ms || 7000, onLive);
   },
   // One recognition session per try (on Android the system beeps when it opens: that beep is the child's "your turn" signal).
@@ -1108,6 +1118,89 @@ function heardNumber(heard) {
   for (const [n, ws] of Object.entries(NUM_HEARD)) { const s = heardScore(heard, ws); if (s > bs) { bs = s; best = +n; } }
   return best;
 }
+
+// ------------------------------------------------------------------ the game's own ear: a voice, its length, its beats
+// Speech recognition cannot tell which sounds a three-year-old made (research_notes: child_speech_recognition.md). What a
+// phone CAN tell is that he made a voice, for how long, and roughly how many beats (syllables) it had. This ear does only
+// that, from the loudness of the microphone, with no recognition and no beep. Nothing leaves the phone: the recording is
+// kept in memory just long enough for Boti to play the child's own sound back to him, and then it is dropped.
+//
+// beatTracker is pure (one loudness value per 20 ms in, beats out), so tools/test_beats.mjs can run it on the game's clips.
+function beatTracker(onBeat, o) {
+  const DIP = (o && o.dip) || 0.65, RISE = (o && o.rise) || 1.35, REL = (o && o.rel) || 0.6;      // the best of the settings tried in tools/test_beats.mjs
+  const S = { floor: 0, n: 0, env: 0, on: false, beats: 0, peak: 0, valley: 0, last: -1e9, t0: -1, tEnd: -1, voiced: 0, up: 0, quiet: 0, tPrev: 0 };
+  const beat = t => { S.beats++; S.last = t; if (onBeat) onBeat(S.beats, t); };
+  S.push = (rms, t) => {
+    const dt = S.n ? t - S.tPrev : 20; S.tPrev = t; S.n++;
+    S.floor = S.n === 1 ? Math.min(rms, 0.02) : Math.min(rms, S.floor * 1.02 + 2e-5);        // the room: the quietest it has been lately
+    S.env = rms > S.env ? rms * 0.7 + S.env * 0.3 : S.env * (1 - REL) + rms * REL;                 // loudness, smoothed a little
+    const e = S.env, thOn = Math.max(S.floor * 3.5, 0.006), thOff = Math.max(S.floor * 2.2, 0.004);
+    if (!S.on) {
+      if (e > thOn) { if (++S.up >= 2) { S.on = true; S.quiet = 0; if (S.t0 < 0) S.t0 = Math.max(0, t - 2 * dt); S.peak = S.valley = e; beat(t); } } else S.up = 0;
+      return;
+    }
+    S.voiced += dt;
+    if (e > S.peak) { S.peak = e; S.valley = e; } else if (e < S.valley) S.valley = e;
+    // a new beat: the loudness dipped to under half of the last peak and is clearly rising again
+    if (S.valley < S.peak * DIP && e > S.valley * RISE && e > thOn && t - S.last > 140) { S.peak = S.valley = e; beat(t); }
+    if (e < thOff) { S.quiet += dt; if (S.quiet > 300) { S.on = false; S.up = 0; S.tEnd = t - S.quiet; S.voiced = Math.max(0, S.voiced - S.quiet); } } else S.quiet = 0;
+  };
+  S.voice = () => S.beats > 0 && S.voiced >= 100;
+  return S;
+}
+const Mic = {
+  ok: null, stream: null, listening: false, level: 0, _idle: 0, _stop: false,
+  get usable() { return STANDALONE && Store.d.set.mic !== false && this.ok !== false && !Ear.denied && !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia); },
+  async open() {
+    clearTimeout(this._idle);
+    if (this.stream && this.stream.active) return this.stream;
+    // plain capture: no echo canceller or gain control, so the phone does not switch into "phone call" sound
+    this.stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false } });
+    this.ok = true;
+    return this.stream;
+  },
+  // the microphone is given back at once (speech recognition needs it for itself) or a few seconds after the last use
+  release() { clearTimeout(this._idle); if (this.stream) { try { this.stream.getTracks().forEach(t => t.stop()); } catch (e) { /* already stopped */ } this.stream = null; } },
+  idle() { clearTimeout(this._idle); this._idle = setTimeout(() => this.release(), 6000); },
+  stop() { this._stop = true; },
+  // Listen for up to ms. onBeat(n) fires live for every beat. Resolves {voice, beats, dur, clip} (clip = his own sound, an AudioBuffer).
+  async hear(ms, o = {}) {
+    const none = { nomic: true, voice: false, beats: 0, dur: 0 };
+    if (!this.usable || this.listening) return none;
+    const ac = Snd.ctx(); if (!ac) return none;
+    Ear.stop(); Voice.stop();
+    let stream; try { stream = await this.open(); } catch (e) { this.ok = false; return none; }
+    this.listening = true; this._stop = false; Snd.duck(true, true);
+    await sleep(240);                                                 // let the music fade and the room go quiet after Boti's own voice
+    let src, an; try { src = ac.createMediaStreamSource(stream); an = ac.createAnalyser(); an.fftSize = 1024; src.connect(an); } catch (e) { this.listening = false; Snd.duck(false); this.ok = false; return none; }
+    const buf = new Float32Array(an.fftSize), tr = beatTracker(n => { if (o.onBeat) o.onBeat(n); });
+    let rec = null; const chunks = [];
+    if (o.record !== false && window.MediaRecorder) { try { rec = new MediaRecorder(stream); rec.ondataavailable = e => { if (e.data && e.data.size) chunks.push(e.data); }; rec.start(); } catch (e) { rec = null; } }
+    const t0 = now();
+    await new Promise(res => {
+      const iv = setInterval(() => {
+        an.getFloatTimeDomainData(buf); let s = 0; for (let i = 0; i < buf.length; i++) s += buf[i] * buf[i];
+        const t = now() - t0; tr.push(Math.sqrt(s / buf.length), t); this.level = tr.env;
+        if (t >= ms || this._stop || (tr.beats && !tr.on && t - tr.tEnd > (o.tail || 650))) { clearInterval(iv); res(); }
+      }, 20);
+    });
+    const tEnd = tr.on ? now() - t0 : tr.tEnd;
+    let clip = null;
+    if (rec) {
+      try {
+        await new Promise(res => { rec.onstop = res; rec.stop(); setTimeout(res, 800); });
+        if (tr.voice() && chunks.length) {
+          const full = await ac.decodeAudioData(await new Blob(chunks, { type: chunks[0].type }).arrayBuffer());
+          const a = Math.max(0, Math.floor((tr.t0 - 140) / 1000 * full.sampleRate)), b = Math.min(full.length, Math.ceil((Math.min(tEnd, tr.t0 + 2600) + 180) / 1000 * full.sampleRate));
+          if (b - a > full.sampleRate * 0.08) { clip = ac.createBuffer(1, b - a, full.sampleRate); clip.copyToChannel(full.getChannelData(0).subarray(a, b), 0); }
+        }
+      } catch (e) { clip = null; }
+    }
+    try { src.disconnect(); } catch (e) { /* ignore */ }
+    this.listening = false; this.level = 0; Snd.duck(false); this.idle();
+    return { voice: tr.voice(), beats: tr.beats, dur: Math.round(tr.voiced), clip };
+  },
+};
 
 // ------------------------------------------------------------------ phonetics: which part of the word did he say?
 // The recogniser returns Hebrew text without vowels. A target word is stored as Latin syllables ("ka-dur"); each Hebrew letter
@@ -1254,6 +1347,28 @@ function sylChunks(word, syls) {
   for (let k = 0; k < plain.length; k++) { let ch = letters[li++] || ''; if (letters[li] === '׳' || letters[li] === "'") ch += letters[li++]; out[Math.max(0, a.map[k])] += ch; }
   for (let k = 0; k < out.length; k++) if (!out[k]) { return syls.length === 1 ? [stripNiqqud(word)] : out.map((s, q) => s || '·'); }
   return out;
+}
+
+// A word in two pieces, for the "stones": the end he already has (tail) and what comes before it (head).
+// from = index of the first syllable of the tail. With no "from" the tail starts at the stressed syllable (the end of the
+// word is what Hebrew toddlers say first) and the head is everything before it; with a "from" the head is just the one
+// syllable before the piece he said. clip = the recording of both pieces in one breath ("‖ka|dˈuʁ").
+function sylPieces(word, from, whole) {
+  const ip = sylIpa(word); if (!ip || ip.length < 2) return null;
+  if (from == null) { from = Math.max(1, ip.findIndex(x => x.includes('ˈ'))); whole = true; }
+  from = clamp(from, 1, ip.length - 1);
+  const he = sylChunks(word, sylOf(word)), ok = he.length === ip.length && !he.includes('·');
+  const head = whole ? ip.slice(0, from).join('') : ip[from - 1], tail = ip.slice(from).join('');
+  return { from, head, tail, clip: '‖' + head + '|' + tail, heHead: ok ? (whole ? he.slice(0, from).join('') : he[from - 1]) : '●', heTail: ok ? he.slice(from).join('') : '●', hePre: ok && !whole ? he.slice(0, from - 1).join('') : '' };
+}
+// where the second piece of a two-piece recording begins (seconds): the quietest moment in the middle of it
+function gapOf(buf) {
+  const d = buf.getChannelData(0), sr = buf.sampleRate, hop = Math.round(sr * 0.01), n = Math.floor(d.length / hop), e = [];
+  for (let i = 0; i < n; i++) { let q = 0; for (let j = 0; j < hop; j++) { const v = d[i * hop + j]; q += v * v; } e.push(Math.sqrt(q / hop)); }
+  const top = Math.max.apply(null, e) * 0.1; let a = 0, b = n - 1; while (a < n - 1 && e[a] < top) a++; while (b > a && e[b] < top) b--;
+  let best = Math.round((a + b) / 2), bv = 1e9;
+  for (let i = a + Math.round((b - a) * 0.2); i <= a + Math.round((b - a) * 0.8) && i < n - 1; i++) { if (i < 1) continue; const v = (e[i - 1] + e[i] + e[i + 1]) / 3; if (v < bv) { bv = v; best = i; } }
+  return best * hop / sr;
 }
 
 // generated by tools/phon.py - do not edit. Coach words as IPA syllables (stress mark before the stressed vowel).
@@ -3034,6 +3149,7 @@ function startLevel(idx) {
   // two little friends wait in bubbles at the hardest-to-reach gems of every level; freeing one is remembered for good
   { const have = (Store.d.friends || {})[idx] || 0, free = L.gems.filter(g => !g.word).sort((p, q) => p.y - q.y);
     for (let i = 0; i < 2 && i < free.length; i++) if (!(have & (1 << i))) { free[i].friend = i; free[i].hue = (idx * 2 + i) % 6; } }
+  G.hold = false; G.winHold = false;
   Object.assign(G, { L, idx, mode: 'run', t: 0, coins: 0, stars: 0, parts: [], pops: [], flies: [], cfly: [], freed: [], hinted: {}, groupCount: {}, idleT: 0, winT: 0, shake: 0, levelStart: now(), hold: false, freeze: 0, zoom: 1 });
   Object.assign(G.p, { x: 3 * T, y: GR * T, vx: 0, vy: 0, dir: 1, onGround: true, ground: null, coy: 0, buf: 0, dbl: 0, inv: 0, hurtT: 0, land: 0, jetT: 0, jumping: false, ice: false, conv: 0, carry: 0, water: false, wind: false,
     safe: { x: 3 * T, y: GR * T }, bub: null, falls: {}, blockT: 0, lock: 0, hover: 0, fallFrom: GR * T, pow: { giant: 0, magnet: 0, shield: 0, rocket: 0 }, turnT: 0 });
@@ -3057,7 +3173,7 @@ function hint(key, text, o) {
 const HINTS = {
   jump: 'לוחצים על הכפתור האדום כדי לקפוץ.', pit: 'קופצים מעל הבור!', spring: 'קפוץ על הפטרייה האדומה!', mover: 'מחכים לפלטפורמה, ואז קופצים עליה.', lift: 'עולים על המעלית ומחכים.',
   enemy: 'קופצים לו על הראש!', spiky: 'זהירות, קוצים! קופצים מעליו.', gate: 'כוכב לכוד! בוא נעזור לו.', dbl: 'באוויר לוחצים שוב: קפיצת טיל!', balloon: 'קופצים על הבלונים!', crate: 'קפוץ על הארגזים ושבור אותם!',
-  water: 'בתוך המים לוחצים על קפיצה כדי לשחות.', launch: 'היכנס לתותח ותעוף!', ride: 'עלה והחזק חזק. נוסעים!', wind: 'הרוח מרימה אותך למעלה!', tele: 'היכנס לשער הקסם.', conveyor: 'הרצפה זזה! רוץ מהר.',
+  water: 'בתוך המים לוחצים על קפיצה כדי לשחות.', launch: 'היכנס לתותח ותעוף!', pick: 'נוגעים בבלון!', ride: 'עלה והחזק חזק. נוסעים!', wind: 'הרוח מרימה אותך למעלה!', tele: 'היכנס לשער הקסם.', conveyor: 'הרצפה זזה! רוץ מהר.',
   idle: 'בוא נמשיך! לוחצים על החץ.', sleep: 'ששש... הוא נרדם. אפשר לעבור.', bridge: 'הנה גשר ענן! עכשיו אפשר לעבור.', hover: 'החזק את הקפיצה כדי לרחף.',
 };
 const camBaseY = () => (PORTRAIT ? GR * T - VH * 0.72 : LH * T - VH);   // upright phone: the ground sits low, buttons below it
@@ -3213,7 +3329,7 @@ function stepRun(dt) {
     for (const m of L.movers) land(m);
     for (const rd of L.rides) land(rd);
     for (const cr of L.crumbles) if (cr.st < 2) land(cr);
-    for (const P of L.pads) if (P.state !== 'off' && Math.abs(P.x - p.x) < 900) P.pads.forEach((pd, i) => { if (P.gone[i] <= 0) land(pd); });
+    for (const P of L.pads) if (P.state !== 'off' && Math.abs(P.x - p.x) < 900) P.pads.forEach((pd, i) => { if (P.boss && P.gone[i] <= 0) land(pd); });
   } else {
     const r = Math.floor((ny - PH) / T);
     for (let c = cL; c <= cR; c++) { if (breakCrate(c, r)) { p.vy = 60; continue; } if (L.solid(c, r)) { ny = (r + 1) * T + PH; p.vy = 0; break; } }
@@ -3248,6 +3364,7 @@ function stepRun(dt) {
     p.vy = I.j ? -720 : -600; p.dbl = 0; p.hover = 0; p.jumping = false; b.pop = 2.4; Snd.sfx.balloon(); burst(b.x, b.y, 12, [b.col, '#fff'], 170, 0.45, 4, 300); if (!b.paid) { b.paid = 1; addCoins(1, b.x, b.y - 30); }
   }
   for (const s of L.launchers) if (p.onGround && p.lock <= 0 && Math.abs(p.x - s.x) < 18 && Math.abs(p.y - s.y) < 3) {
+    if (!s.asked && Coach.canAsk()) { s.asked = 1; G.mode = 'power'; p.vx = 0; Object.assign(G.input, { l: false, r: false, j: false, jp: false }); Coach.request('הופ').then(() => { if (G.mode === 'power') G.mode = 'run'; }); break; }      // the cannon waits for "hop!" (and fires anyway)
     p.vx = 430; p.vy = -820 * Math.sqrt(L.grav); p.onGround = false; p.ground = null; p.lock = 1.6; p.dbl = 0; p.dir = 1; s.t = 0.5; G.shake = 0.5; Snd.sfx.launch(); burst(s.x, s.y - 20, 18, ['#ffb341', '#fff3c4', '#cfd8dc'], 220, 0.6, 5, 200);
   }
   if (p.lock > 0 && p.onGround) p.lock = 0;
@@ -3328,8 +3445,54 @@ function superStomp() {
   const c0 = Math.floor(p.x / T), r0 = Math.floor(p.y / T + 0.01);
   for (let c = c0 - 2; c <= c0 + 2; c++) for (let r = r0 - 3; r <= r0; r++) breakCrate(c, r, true);
 }
-// ------------------------------------------------------------------ listening pads: Boti is held until the question has been said,
-// the signs stay hidden until then, a wrong pad poofs away and the signs change places.
+// ------------------------------------------------------------------ listening tasks inside the level
+// In the level: three balloons, each carrying a picture. Boti stops, the question is said, the pictures turn over, and the
+// child TOUCHES a balloon. A wrong one pops and says what it was; the right one lifts Boti and carries him on through a row
+// of coins. (Before: three platforms in a row, which a child simply hops across one after the other, or walks past.)
+// The boss's shield keeps the old form: three platforms, jump on the right one.
+const padXY = pd => [pd.x + pd.w / 2, GR * T - 200];
+function padPick(P, j) {
+  const L = G.L, p = G.p, sign = P.order[j], [bx, by] = padXY(P.pads[j]);
+  if (P.state !== 'active' || P.gone[j] > 0) return;
+  if (sign === P.task.correct) {
+    const prize = P.tries === 0 ? 10 : P.tries === 1 ? 5 : 2;
+    UI.setRepeat(false); Snd.sfx.good(); sparkle(bx, by, 30); addCoins(prize, bx, by - 44); Voice.say(P.task.praise);
+    recordTrial(P.task.skill, P.task.item, P.tries === 0, P.tries + 1, Math.round(now() - P.t0), { w: 1 });
+    P.state = 'lift'; P.lift = { t: 0, j, x0: p.x, y0: p.y, x1: P.x + 14.2 * T };
+    if (P.tries === 0) { Snd.sfx.gem(); for (let i = 0; i < 7; i++) { const u = (i + 1) / 8; L.coins.push({ x: lerp(p.x, P.lift.x1, u), y: p.y - 70 - Math.sin(u * Math.PI) * 160, got: false, g: ++L.gid }); } }
+  } else {
+    P.tries++; P.rep = 0; P.gone[j] = 1e9; Snd.sfx.balloon(); burst(bx, by, 16, ['#fff', '#e6ecff', '#ffb3b3'], 170, 0.5, 5, 220);
+    if (P.tries >= 2) P.hot = P.order.indexOf(P.task.correct);
+    Voice.say(P.task.wrong(sign));
+  }
+}
+function stepPick(P, dt) {
+  const p = G.p;
+  if (P.state === 'idle' && p.x > P.x - 30 && p.x < P.x + 14 * T) padAsk(P);       // also when he arrives in the air: no jumping past it
+  if (P.state === 'ask' || P.state === 'active') P.in = Math.min(1, (P.in || 0) + dt * 1.6);
+  if (P.state === 'lift') {                                           // the ride: up, over, and down beyond the balloons
+    const F = P.lift; F.t += dt; const u = Math.min(1, F.t / 2.1), e = u * u * (3 - 2 * u);
+    p.x = lerp(F.x0, F.x1, e); p.y = F.y0 - Math.sin(u * Math.PI) * 170; p.vx = 0; p.vy = 0; p.onGround = false; p.ground = null; p.dir = 1; G.hold = true;
+    if (u >= 1) { P.state = 'done'; G.hold = false; p.y = F.y0 - 2; }
+    return;
+  }
+  if (P.state !== 'active') return;
+  P.rep += dt;
+  if (P.rep > 8 && !Voice.speaking) {                                 // he is waiting: say it again; later show the answer; in the end the right balloon comes by itself
+    P.rep = 0; P.reps = (P.reps || 0) + 1;
+    if (P.reps >= 2) P.hot = P.order.indexOf(P.task.correct);
+    if (P.reps >= 4) { P.tries = Math.max(P.tries, 3); padPick(P, P.order.indexOf(P.task.correct)); } else padSay(P);
+  }
+}
+// a touch on the game picture while a balloon question is open: which balloon was it? (true = the touch was for the balloons, not a jump)
+function padTap(e) {
+  const L = G.L, P = L && L.pads.find(q => !q.boss && (q.state === 'ask' || q.state === 'active' || q.state === 'lift'));
+  if (!P) return false;
+  if (P.state !== 'active') return true;
+  const r = cv.getBoundingClientRect(), wx = (e.clientX - r.left) / S + G.cam.x, wy = (e.clientY - r.top) / S + G.cam.y;
+  for (let j = 0; j < 3; j++) { const [bx, by] = padXY(P.pads[j]); if (P.gone[j] <= 0 && Math.abs(wx - bx) < 54 && wy > by - 46 && wy < by + 130) { padPick(P, j); break; } }
+  return true;
+}
 function stepPads(dt) {
   const L = G.L, p = G.p;
   for (const P of L.pads) {
@@ -3337,6 +3500,7 @@ function stepPads(dt) {
     P.wobT = Math.max(0, P.wobT - dt);
     if (P.state === 'active' || P.state === 'done') P.show = Math.min(1, P.show + dt * 3);
     if (G.bot) { if (P.state === 'idle' && p.x > P.x) { P.state = 'done'; P.task = padTask(); } continue; }
+    if (!P.boss) { stepPick(P, dt); continue; }
     if (P.state === 'idle' && !P.boss && p.onGround && p.x > P.x - 30 && p.x < P.x + 2 * T) padAsk(P);
     if (P.state !== 'active') continue;
     P.rep += dt;
@@ -3363,9 +3527,10 @@ function stepPads(dt) {
 }
 function padAsk(P) {
   const p = G.p;
-  P.state = 'ask'; P.task = padTask(P.only); P.tries = 0; P.hot = -1; P.order = shuffle([0, 1, 2]); P.show = 0; P.lastOn = -1; P.rep = 0;
+  P.state = 'ask'; P.task = padTask(P.only, P.boss); P.tries = 0; P.hot = -1; P.order = shuffle([0, 1, 2]); P.show = 0; P.lastOn = -1; P.rep = 0; P.reps = 0; P.gone = [0, 0, 0]; P.in = 0;
   G.hold = true; p.vx = 0; UI.setRepeat(true); Snd.sfx.mic();
-  padSay(P).then(() => { G.hold = false; if (P.state === 'ask') { P.state = 'active'; P.t0 = now(); Snd.sfx.pop(); } });
+  // the boss's pads: Boti is free again once the question has been said. Balloons: he stays put until one is chosen.
+  padSay(P).then(() => { if (P.boss) G.hold = false; if (P.state === 'ask') { P.state = 'active'; P.t0 = now(); Snd.sfx.pop(); if (!P.boss) hint('pick', HINTS.pick, { max: 3 }); } });
 }
 // ------------------------------------------------------------------ pets: a small friend that follows Boti and helps
 const PETS = {
@@ -3411,7 +3576,8 @@ function stepBubble(dt) {
 }
 function levelComplete() {
   const p = G.p, s = ensureSession(), idx = G.idx;
-  G.mode = 'win'; G.winT = 0; p.vx = 0; Snd.music(null); Snd.sfx.win(); UI.setRepeat(false);
+  G.mode = 'win'; G.winT = 0; p.vx = 0; Snd.music(null); Snd.sfx.win(); UI.setRepeat(false); G.hold = false;
+  if (!G.bot && Coach.canAsk()) { G.winHold = true; sleep(900).then(() => Coach.request('עוף')).then(() => { G.winHold = false; }, () => { G.winHold = false; }); }      // the rocket waits for "fly!" (and flies anyway)
   G.stats.ms = Math.round(now() - G.levelStart); G.stats.stars = G.stars;
   s.levels.push(G.stats); s.updatedAt = Date.now();
   G.firstClear = !(Store.d.stars[idx] > 0);
@@ -3421,7 +3587,7 @@ function levelComplete() {
   Store.save(true); syncSession();
 }
 function stepWin(dt) {
-  const F = G.L.finish; G.winT += dt;
+  const F = G.L.finish; G.winT += dt; if (G.winHold) G.winT = Math.min(G.winT, 0.98);
   if (G.winT > 1) { F.launch += (60 + F.launch * 2.2) * dt; if (rnd() < dt * 30) burst(F.x + (rnd() - 0.5) * 16, F.y - F.launch + 10, 1, ['#ffb341', '#fff3c4', '#cfd8dc'], 60, 0.7, 6, 80); }
   if (G.winT > 3.1 && G.mode === 'win') { G.mode = 'done'; UI.showWin(); }
 }
@@ -3439,7 +3605,7 @@ function update(dt) {
   const p = G.p, cam = G.cam, B = L.boss;
   let tx = clamp(p.x + p.dir * (PORTRAIT ? 36 : 50) - VW * (PORTRAIT ? 0.34 : 0.4), 0, Math.max(0, L.w * T - VW));
   const AP = L.pads.find(P => !P.boss && (P.state === 'active' || P.state === 'ask'));      // frame all three pads of a listening task
-  if (AP && (PORTRAIT || AP.state === 'ask')) tx = clamp((AP.pads[0].x + AP.pads[2].x + AP.pads[2].w) / 2 - VW / 2, p.x - VW + 60, p.x - 60);
+  if (AP) tx = clamp((AP.pads[0].x + AP.pads[2].x + AP.pads[2].w) / 2 - VW / 2, p.x - VW + 60, p.x - 60);
   if (B.on && B.st !== 'dead') tx = clamp(tx, B.x0 - 30, Math.max(B.x0 - 30, B.x1 + 30 - VW));
   cam.x += (tx - cam.x) * Math.min(1, dt * 5);
   const ty = Math.min(camBaseY(), p.y - VH * (PORTRAIT ? 0.3 : 0.45));
@@ -3624,6 +3790,19 @@ function render() {
   for (const P of L.pads) {
     if (P.state === 'off' || !(vis(P.x) || vis(P.x + 14 * T))) continue;
     if (!P.boss) { c.strokeStyle = INK; c.lineWidth = 3; c.beginPath(); c.moveTo(P.x + 20, gy); c.lineTo(P.x + 20, gy - 44); c.stroke(); rrect(c, P.x - 4, gy - 84, 48, 44, 10); fillStroke(c, P.state === 'ask' ? '#fff6c7' : '#fff', 2.4); emoji(c, '👂', P.x + 20, gy - 62, 26 + (P.state === 'ask' ? Math.sin(t * 12) * 3 : 0)); }
+    if (!P.boss) {                                                    // balloons carrying pictures; the right one becomes Boti's ride
+      if (P.task && P.state !== 'done') P.pads.forEach((pd, j) => {
+        if (P.gone[j] > 0) return;
+        const lift = P.state === 'lift', mine = lift && P.lift.j === j, k = P.in || 0, col = '#f3f6ff';      // all three the same plain colour: the balloon must not look like an answer to "where is the red one?"
+        let [bx, by] = padXY(pd); by += Math.sin(t * 2 + j * 2.1) * 4 - (1 - k) * (1 - k) * 300;
+        if (mine) { bx = p.x + 4; by = p.y - 150; c.strokeStyle = 'rgba(29,35,64,0.6)'; c.lineWidth = 2; c.beginPath(); c.moveTo(bx, by + 30); c.lineTo(p.x + 6, p.y - 52); c.stroke(); }
+        else if (lift) { by -= P.lift.t * 260; c.globalAlpha = Math.max(0, 1 - P.lift.t * 1.2); }
+        drawBalloon(c, { x: bx, y: by, r: 30, pop: 0, col }, 0);
+        if (!mine) { c.save(); c.translate(bx, by + 124); c.scale(1.28, 1.28); drawPadSign(c, 0, 0, P.state === 'ask' ? { e: '❔' } : P.task.signs[P.order[j]], t, P.state === 'active' && P.hot === j, false); c.restore(); }
+        c.globalAlpha = 1;
+      });
+      continue;
+    }
     P.pads.forEach((pd, j) => {
       if (P.gone[j] > 0) { c.globalAlpha = 0.25; drawPlatform(c, pd.x, pd.y, pd.w, W, 'pad'); c.globalAlpha = 1; return; }
       drawPlatform(c, pd.x, pd.y, pd.w, W, 'pad');
@@ -4097,24 +4276,24 @@ async function tellStory(s, sel, order, free) {
 function makeRound(skill) { const r = MAKE[skill](sk(skill).lv); r.lv = sk(skill).lv; return r; }
 
 // listening task inside the level (pads, and the boss "shield"): three signs, one spoken instruction
-function padTask(only) {
+function padTask(only, jump) {
   const f = Store.d.set.focus || {}, types = [];
   if (f.think !== false) types.push('color', 'color', 'size', 'shape');
   if (f.lang !== false) types.push('vocab', 'vocab', 'vocab', 'opp');
   if (f.num !== false) types.push('numeral', 'numeral');
   const type = only || pick(types.length ? types : ['color', 'vocab', 'numeral']), ci = ri(0, 2);
-  if (type === 'color') { const cs = others(sk('color').lv === 1 ? ['red', 'blue', 'yellow', 'green'] : Object.keys(COLORS), [], 3), n = COLORS[cs[ci]][0]; return { skill: 'color', item: cs[ci], signs: cs.map(c => ({ color: c })), correct: ci, q: `קפוץ על ה${n}!`, praise: ['כן!', `${n}!`], wrong: i => [`זה ${COLORS[cs[i]][0]}.`, `איפה ה${n}?`] }; }
-  if (type === 'shape') { const ss = others(sk('shape').lv === 1 ? ['circle', 'square', 'triangle'] : Object.keys(SHAPES), [], 3), n = SHAPES[ss[ci]]; return { skill: 'shape', item: ss[ci], signs: ss.map(s => ({ shape: s, col: 'blue' })), correct: ci, q: `קפוץ על ה${n}!`, praise: ['כן!', `${n}!`], wrong: i => [`זה ${SHAPES[ss[i]]}.`, `איפה ה${n}?`] }; }
-  if (type === 'size') { const e = V[pick(['ball', 'apple', 'dog', 'star', 'fish'])].e, szs = shuffle([0.5, 0.78, 1.12]), big = rnd() < 0.5, want = big ? 1.12 : 0.5; return { skill: 'size', item: big ? 'most_big' : 'most_small', signs: szs.map(sz => ({ e, sz })), correct: szs.indexOf(want), q: big ? 'קפוץ על הכי גדול!' : 'קפוץ על הכי קטן!', praise: big ? 'כן! הכי גדול!' : 'כן! הכי קטן!', wrong: () => [big ? 'איפה הכי גדול?' : 'איפה הכי קטן?'] }; }
+  if (type === 'color') { const cs = others(sk('color').lv === 1 ? ['red', 'blue', 'yellow', 'green'] : Object.keys(COLORS), [], 3), n = COLORS[cs[ci]][0]; return { skill: 'color', item: cs[ci], signs: cs.map(c => ({ color: c })), correct: ci, q: jump ? `קפוץ על ה${n}!` : `איפה ה${n}?`, praise: ['כן!', `${n}!`], wrong: i => [`זה ${COLORS[cs[i]][0]}.`, `איפה ה${n}?`] }; }
+  if (type === 'shape') { const ss = others(sk('shape').lv === 1 ? ['circle', 'square', 'triangle'] : Object.keys(SHAPES), [], 3), n = SHAPES[ss[ci]]; return { skill: 'shape', item: ss[ci], signs: ss.map(s => ({ shape: s, col: 'blue' })), correct: ci, q: jump ? `קפוץ על ה${n}!` : `איפה ה${n}?`, praise: ['כן!', `${n}!`], wrong: i => [`זה ${SHAPES[ss[i]]}.`, `איפה ה${n}?`] }; }
+  if (type === 'size') { const e = V[pick(['ball', 'apple', 'dog', 'star', 'fish'])].e, szs = shuffle([0.5, 0.78, 1.12]), big = rnd() < 0.5, want = big ? 1.12 : 0.5; return { skill: 'size', item: big ? 'most_big' : 'most_small', signs: szs.map(sz => ({ e, sz })), correct: szs.indexOf(want), q: jump ? (big ? 'קפוץ על הכי גדול!' : 'קפוץ על הכי קטן!') : (big ? 'איפה הכי גדול?' : 'איפה הכי קטן?'), praise: big ? 'כן! הכי גדול!' : 'כן! הכי קטן!', wrong: () => [big ? 'איפה הכי גדול?' : 'איפה הכי קטן?'] }; }
   if (type === 'opp') {
     const st = oppState().hot_cold || { a: 0, b: 0 }, pole = st.b >= 3 && rnd() < 0.5 ? 'cold' : 'hot', other = OPP[pole].vs, o = OPP[pole];
     const ti = ri(0, o.ex.length - 1), fo = others(OPP[other].ex.map((_, i) => i), [], 2), order = shuffle([0, 1, 2]), signs = [], src = [{ pole, i: ti }, { pole: other, i: fo[0] }, { pole: other, i: fo[1] }];
     order.forEach((k, j) => { signs[j] = { opp: oppPic(src[k].pole, src[k].i).opp }; });
-    return { skill: 'opp', item: pole, signs, correct: order.indexOf(0), q: `קפוץ על ה${o.n}!`, praise: ['כן!', `${o.n}.`, `${oppPhrase(pole, ti)}.`], wrong: () => [`זה לא ${o.n}.`, oppAsk(pole)] };
+    return { skill: 'opp', item: pole, signs, correct: order.indexOf(0), q: jump ? `קפוץ על ה${o.n}!` : oppAsk(pole), praise: ['כן!', `${o.n}.`, `${oppPhrase(pole, ti)}.`], wrong: () => [`זה לא ${o.n}.`, oppAsk(pole)] };
   }
-  if (type === 'numeral') { const maxN = [3, 5, 10, 10][sk('numeral').lv - 1], ns = others(Array.from({ length: maxN }, (_, i) => i + 1), [], 3), n = ns[ci]; return { skill: 'numeral', item: 'd' + n, signs: ns.map(k => ({ num: k })), correct: ci, q: `קפוץ על המספר ${n}!`, qs: [`קפוץ על המספר ${NUMF[n]}!`], praise: ['כן!', `${NUMF[n]}!`], wrong: i => [`זה ${NUMF[ns[i]]}.`, `איפה המספר ${NUMF[n]}?`] }; }
+  if (type === 'numeral') { const maxN = [3, 5, 10, 10][sk('numeral').lv - 1], ns = others(Array.from({ length: maxN }, (_, i) => i + 1), [], 3), n = ns[ci]; return { skill: 'numeral', item: 'd' + n, signs: ns.map(k => ({ num: k })), correct: ci, q: jump ? `קפוץ על המספר ${n}!` : `איפה המספר ${n}?`, qs: [jump ? `קפוץ על המספר ${NUMF[n]}!` : `איפה המספר ${NUMF[n]}?`], praise: ['כן!', `${NUMF[n]}!`], wrong: i => [`זה ${NUMF[ns[i]]}.`, `איפה המספר ${NUMF[n]}?`] }; }
   const ks = others(VOCAB_L.slice(0, sk('vocab').lv).flat(), [], 3), k = ks[ci];
-  return { skill: 'vocab', item: k, signs: ks.map(x => ({ e: V[x].e })), correct: ci, q: SAY.jumpOn(k), praise: ['כן!', SAY.the(k)], wrong: i => [SAY.thisIs(ks[i]), SAY.where(k)] };
+  return { skill: 'vocab', item: k, signs: ks.map(x => ({ e: V[x].e })), correct: ci, q: jump ? SAY.jumpOn(k) : SAY.where(k), praise: ['כן!', SAY.the(k)], wrong: i => [SAY.thisIs(ks[i]), SAY.where(k)] };
 }
 const padSay = P => Voice.say(P.task.qs || P.task.q);
 
@@ -4558,7 +4737,7 @@ async function startStation(st) {
   let perfect = true;
   if (!G.bot) {
     await sleep(400);
-    if (st.talk) { const good = await Coach.lesson(3, ['הנה קופסת הפתעות!']); perfect = good >= 1; G.coins += Coach.gain || 0; UI.setCoins(G.coins); }
+    if (st.talk) { const good = await Coach.lesson(2, ['הנה קופסת הפתעות!']); perfect = good >= 1; G.coins += Coach.gain || 0; UI.setCoins(G.coins); }
     else {
       const skill = pickSkill(slot); st.skill = skill;
       for (let i = 0; i < 2; i++) { const r = await ask(makeRound(skill)); if (!r.ok) perfect = false; }
@@ -4567,8 +4746,14 @@ async function startStation(st) {
   st.done = true; G.stars++; Snd.sfx.gate();
   UI.show(null);
   G.flies.push({ x: st.x + 27 - G.cam.x, y: GR * T - 254 - G.cam.y, t: 0, i: G.stars - 1 });
-  addCoins(perfect ? 6 : 3, st.x + 27, GR * T - 150);
-  if (!G.bot) Voice.say(perfect ? [withKid('מושלם!'), 'הצלת את הכוכב!'] : 'הצלת את הכוכב!');
+  if (!G.bot && Coach.canAsk()) {                                     // a few coins come out; "more!" (any voice) brings the rest, and they come anyway
+    addCoins(2, st.x + 27, GR * T - 150);
+    await Voice.say(perfect ? [withKid('מושלם!'), 'הצלת את הכוכב!'] : 'הצלת את הכוכב!');
+    await Coach.request('עוד', { fire: () => { addCoins(perfect ? 6 : 3, st.x + 27, GR * T - 170); sparkle(st.x + 27, GR * T - 150, 22); Snd.sfx.gem(); } });
+  } else {
+    addCoins(perfect ? 6 : 3, st.x + 27, GR * T - 150);
+    if (!G.bot) Voice.say(perfect ? [withKid('מושלם!'), 'הצלת את הכוכב!'] : 'הצלת את הכוכב!');
+  }
   syncSession();
   G.mode = 'run';
 }
@@ -4585,19 +4770,21 @@ async function startStation(st) {
 // There are no buttons for a parent. Without a microphone Boti still models and waits; he just cannot tell what was said.
 const EXPAND = {
   dog: 'כלב גדול', cat: 'חתול קטן', ball: 'כדור גדול', apple: 'תפוח אדום', banana: 'בננה צהובה', car: 'מכונית מהירה', shoe: 'נעל קטנה', sun: 'שמש חמה',
-  fish: 'דג קטן', bed: 'מיטה רכה', book: 'ספר יפה', flower: 'פרח יפה', bus: 'אוטובוס גדול', cup: 'כוס מלאה', hat: 'כובע אדום', balloon: 'בלון אדום',
-  bird: 'ציפור קטנה', cow: 'פרה גדולה', horse: 'סוס גדול', duck: 'ברווז קטן', bread: 'לחם טעים', icecream: 'גלידה קרה', cake: 'עוגה טעימה', egg: 'ביצה לבנה',
-  train: 'רכבת ארוכה', plane: 'מטוס גדול', shirt: 'חולצה נקייה', sock: 'גרב קטן', key: 'מפתח קטן', phone: 'טלפון קטן', tree: 'עץ גבוה', moon: 'ירח עגול',
-  star: 'כוכב קטן', teddy: 'דובי רך', house: 'בית גדול', door: 'דלת פתוחה', frog: 'צפרדע ירוקה', lion: 'אריה גדול', monkey: 'קוף מצחיק', elephant: 'פיל ענק',
-  rabbit: 'ארנב לבן', carrot: 'גזר כתום', pizza: 'פיצה חמה', strawberry: 'תות אדום', boat: 'סירה קטנה', bike: 'אופניים מהירים', pants: 'מכנסיים ארוכים',
+  fish: 'דג קטן', bed: 'מיטה רכה', book: 'ספר יפה', flower: 'פרח יפה', bus: 'אוטובוס גדול', cup: 'כוס גדולה', hat: 'כובע כחול', balloon: 'בלון אדום',
+  bird: 'ציפור קטנה', cow: 'פרה גדולה', horse: 'סוס גדול', duck: 'ברווז קטן', bread: 'לחם טעים', icecream: 'גלידה קרה', cake: 'עוגה טעימה', egg: 'ביצה קטנה',
+  train: 'רכבת גדולה', plane: 'מטוס גדול', shirt: 'חולצה נקייה', sock: 'גרב קטן', key: 'מפתח קטן', phone: 'טלפון קטן', tree: 'עץ גבוה', moon: 'ירח צהוב',
+  star: 'כוכב קטן', teddy: 'דובי רך', house: 'בית גדול', door: 'דלת סגורה', frog: 'צפרדע ירוקה', lion: 'אריה גדול', monkey: 'קוף מצחיק', elephant: 'פיל ענק',
+  rabbit: 'ארנב קטן', carrot: 'גזר כתום', pizza: 'פיצה חמה', strawberry: 'תות אדום', boat: 'סירה קטנה', bike: 'אופניים מהירים', pants: 'מכנסיים ארוכים',
   coat: 'מעיל חם', clock: 'שעון גדול', spoon: 'כפית קטנה', umbrella: 'מטרייה גדולה', gift: 'מתנה יפה', cloud: 'ענן לבן', rain: 'גשם יורד', drum: 'תוף גדול', cookie: 'עוגייה מתוקה',
   turtle: 'צב קטן', bee: 'דבורה קטנה', butterfly: 'פרפר יפה', chick: 'אפרוח צהוב', watermelon: 'אבטיח מתוק', cheese: 'גבינה צהובה', rocket: 'חללית מהירה', truck: 'משאית גדולה',
-  tractor: 'טרקטור גדול', heli: 'מסוק גדול', dress: 'שמלה יפה', glasses: 'משקפיים עגולים', glove: 'כפפה חמה', guitar: 'גיטרה יפה', pencil: 'עיפרון חד', scissors: 'מספריים חדים',
+  tractor: 'טרקטור גדול', heli: 'מסוק גדול', dress: 'שמלה יפה', glasses: 'משקפיים גדולים', glove: 'כפפה חמה', guitar: 'גיטרה יפה', pencil: 'עיפרון חד', scissors: 'מספריים חדים',
   flashlight: 'פנס קטן', rainbow: 'קשת יפה', fire: 'אש חמה', snowman: 'איש שלג קר',
 };
 // animal and thing sounds made of the earliest consonants: the easiest first "words"
 const SOUNDS = { dog: 'הב הב', cat: 'מיאו', cow: 'מו', duck: 'גע גע', train: 'טו טו', car: 'ביפ ביפ', clock: 'טיק טק', drum: 'בום בום', bird: 'ציף ציף' };
 // one-syllable shouts for the boss fights, early consonants only
+// words that make something happen in the game when he uses his voice: more coins, the box opens, the rocket flies, the cannon fires
+const REQ_WORDS = ['עוד', 'טוק טוק', 'עוף', 'הופ'];       // "knock knock" opens the box: early sounds, no cluster ("ptax" was swallowed by the voice and is hard to say)
 const POWER_WORDS = ['בום', 'הופ', 'די', 'עוף', 'קום', 'גול'];
 const VOCAB_ALL = VOCAB_L.flat();
 const foilOf = k => { const i = VOCAB_ALL.indexOf(k), c = V[k].c; for (let d = 3; d < VOCAB_ALL.length; d++) { const f = VOCAB_ALL[(i + d) % VOCAB_ALL.length]; if (V[f].c !== c) return f; } return VOCAB_ALL[(i + 1) % VOCAB_ALL.length]; };
@@ -4640,7 +4827,7 @@ const Coach = {
     const rx = {}; allLocalEvents().forEach(e => { if (e.s === 'vocab' && e.ok) rx[e.i] = 1; });
     const nouns = VOCAB_L.slice(0, Math.max(1, sk('vocab').lv)).flat().filter(k => EXPAND[k]);
     const opp = Object.keys(OPP).filter(p => { const pr = OPP_PAIRS.find(x => x.includes(p)), r = pr && oppState()[pr.join('_')]; return r && (pr[0] === p ? r.a : r.b) >= 3; }).map(p => 'op_' + p);
-    const cost = k => phonCost(this.spec(k, { i: 0 }).word) - (boost.includes(k) ? 50 : 0) - (rx[k] ? 0.8 : 0) + ((W[k] || {}).m ? -0.5 : 0) + hash2(k.length * 7 + k.charCodeAt(0), sp.n || 0) * 1.2;
+    const cost = k => phonCost(this.spec(k, { i: 0 }).word) - (boost.includes(k) ? 50 : 0) - (rx[k] ? 2 : 0) + ((W[k] || {}).m ? -0.5 : 0) + hash2(k.length * 7 + k.charCodeAt(0), sp.n || 0) * 1.2;
     const keep = ((sp.set && sp.set.words) || []).filter(k => !done(k) && (sp.set.age || 0) < 3);
     const fresh = nouns.concat(opp).filter(k => !done(k) && !keep.includes(k)).sort((a, b) => cost(a) - cost(b));
     const snd = Object.keys(SOUNDS).map(k => 'snd_' + k).filter(k => !done(k) && !keep.includes(k)).sort((a, b) => ((W[a] || {}).m || 0) - ((W[b] || {}).m || 0));
@@ -4692,7 +4879,7 @@ const Coach = {
     $('#sayWord').textContent = ''; $('#sayLive').textContent = ''; $('#sayChoice').hidden = true; this.bar(false);
     $('#sayDots').innerHTML = Array.from({ length: of || 1 }, (_, i) => `<i class="${i < n ? 'done' : i === n ? 'now' : ''}"></i>`).join('');
     const parts = stripNiqqud(spec.word).split(' '), chunks = parts.length === 1 && sylIpa(parts[0]) ? sylChunks(parts[0], sylOf(parts[0])) : parts;
-    $('#sayBeats').innerHTML = chunks.map(ch => `<b>${esc(ch)}</b>`).join(''); $('#sayBeats').hidden = true;
+    $('#sayBeats').innerHTML = chunks.map(ch => `<b>${esc(ch)}</b>`).join(''); $('#sayBeats').hidden = true; $('#sayBeats').className = 'saybeats'; $('#sayBeats').onclick = null; $('#sayWord').style.visibility = '';
     const cvs = $('#sayCv'), loop = () => {
       if (!this.on || UI.screen !== 'scSay') return;
       paintMini(cvs, c => this.paint(c, now() / 1000), 300, 190);
@@ -4750,7 +4937,8 @@ const Coach = {
     this.gain = (this.gain || 0) + (big ? 3 : 1);
   },
   async beats(spec) {                                                 // the slow, smooth word with one light per syllable (a cue on Boti's side only)
-    const el = $('#sayBeats'), bs = $$('b', el); el.hidden = false; $('#sayWord').style.visibility = 'hidden';
+    const el = $('#sayBeats'); if (!$$('b', el).length) return this.tell(spec, ['~' + spec.word]);
+    const bs = $$('b', el); el.className = 'saybeats'; el.hidden = false; $('#sayWord').style.visibility = 'hidden';
     const clip = await Voice.find('~' + spec.word), dur = clip ? clip.duration * 1000 : 1100;
     bs.forEach((b, i) => setTimeout(() => { bs.forEach(x => x.classList.remove('on')); b.classList.add('on'); Snd.sfx.tick && Snd.sfx.tick(); }, 60 + (dur * i) / bs.length));
     await this.tell(spec, ['~' + spec.word]);
@@ -4766,9 +4954,13 @@ const Coach = {
     const routine = this.sp().routine || 0;
     if (!known) {
       // new word (or a quiet stretch): show it, name it three times in short sentences, then wait
-      await this.tell(spec, [spec.lead || 'בקופסה יש...'], 500); await this.openBox(spec); this.sp().routine = routine + 1;
-      await this.tell(spec, [`${W}!`].concat(close, [`${W}.`]));
-      r = await this.listen(wasQuiet ? 2600 : 5000, spec);
+      await this.tell(spec, [spec.lead || 'בקופסה יש...'], 500);
+      if (n === 0 && this.canAsk()) await this.request('טוק טוק');           // the box opens to his voice (and opens anyway)
+      await this.openBox(spec); this.sp().routine = routine + 1;
+      const P = Store.d.set.syl !== false && spec.kind !== 'sound' && w.sd !== dayKey() ? sylPieces(stripNiqqud(W)) : null;
+      if (P) { w.sd = dayKey(); await this.tell(spec, [`${W}!`]); await this.stones(spec, P); await this.tell(spec, close.concat([`${W}.`])); }
+      else await this.tell(spec, [`${W}!`].concat(close, [`${W}.`]));
+      r = await this.listen(wasQuiet ? 2600 : 4200, spec);
     } else {
       // a word he has heard many times: leave room for him first (the unfinished sentence, or a choice of two), then give the word
       const choice = spec.foil && w.n % 3 === 1;
@@ -4788,7 +4980,10 @@ const Coach = {
     $('#sayWord').textContent = stripNiqqud(W); $('#sayChoice').hidden = true;
     if (!j) { j = this.judge(spec, r); this.debug(r, j); }
     const heard = (r && r.text) || '';
-    if (j.cls === 'good') { this.reward(true); await this.tell(spec, [!j.tap && rnd() < 0.35 ? `אמרת ${W}!` : 'כן!', `${W}.`].concat(spec.phrase ? [`${spec.phrase}!`] : [])); }
+    if (j.cls === 'good') {
+      this.reward(true); await this.tell(spec, [!j.tap && rnd() < 0.35 ? `אמרת ${W}!` : 'כן!', `${W}.`].concat(spec.phrase ? [`${spec.phrase}!`] : []));
+      if (!j.tap && rnd() < 0.3) { const mouse = rnd() < 0.5; await Voice.say([mouse ? 'בקול של עכבר:' : 'בקול של ענק:']); await Voice.say([`${W}!`], { rate: mouse ? 1.3 : 0.8 }); w.m++; }      // the same word in another voice, for fun
+    }
     else if (j.cls === 'close') j = await this.closeUp(spec, j);
     else if (j.cls === 'partial') j = await this.buildUp(spec, j);
     else if (j.cls === 'other') { this.reward(false); await this.tell(spec, [spec.kind === 'sound' ? `${W}.` : `זה ${W}.`].concat(close)); }
@@ -4813,23 +5008,64 @@ const Coach = {
   // part of the word came out: welcome it, give the whole word back slowly, and (once) build it together from its end
   async buildUp(spec, j) {
     const W = spec.word, close = spec.phrase ? [`${spec.phrase}.`] : [], parts = stripNiqqud(W).split(' ');
-    await this.tell(spec, [pick(['ניסית!', 'שמעתי אותך!']), '~' + W].concat(close));
-    let r = await this.listen(4000, spec), j2 = this.judge(spec, r); this.debug(r, j2);
-    const ip = parts.length === 1 ? sylIpa(parts[0]) : null;
-    if (j2.cls === 'silent' && ip && ip.length >= 2) {
-      // the piece he already has is normally the end of the word; start from there
-      const sy = j.hp && j.hp.words[0] ? j.hp.words[0].syl : [];
+    const ip = parts.length === 1 ? sylIpa(parts[0]) : null, sy = j.hp && j.hp.words[0] ? j.hp.words[0].syl : [];
+    let P = null, mine = false;
+    if (ip && ip.length >= 2 && Store.d.set.syl !== false && sy.some(v => v < 0.6)) {          // a syllable is missing: add it to the piece he has
       let from = ip.length - 1; while (from > 1 && sy[from - 1] >= 0.6) from--;
-      await this.tell(spec, ['ביחד:', sylClip(ip.slice(from).join(''))], 600);
-      await sleep(1700);
-      await this.beats(spec);
-      await this.tell(spec, [`${W}.`]);
-      r = await this.listen(5000, spec); j2 = this.judge(spec, r); this.debug(r, j2);
+      P = sylPieces(parts[0], from, false); mine = sy[from] >= 0.6;
     }
+    await this.tell(spec, [pick(['ניסית!', 'שמעתי אותך!'])]);
+    if (P) { await this.stones(spec, P, mine); await this.tell(spec, [`${W}!`]); }          // his piece, both pieces once, and at once the whole word
+    else await this.tell(spec, ['~' + W]);
+    const r = await this.listen(4500, spec), j2 = this.judge(spec, r); this.debug(r, j2);
     const good = j2.cls === 'good';
     this.reward(good);
     await this.tell(spec, [good ? 'כן!' : pick(EFFORT), `${W}.`].concat(close));
     return { cls: good ? 'good' : j2.cls === 'close' ? 'close' : 'partial', built: true, text: (r && r.text) || j.text };
+  },
+  // The word in two pieces, the way "בלי סודות" showed a word in two colours: the piece that is new and the piece he has,
+  // said ONCE in speaking order in one breath (one recording, the stressed piece stronger), never as equal chopped beats.
+  // He may touch a stone to hear it; nothing is asked of him here and nothing is scored. The whole word always follows.
+  async stones(spec, P, mine) {
+    const el = $('#sayBeats'), key = spec.key;
+    el.className = 'saybeats stones'; el.hidden = false; $('#sayWord').style.visibility = 'hidden';
+    el.innerHTML = (P.hePre ? `<i class="pre">${esc(P.hePre)}</i>` : '') + `<button class="stone a" data-c="${esc(sylClip(P.head))}">${esc(P.heHead)}</button><button class="stone b" data-c="${esc(sylClip(P.tail))}">${esc(P.heTail)}</button>`;
+    const [a, b] = $$('.stone', el), lit = x => { [a, b].forEach(q => q.classList.toggle('on', q === x)); if (x) Snd.sfx.tap(); };
+    let taps = 0;
+    el.onclick = e => { const q = e.target.closest('.stone'); if (!q || Voice.speaking || Ear.listening || Mic.listening) return; Snd.init(); lit(q); setTimeout(() => q.classList.remove('on'), 600); Voice.say(q.dataset.c); taps++; const w = this.rec(key); w.tp = (w.tp || 0) + 1; };
+    await sleep(250);
+    if (mine) { lit(b); await this.tell(spec, [sylClip(P.tail)], 300); await sleep(350); }
+    const clip = await Voice.find(P.clip), cut = clip ? gapOf(clip) : 0.5;
+    lit(a); const sw = setTimeout(() => lit(b), Math.max(150, cut * 1000 - 60));
+    await this.tell(spec, [P.clip], 300); clearTimeout(sw); lit(null);
+    // a moment in which he may touch a stone and hear it (each touch buys a little more time), then the stones give way to the whole word
+    el.classList.add('free'); for (let t = 0; t < 1300 + Math.min(taps, 3) * 1700 || Voice.speaking; t += 100) await sleep(100);
+    el.hidden = true; el.className = 'saybeats'; el.onclick = null; $('#sayWord').style.visibility = '';
+  },
+  // ---- a request episode. Something he wants is one sound away: Boti looks and waits; ANY voice makes it happen; after the
+  // wait Boti says the word "together", waits once more, and then it happens anyway. Nothing here is right or wrong, and
+  // the thing itself (the coins, the open box, the flight) is the reward. The first times Boti says the word first.
+  canAsk() { return !G.bot && Store.d.set.ask !== false && (Mic.usable || Ear.usable); },
+  async request(word, o = {}) {
+    const bar = $('#powerBar'), lab = $('.pwlabel', bar), key = 'rq_' + word, w = this.rec(key), early = (w.n || 0) < 3;
+    const show = (label, on) => { bar.hidden = false; lab.textContent = label; $('#powerWord').textContent = word + '!'; bar.classList.toggle('listening', !!on); };
+    const hear = async ms => {
+      if (Mic.usable) { const r = await Mic.hear(ms, { onBeat: () => bar.classList.add('heard') }); if (!r.nomic) return r; }
+      if (Ear.usable) { const r = await Ear.hear(ms); return { voice: !!(r.heard || r.voice), beats: 0, text: r.text }; }
+      await sleep(900); return { nomic: true, voice: false };
+    };
+    let res = 'boti', r = null, cue = 'wait'; bar.classList.remove('heard');
+    if (!early) { show('', true); r = await hear(3200); if (r.voice) res = 'said'; }          // he knows the routine: just wait for him
+    if (res === 'boti') { cue = 'together'; show('ביחד:', false); await Voice.say(['ביחד:', `${word}!`], { gap: 450 }); w.m++; show('ביחד:', true); r = await hear(early ? 3600 : 3000); if (r.voice) res = 'heard'; }
+    bar.classList.remove('listening');
+    if (res !== 'boti') { bar.classList.add('heard'); if (r.clip && Store.d.set.echo !== false) await Snd.playBuf(r.clip, 1.12).ended; }        // Boti gives him his own sound back
+    if (o.fire) o.fire(res);                                          // the thing itself: always
+    await Voice.say([`${word}!`]); w.m++;
+    ensureSession().said.push({ t: Date.now(), w: key, k: 'req', r: r && r.nomic ? 'nomic' : res === 'boti' ? 'silent' : 'voice', c: cue, h: (r && r.text) || '', b: (r && r.beats) || 0 });
+    w.n = (w.n || 0) + 1; if (res === 'boti') w.q = (w.q || 0) + 1; else w.v = (w.v || 0) + 1; w.t = Date.now();
+    Store.save(true);
+    await sleep(220); bar.hidden = true; bar.classList.remove('heard'); lab.textContent = 'ביחד:';
+    return res;
   },
   // nearly the word: no "yes" yet. Boti says it slowly, together, lights the beats, and listens once more.
   async closeUp(spec, j) {
@@ -5130,7 +5366,7 @@ function bindInput() {
   stick.addEventListener('pointerdown', e => { e.preventDefault(); Snd.init(); sid = e.pointerId; try { stick.setPointerCapture(sid); } catch (x) { /* ignore */ } setDir(e); });
   stick.addEventListener('pointermove', e => { if (e.pointerId === sid) setDir(e); });
   ['pointerup', 'pointercancel', 'lostpointercapture'].forEach(n => stick.addEventListener(n, relS));
-  const press = e => { e.preventDefault(); Snd.init(); if (G.mode !== 'run') return; jid = e.pointerId; I.j = true; I.jp = true; jb.classList.add('down'); };
+  const press = e => { e.preventDefault(); Snd.init(); if (G.mode !== 'run') return; if (e.currentTarget === cv && padTap(e)) return; jid = e.pointerId; I.j = true; I.jp = true; jb.classList.add('down'); };
   const relJ = e => { if (jid != null && e.pointerId !== jid) return; jid = null; I.j = false; jb.classList.remove('down'); };
   jb.addEventListener('pointerdown', e => { try { jb.setPointerCapture(e.pointerId); } catch (x) { /* ignore */ } press(e); });
   ['pointerup', 'pointercancel', 'lostpointercapture'].forEach(n => jb.addEventListener(n, relJ));
@@ -5160,7 +5396,7 @@ function bindInput() {
   $('#btnAlbumBack').onclick = () => { Snd.sfx.tap(); UI.showHub(true); };
   $('#btnCatch').onclick = () => { Snd.init(); Snd.sfx.tap(); Catch.start(); };
   $('#btnCatchBack').onclick = () => { Snd.sfx.tap(); Catch.quit(); };
-  $('#btnTalk').onclick = async () => { Snd.init(); Snd.sfx.tap(); const good = await Coach.lesson(5, [withKid('בוא נשחק!'), 'יש לי קופסת הפתעות.']); Store.d.wallet += 3 + (Coach.gain || 0); Store.save(true); syncSession(); UI.showHub(true); Snd.sfx.buy(); Voice.say([withKid('היה כיף!'), 'קיבלת מטבעות.']); };
+  $('#btnTalk').onclick = async () => { Snd.init(); Snd.sfx.tap(); const good = await Coach.lesson(3, [withKid('בוא נשחק!'), 'יש לי קופסת הפתעות.']); Store.d.wallet += 3 + (Coach.gain || 0); Store.save(true); syncSession(); UI.showHub(true); Snd.sfx.buy(); Voice.say([withKid('היה כיף!'), 'קיבלת מטבעות.']); };
   $('#btnBreakHub').onclick = () => { Snd.sfx.tap(); UI.showHub(true); };
   holdButton($('#btnParent'), openParent);
   holdButton($('#btnBreakGo'), () => UI.show('scWin'));
@@ -5191,6 +5427,7 @@ function itemLabel(key) {
   if (V[key]) return V[key].n;
   if (key.startsWith('tell_')) { const k = key.slice(5); return 'סיפר לבד' + (KSCENES[k] ? ' (' + KSCENES[k].where.replace(/^הם |\.$/g, '') + ')' : ''); }
   if (key.startsWith('ks_')) { const [, k, i] = key.split('_'), f = KSCENES[k] && KSCENES[k].figs[+i]; return f ? f.v : key; }
+  if (key.startsWith('rq_')) return key.slice(3) + ' (בקשה)';
   if (key.startsWith('grp_')) return CAT[key.slice(4)] ? CAT[key.slice(4)][0] : key;
   if (SEASONS[key.replace('_thing', '')]) return SEASONS[key.replace('_thing', '')].n;
   const [p, k] = [key.slice(0, 2), key.slice(2)];
@@ -5214,12 +5451,12 @@ function analyze(sessions) {
     if (l.length >= 10) { const a = l.slice(-5).filter(e => e.ok).length / 5, b = l.slice(-10, -5).filter(e => e.ok).length / 5; trend = a - b > 0.15 ? 'עולה' : b - a > 0.15 ? 'יורד' : 'יציב'; }
     return { k, n: l.length, acc, trend, lv: sk(k).lv, max: SKILLS[k].max, up: sk(k).up || 0, ms: median(l.slice(-10).map(e => e.ms).filter(Boolean)) };
   });
-  const cue = {}; said.forEach(s => { s.r = OLD_CUE[s.r] || s.r; cue[s.r] = (cue[s.r] || 0) + 1; });
+  const cue = {}, req = said.filter(s => s.k === 'req' && s.r !== 'nomic'); said.forEach(s => { s.r = OLD_CUE[s.r] || s.r; if (s.k !== 'req') cue[s.r] = (cue[s.r] || 0) + 1; });
   const utter = said.filter(s => s.h).map(s => s.h), words = utter.map(s => s.trim().split(/\s+/).filter(Boolean).length);
   const nums = {}; (by.count || []).concat(by.give || []).forEach(e => { const m = /^n(\d+)$/.exec(e.i); if (!m) return; const o = nums[m[1]] = nums[m[1]] || { n: 0, ok: 0 }; o.n++; if (e.ok) o.ok++; });
   const wr = {}; (by.vocab || []).forEach(e => { const o = wr[e.i] = wr[e.i] || { n: 0, ok: 0 }; o.n++; if (e.ok) o.ok++; });
   return {
-    ev, said, heard, levels, by, rows, cue, utter, nums, wr,
+    ev, said, heard, levels, by, rows, cue, req, utter, nums, wr,
     mlu: words.length ? sum(words) / words.length : 0,
     totalMin: Math.round(sum(sessions.map(s => s.playMs || 0)) / 60000),
     todayMin: Math.round(sum(sessions.filter(s => day(s.startedAt) === today).map(s => s.playMs || 0)) / 60000),
@@ -5246,6 +5483,7 @@ function buildInsights(A) {
   if (cnt.n >= 4 && giv.n >= 4 && cnt.lv >= giv.lv + 2) ins.push('<b>ספירה מול כמות:</b> סופר יפה, אבל "תן לי 3" עוד קשה לו. זה שלב טבעי. בבית: "תן לי 2 קוביות", ועוצרים יחד במספר.');
   const hardN = Object.entries(A.nums).filter(([k, o]) => +k >= 2 && o.n >= 3 && o.ok / o.n < 0.5).map(([k]) => k);
   if (hardN.length) ins.push(`<b>מספרים שעוד מבלבלים:</b> ${hardN.join(', ')}. ספרו יחד בדיוק את הכמות הזאת בחפצים אמיתיים.`);
+  if (A.req.length >= 3) { const v = A.req.filter(x => x.r === 'voice').length, alone = A.req.filter(x => x.r === 'voice' && x.c === 'wait').length; ins.push(`<b>בקשות בקול ("עוד", "טוק טוק", "עוף", "הופ"):</b> ב-${v} מתוך ${A.req.length} הפעמים שבוטי חיכה לו הוא השמיע קול${alone ? `, מהן ${alone} לפני שבוטי אמר את המילה` : ''}. כל קול מפעיל את הדבר, והוא קורה גם אם שתק.`); }
   const c = A.cue, waited = (c.good || 0) + (c.close || 0) + (c.partial || 0) + (c.other || 0) + (c.voice || 0) + (c.silent || 0), voiced = waited - (c.silent || 0);
   if (waited >= 4) {
     ins.push(`<b>דיבור (קופסת ההפתעות):</b> בוטי אמר מילה וחיכה ${waited} פעמים. ב-${c.good || 0} מהן הוא אמר את המילה, ב-${c.close || 0} כמעט, ב-${c.partial || 0} חלק ממנה, ב-${c.other || 0} מילה אחרת, ב-${c.voice || 0} השמיע קול, וב-${c.silent || 0} שתק.`);
@@ -5299,6 +5537,7 @@ function renderInsights(A) {
   const settings = `<div class="pcard"><h3>הגדרות</h3>
     <div class="prow"><label class="plabel" for="iName">שם הילד:</label><input id="iName" type="text" maxlength="14" autocomplete="off" value="${esc(set.name || '')}"></div>
     <div class="prow">${tg('tSound', set.sound, 'קול ודיבור')}${tg('tMusic', set.music, 'מוזיקה')}${tg('tMic', set.mic, 'מיקרופון')}${tg('tRobot', set.robot, 'קריין הטלפון כגיבוי')}</div>
+    <div class="prow"><span class="plabel">דיבור פעיל:</span>${tg('tAsk', set.ask !== false, 'בקשות בקול במשחק (עוד, טוק טוק, עוף)')}${tg('tSyl', set.syl !== false, 'מילה בשני חלקים ואז שלמה')}${tg('tEcho', set.echo !== false, 'בוטי משמיע לו את הקול שלו')}</div>
     <div class="prow"><span class="plabel">דיבור:</span>${tg('tStrict', set.strict !== false, 'רק מילה מדויקת מקבלת "כן"')}<span class="note">כבוי = גם הגייה של ילד קטן ("קה" במקום "קר") נחשבת נכונה.</span></div>
     <div class="prow"><span class="plabel">מה לתרגל:</span>${tg('fNum', set.focus.num !== false, 'מספרים')}${tg('fLang', set.focus.lang !== false, 'שפה')}${tg('fThink', set.focus.think !== false, 'חשיבה')}</div>
     <div class="prow"><span class="plabel">קושי הפלטפורמה:</span>${seg('sEase', [[-1, 'קל יותר'], [0, 'רגיל'], [1, 'קשה יותר']], set.ease || 0)}</div>
@@ -5364,7 +5603,7 @@ async function openParent() {
   const tog = (id, get, put) => { const b = $('#' + id); if (b) b.onclick = () => { put(!get()); b.setAttribute('aria-pressed', get()); again(); }; };
   { const bu = $('#bUpd'); if (bu) bu.onclick = async () => { Snd.sfx.tap(); $('#updMsg').textContent = 'בודק...'; const st = await Updater.check(true); $('#updMsg').textContent = st === 'new' ? 'יש גרסה חדשה. מתעדכן...' : st === 'ok' ? 'זו הגרסה האחרונה.' : 'אין חיבור, או שהמשחק לא רץ מהקישור.'; }; }
   { const bt = $('#bTest'); if (bt) bt.onclick = () => { Snd.sfx.tap(); if (Store.test) Store.exitTest(); else Store.enterTest(); }; }
-  tog('tSound', () => set.sound, v => { set.sound = v; Snd.duck(false); }); tog('tMusic', () => set.music, v => { set.music = v; Snd.duck(false); }); tog('tMic', () => set.mic, v => { set.mic = v; }); tog('tRobot', () => set.robot, v => { set.robot = v; }); tog('tStrict', () => set.strict !== false, v => { set.strict = v; });
+  tog('tSound', () => set.sound, v => { set.sound = v; Snd.duck(false); }); tog('tMusic', () => set.music, v => { set.music = v; Snd.duck(false); }); tog('tMic', () => set.mic, v => { set.mic = v; }); tog('tRobot', () => set.robot, v => { set.robot = v; }); tog('tStrict', () => set.strict !== false, v => { set.strict = v; }); tog('tAsk', () => set.ask !== false, v => { set.ask = v; }); tog('tSyl', () => set.syl !== false, v => { set.syl = v; }); tog('tEcho', () => set.echo !== false, v => { set.echo = v; });
   tog('fNum', () => set.focus.num !== false, v => { set.focus.num = v; }); tog('fLang', () => set.focus.lang !== false, v => { set.focus.lang = v; }); tog('fThink', () => set.focus.think !== false, v => { set.focus.think = v; });
   const segBind = (id, put) => $$(`#${id} button`).forEach(b => b.onclick = () => { put(b.dataset.v); $$(`#${id} button`).forEach(x => x.setAttribute('aria-pressed', x === b)); again(); });
   segBind('sEase', v => { set.ease = +v; }); segBind('sLimit', v => { set.limit = +v; });
