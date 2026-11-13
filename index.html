@@ -416,6 +416,19 @@ body.portrait .hubtop .tbtn span { display: none; } body.portrait .hubtop .tbtn 
 .bfig { position: absolute; top: 0; height: 100%; background: none; border: 0.3rem solid transparent; border-radius: 1.2rem; padding: 0; }
 .bfig.glow { border-color: var(--gold); background: rgba(255, 214, 80, .22); box-shadow: 0 0 1rem rgba(255, 214, 80, .8); }
 .bfig.bad { animation: shake .35s; border-color: #c5cbe0; } .bfig.hint { border-color: var(--sky); border-style: dashed; }
+
+/* the notice before an automatic update */
+#updToast { position: fixed; z-index: 90; left: 50%; top: 42%; transform: translate(-50%, -50%); background: #1d2340; color: #fff; font: 700 1.25rem 'Varela Round', sans-serif; padding: .9rem 1.5rem; border-radius: 1.2rem; border: 3px solid #ffd43b; box-shadow: 0 10px 30px rgba(0,0,0,.4); }
+
+/* picture stories with people: touch areas follow each figure */
+.busy.ks { width: min(100%, clamp(16rem, 128vmin, 44rem)); }
+.busy.ks .bfig { border-radius: 1rem; }
+.opt.glow, #stage .sitem.glow { box-shadow: 0 0 0 0.3rem var(--gold), 0 0 1.2rem rgba(255, 214, 80, .9); transform: scale(1.06); }
+.shp.ln { width: 78%; height: 78%; }
+#stage.many5 .sitem { width: clamp(3rem, 17vmin, 5.6rem); height: clamp(3rem, 17vmin, 5.6rem); }
+/* copying shapes: the model beside the page */
+.copymodel { width: clamp(4.5rem, 24vmin, 7.5rem); height: clamp(4.5rem, 24vmin, 7.5rem); border: 0.2rem solid var(--ink); border-radius: 1rem; overflow: hidden; background: #fff; }
+.copymodel canvas { width: 100%; height: 100%; display: block; }
 </style>
 </head>
 <body>
@@ -443,7 +456,8 @@ body.portrait .hubtop .tbtn span { display: none; } body.portrait .hubtop .tbtn 
     <span class="earwave"><i></i><i></i><i></i><i></i><i></i></span>
   </div>
   <div id="sub" hidden></div>
-  <div id="testBadge" hidden><span>מצב בדיקה</span><button id="btnTestExit">יציאה</button></div>
+  <div id="updToast" hidden>מתעדכן לגרסה חדשה...</div>
+<div id="testBadge" hidden><span>מצב בדיקה</span><button id="btnTestExit">יציאה</button></div>
   <div id="wipe"></div>
 
   <section id="scTitle" class="screen">
@@ -593,8 +607,8 @@ body.portrait .hubtop .tbtn span { display: none; } body.portrait .hubtop .tbtn 
   </section>
 </div>
 
-<script>/* build 202611121355 */
-const BUILD = '202611121355';
+<script>/* build 202611131722 */
+const BUILD = '202611131722';
 'use strict';
 /* בוטי והכוכבים האבודים – platformer + learning stations for a 3-year-old gamer.
    File order (see build.py): core → audio/voice → data → art → engine → stations → ui → parent → boot. */
@@ -888,7 +902,8 @@ const Voice = {
   man: null, packs: {}, cache: new Map(), speaking: false, tok: 0, curPri: 0, cur: null, missing: {}, heb: null, ready: null,
   // pack 0 (the most used lines) loads at once; the others arrive quietly, so no line waits for a download and the game works offline
   init() {
-    this.ready = fetch('voice/manifest.json?b=' + (typeof BUILD === 'string' ? BUILD : '')).then(r => (r.ok ? r.json() : null)).then(m => { if (m && m.lines) { this.man = m; this.pack(0); if (!(navigator.connection && navigator.connection.saveData)) m.packs.forEach((_, i) => setTimeout(() => this.pack(i), 4000 + i * 1500)); } }).catch(() => {});
+    this.prune = m => { try { if (window.caches && m.packs) caches.open('boti-voice').then(c => c.keys().then(ks => ks.forEach(k => { if (!m.packs.some(p => k.url.endsWith('/' + (p.f || p.file || p)))) c.delete(k); }))).catch(() => {}); } catch (e) { /* no cache storage here */ } };
+    this.ready = fetch('voice/manifest.json?b=' + (typeof BUILD === 'string' ? BUILD : '')).then(r => (r.ok ? r.json() : null)).then(m => { if (m && m.lines) { this.man = m; this.prune(m); this.pack(0); if (!(navigator.connection && navigator.connection.saveData)) m.packs.forEach((_, i) => setTimeout(() => this.pack(i), 4000 + i * 1500)); } }).catch(() => {});
     if ('speechSynthesis' in window) {
       const pv = () => { const vs = speechSynthesis.getVoices() || []; this.heb = vs.find(v => /^(he|iw)/i.test(v.lang)) || null; };
       pv(); try { speechSynthesis.addEventListener('voiceschanged', pv); } catch (e) { /* older browsers */ }
@@ -1270,8 +1285,17 @@ const V = {};
     ['goal', '🥅', 'שער'], ['bottle', '🍼', 'בקבוק'], ['baby', '👶', 'תינוק']]);
   add('nature', [['sun', '☀️', 'שמש', '', 'f'], ['moon', '🌙', 'ירח'], ['star', '⭐', 'כוכב', 'כוכבים'], ['cloud', '☁️', 'ענן', 'עננים'], ['tree', '🌳', 'עץ', 'עצים'],
     ['flower', '🌸', 'פרח', 'פרחים'], ['rain', '🌧️', 'גשם'], ['rainbow', '🌈', 'קשת', '', 'f'], ['fire', '🔥', 'אש', '', 'f'], ['sea', '🌊', 'ים'], ['snowman', '⛄', 'איש שלג']]);
+  // more groups, for "odd one out" and "what group is it" (the same groups the kindergarten sheets use)
+  add('furniture', [['chair', '🪑', 'כיסא'], ['sofa', '🛋️', 'ספה', '', 'f']]);
+  add('music', [['piano', '🎹', 'פסנתר'], ['trumpet', '🎺', 'חצוצרה', '', 'f'], ['violin', '🎻', 'כינור']]);
+  add('kitchen', [['plate', '🍽️', 'צלחת', '', 'f'], ['knife', '🔪', 'סכין']]);
+  add('toy', [['kite', '🪁', 'עפיפון']]);
+  add('animal', [['tiger', '🐯', 'נמר'], ['giraffe', '🦒', 'ג\'ירפה', '', 'f']]);
+  Object.entries({ bed: 'furniture', drum: 'music', guitar: 'music', spoon: 'kitchen', bowl: 'kitchen', cup: 'kitchen', ball: 'toy', balloon: 'toy', teddy: 'toy' }).forEach(([k, c]) => { V[k].c = c; });
 })();
-const CAT = { animal: ['חיות', '🐾', 'חיה'], food: ['אוכל', '🍽️', 'אוכל'], vehicle: ['כלי רכב', '🛣️', 'כלי רכב'], clothes: ['בגדים', '🧺', 'בגד'] };
+const CAT = { animal: ['חיות', '🐾', 'חיה'], food: ['אוכל', '🍎', 'אוכל'], vehicle: ['כלי רכב', '🛣️', 'כלי רכב'], clothes: ['בגדים', '🧺', 'בגד'],
+  furniture: ['רהיטים', '🏠', 'רהיט'], music: ['כלי נגינה', '🎵', 'כלי נגינה'], kitchen: ['כלי אוכל', '🍽️', 'כלי אוכל'], toy: ['צעצועים', '🧩', 'צעצוע'] };
+const CAT_BASE = ['animal', 'food', 'vehicle', 'clothes'];
 const byCat = c => Object.values(V).filter(w => w.c === c).map(w => w.k);
 const VOCAB_L = [   // vocabulary tiers: everyday first
   ['dog', 'cat', 'ball', 'apple', 'banana', 'car', 'shoe', 'sun', 'fish', 'bed', 'book', 'flower', 'bus', 'cup', 'hat', 'balloon'],
@@ -1342,16 +1366,28 @@ const FEELS = [
 ];
 
 // what happens next / put the story in order
+// three pictures that tell one small story (drawn in 36-kids.js): what Boti says about each
+const KSTORIES = {
+  plant: ['קודם הילדה שמה זרע.', 'אחר כך היא משקה.', 'בסוף גדל פרח!'],
+  fall: ['קודם הילד רץ.', 'אחר כך הוא נופל.', 'בסוף אמא שמה פלסטר.'],
+  tower: ['קודם יש קוביות.', 'אחר כך הילד בונה מגדל.', 'בסוף המגדל נופל!'],
+  ice: ['קודם לילדה יש גלידה.', 'אחר כך היא אוכלת.', 'בסוף הגלידה נגמרה.'],
+  bath: ['קודם הילד מלוכלך.', 'אחר כך הוא מתרחץ.', 'בסוף הוא נקי.'],
+  balloon: ['קודם לילדה יש בלון.', 'אחר כך הבלון עף.', 'בסוף הילדה בוכה.'],
+};
+const KF = (id, others) => ({ id: 'k_' + id, s: [1, 2, 3].map(n => ({ kf: id + n })), d: others.map(o => ({ kf: o })), tell: KSTORIES[id] });
 const SEQS = [
-  { id: 'chick', s: ['🥚', '🐣', '🐥'], d: ['🐟', '🍎', '🚗'] },
-  { id: 'plant', s: ['🌱', '🌿', '🌻'], d: ['⚽', '🐱', '🧦'] },
-  { id: 'rain', s: ['☁️', '🌧️', '🌈'], d: ['🔥', '🚗', '🍌'] },
-  { id: 'snow', s: ['❄️', '⛄', '💧'], d: ['🌻', '🐶', '🚌'] },
-  { id: 'day', s: ['🌙', '🌅', '☀️'], d: ['🍕', '🧸', '🐸'] },
-  { id: 'grow', s: ['👶', '🧒', '🧑'], d: ['🐥', '🚗', '🍎'] },
-  { id: 'bath', s: [{ scene: 'dirty' }, { scene: 'wash' }, { scene: 'clean' }], d: [{ scene: 'eat' }, { scene: 'kick' }, { scene: 'read' }] },
-  { id: 'sleep', s: [{ scene: 'sleepy' }, { scene: 'sleep' }, { scene: 'wake' }], d: [{ scene: 'wash' }, { scene: 'kick' }, { scene: 'cry' }] },
-  { id: 'eat', s: [{ scene: 'hungry' }, { scene: 'eat' }, { scene: 'full' }], d: [{ scene: 'sleep' }, { scene: 'jump' }, { scene: 'cry' }] },
+  { id: 'chick', s: ['🥚', '🐣', '🐥'], d: ['🐟', '🍎', '🚗'], tell: ['קודם יש ביצה.', 'אחר כך הביצה נפתחת.', 'בסוף יוצא אפרוח!'] },
+  { id: 'plant', s: ['🌱', '🌿', '🌻'], d: ['⚽', '🐱', '🧦'], tell: ['קודם יש עלה קטן.', 'אחר כך הוא גדל.', 'בסוף יש פרח!'] },
+  { id: 'rain', s: ['☁️', '🌧️', '🌈'], d: ['🔥', '🚗', '🍌'], tell: ['קודם יש ענן.', 'אחר כך יורד גשם.', 'בסוף יש קשת!'] },
+  { id: 'snow', s: ['❄️', '⛄', '💧'], d: ['🌻', '🐶', '🚌'], tell: ['קודם יורד שלג.', 'אחר כך בונים איש שלג.', 'בסוף הוא נמס.'] },
+  { id: 'day', s: ['🌙', '🌅', '☀️'], d: ['🍕', '🧸', '🐸'], tell: ['קודם לילה.', 'אחר כך השמש עולה.', 'בסוף יום!'] },
+  { id: 'grow', s: ['👶', '🧒', '🧑'], d: ['🐥', '🚗', '🍎'], tell: ['קודם תינוק.', 'אחר כך ילד.', 'בסוף איש גדול!'] },
+  { id: 'bath', s: [{ scene: 'dirty' }, { scene: 'wash' }, { scene: 'clean' }], d: [{ scene: 'eat' }, { scene: 'kick' }, { scene: 'read' }], tell: ['קודם בוטי מלוכלך.', 'אחר כך הוא מתרחץ.', 'בסוף בוטי נקי!'] },
+  { id: 'sleep', s: [{ scene: 'sleepy' }, { scene: 'sleep' }, { scene: 'wake' }], d: [{ scene: 'wash' }, { scene: 'kick' }, { scene: 'cry' }], tell: ['קודם בוטי עייף.', 'אחר כך הוא ישן.', 'בסוף הוא קם!'] },
+  { id: 'eat', s: [{ scene: 'hungry' }, { scene: 'eat' }, { scene: 'full' }], d: [{ scene: 'sleep' }, { scene: 'jump' }, { scene: 'cry' }], tell: ['קודם בוטי רעב.', 'אחר כך הוא אוכל.', 'בסוף הוא שבע!'] },
+  KF('plant', ['tower3', 'balloon3', 'bath2']), KF('fall', ['ice2', 'plant3', 'tower2']), KF('tower', ['bath3', 'fall2', 'ice3']),
+  KF('ice', ['plant2', 'fall3', 'balloon2']), KF('bath', ['tower3', 'ice1', 'plant3']), KF('balloon', ['bath3', 'tower2', 'fall3']),
   { id: 'bfly', s: ['🐛', '🦋'], d: ['🐟', '🍞', '🚲'] },
   { id: 'gift', s: ['🎁', '🧸'], d: ['🌧️', '🥕', '🚪'] },
   { id: 'build', s: ['🧱', '🏠'], d: ['🐮', '🍓', '👖'] },
@@ -1376,21 +1412,25 @@ const SKILLS = {
   follow: { n: 'הקשבה להוראות', d: 'lang', max: 4, pg: '', can: ['הוראה אחת', 'הוראה עם תיאור (הכלב הגדול)', 'שתי הוראות ברצף', 'שלוש הוראות ברצף'], tip: 'משחק שליח: "תביא את הנעל ואז שים אותה ליד הדלת".' },
   prep: { n: 'על / מתחת / בתוך / ליד', d: 'lang', max: 4, pg: '11', can: ['על / מתחת', 'גם ליד', 'גם בתוך, שני מקומות', 'שני חפצים, שני מקומות'], tip: 'משחקים עם בובה: "שים את הדובי מתחת לכיסא".' },
   assoc: { n: 'מה מתאים למה', d: 'lang', max: 3, pg: '', can: ['זוגות פשוטים', 'מתוך 3 אפשרויות', 'מתוך 4 אפשרויות'], tip: 'בזמן התלבשות ובישול: "מה הולך עם הגרב?", "מה שמים בתוך הכוס?".' },
-  seq: { n: 'מה קורה אחר כך', d: 'lang', max: 3, pg: '10', can: ['משלים סיפור של 2 שלבים', 'משלים סיפור של 3 שלבים', 'מסדר 3 תמונות לפי הסדר'], tip: 'מספרים את סדר היום: "קודם אמבטיה, אחר כך פיג\'מה, ואז סיפור".' },
+  seq: { n: 'סיפור ברצף', d: 'lang', max: 3, pg: '10', can: ['משלים סיפור של 2 שלבים', 'משלים סיפור של 3 שלבים', 'מסדר 3 תמונות לפי הסדר ומספר'], tip: 'מספרים את סדר היום: "קודם אמבטיה, אחר כך פיג\'מה, ואז סיפור".' },
   sort: { n: 'מיון לקבוצות', d: 'think', max: 3, pg: '', can: ['חיות / אוכל', 'ארבע קבוצות', 'שלוש קבוצות ביחד'], tip: 'ממיינים כביסה, צעצועים, קניות: "זה אוכל או בגד?".' },
   pattern: { n: 'רצפים ודפוסים', d: 'think', max: 3, pg: '', can: ['א-ב-א-ב', 'א-א-ב / א-ב-ב', 'א-ב-ג'], tip: 'בונים רכבת קוביות: אדום-כחול-אדום-כחול, "מה עכשיו?".' },
-  same: { n: 'אותו דבר / שונה', d: 'think', max: 4, pg: '13', can: ['מוצא זהה', 'מוצא את השונה', 'שונה מאותה קבוצה', 'הבדל קטן (הפוך / קטן)'], tip: 'משחק הזיכרון מהחוברת, וזוגות גרביים.' },
+  same: { n: 'אותו דבר / שונה', d: 'think', max: 4, pg: '13', can: ['מוצא זהה', 'מוצא את השונה', 'צורת קו שונה (פתוחה / הפוכה)', 'הבדל קטן בתמונה (הפוך / קטן)'], tip: 'משחק הזיכרון מהחוברת, וזוגות גרביים.' },
   shadow: { n: 'צללים', d: 'think', max: 3, pg: '14', can: ['מתוך 2', 'מתוך 3', 'מתוך 4'], tip: 'פנס וצעצועים על הקיר: "של מי הצל?".' },
   size: { n: 'גדול / קטן', d: 'think', max: 4, pg: '12', can: ['גדול / קטן', 'הכי גדול / הכי קטן', 'מסדר 3 לפי גודל', 'מסדר 4 לפי גודל'], tip: 'מסדרים נעליים, כפות, קופסאות מהקטן לגדול.' },
   puzzle: { n: 'השלמת תמונה', d: 'think', max: 3, pg: '', can: ['חצי תמונה מתוך 2', 'מתוך 3', 'חצי עליון / תחתון'], tip: 'פאזלים של 2–4 חלקים, וגזירת תמונה לשניים.' },
   memory: { n: 'זיכרון (כוסות)', d: 'think', max: 4, pg: '16', can: ['2 כוסות', '3 כוסות, החלפה אחת', '3 כוסות, 3 החלפות', '4 כוסות'], tip: 'מחביאים צעצוע מתחת לאחת משלוש כוסות ומזיזים.' },
-  missing: { n: 'מה נעלם?', d: 'think', max: 3, pg: '', can: ['זוכר 2 חפצים', 'זוכר 3 חפצים', 'זוכר 4 חפצים'], tip: 'שלושה צעצועים על השולחן, עוצמים עיניים, אחד נעלם.' },
+  missing: { n: 'זיכרון חזותי: מה נעלם?', d: 'think', max: 4, pg: '', can: ['זוכר 2 חפצים', 'זוכר 3 חפצים', 'זוכר 4 חפצים', 'זוכר 5 חפצים'], tip: 'שלושה צעצועים על השולחן, עוצמים עיניים, אחד נעלם.' },
   color: { n: 'צבעים', d: 'think', max: 3, pg: '', can: ['4 צבעי יסוד', '7 צבעים', 'צבע + צורה'], tip: '"תביא לי משהו אדום". צבעים בבגדים ובאוכל.' },
   shape: { n: 'צורות', d: 'think', max: 3, pg: '', can: ['עיגול / ריבוע / משולש', 'גם כוכב ולב', 'צורה + צבע'], tip: 'מחפשים צורות בבית: צלחת עגולה, חלון מרובע.' },
   draw: { n: 'ציור פרצוף', d: 'draw', max: 3, pg: '6–7', can: ['עובר על קווים מנוקדים', 'מצייר עיגול ופה לבד', 'מצייר פרצוף שלם לבד'], tip: 'מציירים יחד על דף גדול: עיגול, עיניים, אף, פה. גם בחול ובאדים על המראה.' },
   opp: { n: 'הפכים (חם, קר, למעלה...)', d: 'lang', max: 4, pg: '12', can: ['חם / קר, גדול / קטן, למעלה / למטה', 'גם בפנים / בחוץ, רטוב / יבש', 'גם נקי / מלוכלך, פתוח / סגור', 'גם מהר / לאט, מלא / ריק, יום / לילה, ארוך / קצר'], tip: 'מילה אחת בכל פעם: "חם" מול "לא חם" על הרבה דברים (מרק, תה, אמבטיה). רק אחרי כמה ימים מוסיפים "קר".' },
   season: { n: 'עונות השנה', d: 'lang', max: 3, pg: '', can: ['מבדיל חורף מקיץ', 'מזהה את ארבע העונות', 'יודע מה קורה ומה מתאים בכל עונה'], tip: 'מסתכלים מהחלון: "עכשיו חורף, יורד גשם, לובשים מעיל". בספרים: "איזו עונה כאן? איך יודעים?".' },
   scene: { n: 'ניתוח תמונה: מי עושה מה', d: 'lang', max: 3, pg: '9, 10', can: ['מוצא פעולה בתמונה עם שתי דמויות', 'בתמונה עם שלוש דמויות', 'עונה על שתי שאלות על אותה תמונה'], tip: 'בספר או בתמונה משפחתית: "מי אוכל? מי ישן? מה עוד קורה כאן?". מתארים יחד שתי פעולות: "אבא קורא, והתינוק ישן".' },
+  story: { n: 'מדרש תמונה (לספר מה קורה)', d: 'lang', max: 3, pg: '9, 10', can: ['מוצא בתמונה מי עושה מה', 'עונה על שתי שאלות ואומר מה הדמות עושה', 'עונה על שלוש שאלות ומספר לבד מה קורה'], tip: 'כל תמונה בספר או בטלפון: "מי פה? מה הוא עושה? איפה הם?". קודם מספרים לו משפט קצר על כל דמות, ואחר כך מחכים שיוסיף משלו.' },
+  odd: { n: 'יוצא דופן', d: 'think', max: 3, pg: '', can: ['קבוצות רחוקות (חיות / כלי רכב)', 'גם קבוצות קרובות', 'חמש תמונות (כלי נגינה / צעצועים, כלי אוכל)'], tip: 'שלושה חפצים מאותה קבוצה ואחד אחר: "מה לא שייך?". תמיד אומרים את שם הקבוצה: "אלה חיות, וכיסא הוא לא חיה".' },
+  group: { n: 'קטגוריות והכללה', d: 'lang', max: 3, pg: '', can: ['מוצא חיה / אוכל / בגד / כלי רכב', 'גם רהיט, כלי נגינה, כלי אוכל, צעצוע', 'מוצא מה עוד שייך ואומר את שם הקבוצה'], tip: 'בסידור הבית: "כל הצעצועים לארגז, כל הבגדים לסל". "כלב, חתול ופרה. כולם..." ומחכים שישלים.' },
+  copy: { n: 'העתקת צורות (קו, עיגול, פלוס)', d: 'draw', max: 5, pg: '', can: ['עובר על קו עומד ושוכב', 'עובר על עיגול ופלוס', 'מעתיק לבד קו ועיגול', 'מעתיק לבד פלוס, ריבוע וקו באלכסון', 'מעתיק לבד איקס ומשולש'], tip: 'על דף עם טוש עבה: מציירים קו, והוא מצייר לידו. הסדר: קו עומד, קו שוכב, עיגול, פלוס, ריבוע, אלכסון, איקס, משולש. במשחק זו אצבע; עיפרון ומספריים מתרגלים רק על דף.' },
   body: { n: 'חלקי גוף', d: 'lang', max: 2, pg: '6–7', can: ['חלקי הפנים', 'חלקי הגוף'], tip: 'במקלחת ובהתלבשות: "איפה הבטן? איפה הרגל?".' },
 };
 const DOMAINS = { num: 'מספרים', lang: 'שפה והבנה', think: 'חשיבה וזיכרון', draw: 'ציור' };
@@ -2486,6 +2526,217 @@ function drawBusyScene(c, figs, t) {
   c.restore();
 }
 
+// ------------------------------------------------------------------ people: one simple puppet (child, parent, baby) posed by numbers
+// Angles are measured from "straight down"; a positive angle swings the limb towards the side the figure faces.
+const PEOPLE = {
+  boy: { skin: '#ffd3b0', hair: '#5d4037', top: '#42a5f5', bot: '#37474f', shoe: '#e53935' },
+  girl: { skin: '#f5c7a1', hair: '#3e2723', top: '#ec407a', bot: '#ec407a', shoe: '#7e57c2', girl: 1 },
+  mom: { skin: '#f1c27d', hair: '#6d4c41', top: '#26a69a', bot: '#5c6bc0', shoe: '#5d4037', tall: 1, girl: 2 },
+  dad: { skin: '#e0ac69', hair: '#263238', top: '#ffa726', bot: '#455a64', shoe: '#3e2723', tall: 1 },
+  baby: { skin: '#ffd9c0', hair: '#8d6e63', top: '#fff59d', bot: '#fff59d', shoe: '#ffd9c0', baby: 1 },
+};
+function drawPerson(c, x, y, s, kind, p) {
+  const K = Object.assign({}, PEOPLE[kind], (p && p.wear) || null); p = p || {};
+  const dir = p.dir || 1, L = K.tall ? 15 : K.baby ? 6 : 10, TH = K.tall ? 27 : K.baby ? 14 : 19, TW = K.tall ? 17 : K.baby ? 15 : 14, HR = K.tall ? 12 : 11.5, AL = K.tall ? 12.5 : K.baby ? 6.5 : 9;
+  const aL = p.aL || [-0.18, -0.06], aR = p.aR || [0.18, 0.06], lL = p.lL || (p.sit ? [1.5, 0.15] : [-0.07, 0]), lR = p.lR || (p.sit ? [1.42, 0.05] : [0.07, 0]);
+  const hy = p.sit ? 0 : -2 * L, legCol = K.girl === 1 || K.baby ? K.skin : K.bot;
+  c.save(); c.translate(x, y); c.scale(s * dir, s); c.lineCap = 'round'; c.lineJoin = 'round';
+  const seg = (x0, y0, a, l, w, c1, c2) => {
+    const x1 = x0 + Math.sin(a[0]) * l, y1 = y0 + Math.cos(a[0]) * l, x2 = x1 + Math.sin(a[1]) * l, y2 = y1 + Math.cos(a[1]) * l;
+    c.beginPath(); c.moveTo(x0, y0); c.lineTo(x1, y1); c.lineTo(x2, y2); c.lineWidth = w + 2.6; c.strokeStyle = INK; c.stroke(); c.lineWidth = w; c.strokeStyle = c2; c.stroke();
+    if (c1 !== c2) { c.beginPath(); c.moveTo(x0, y0); c.lineTo(x1, y1); c.strokeStyle = c1; c.stroke(); }
+    return [x2, y2];
+  };
+  const leg = (a, ox) => { const [fx, fy] = seg(ox, hy, a, L, 5.6, legCol, legCol); c.save(); c.translate(fx, fy); c.rotate(-a[1]); c.beginPath(); c.ellipse(2.4, 0.4, 5.2, 3.2, 0, 0, 7); fillStroke(c, K.shoe, 1.6); c.restore(); };
+  const arm = (a, sx, sh) => { const h = seg(sx, sh, a, AL, 4.6, K.top, K.skin); c.beginPath(); c.arc(h[0], h[1], 3.1, 0, 7); fillStroke(c, K.skin, 1.5); return h; };
+  if (!p.noLegs) { leg(lL, -3); leg(lR, 3); }
+  c.translate(0, hy); if (p.lean) c.rotate(p.lean);
+  const sh = -TH + 4, hl = arm(aL, -TW / 2 + 2.5, sh);
+  if (p.inL) { c.save(); c.translate(hl[0], hl[1]); p.inL(c); c.restore(); }
+  if (K.girl === 1) { c.beginPath(); c.moveTo(-TW / 2 + 1, -TH + 4); c.quadraticCurveTo(0, -TH - 2, TW / 2 - 1, -TH + 4); c.lineTo(TW / 2 + 5, 7); c.lineTo(-TW / 2 - 5, 7); c.closePath(); fillStroke(c, K.top, 2); }
+  else { rrect(c, -TW / 2, -TH, TW, TH + 3, [6, 6, 3, 3]); fillStroke(c, K.top, 2); if (!K.baby) { rrect(c, -TW / 2, -4, TW, 7, 2); fillStroke(c, K.bot, 2); } }
+  if (p.apron) { rrect(c, -TW / 2 + 2, -TH + 9, TW - 4, TH - 4, 3); fillStroke(c, '#fff', 1.6); }
+  // head
+  const look = p.look || 0, hx = look * 1.5, hcy = -TH - HR + 3;
+  if (K.girl === 2) { c.beginPath(); c.ellipse(hx - 1, hcy + 4, HR + 2.6, HR + 6, 0, 0, 7); fillStroke(c, K.hair, 2); }
+  if (K.girl === 1) for (const sx of [-1, 1]) { c.beginPath(); c.arc(hx + sx * (HR + 2.6), hcy + 2, 4.8, 0, 7); fillStroke(c, K.hair, 1.8); }
+  c.beginPath(); c.arc(hx, hcy, HR, 0, 7); fillStroke(c, K.skin, 2);
+  if (K.baby) { c.beginPath(); c.moveTo(hx - 2, hcy - HR + 1); c.quadraticCurveTo(hx + 4, hcy - HR - 7, hx + 6, hcy - HR + 1); c.lineWidth = 2.2; c.strokeStyle = K.hair; c.stroke(); }
+  else { c.beginPath(); c.arc(hx, hcy, HR + 0.5, Math.PI, 0); c.quadraticCurveTo(hx + HR * 0.55, hcy - HR * 0.6, hx + 1, hcy - HR * 0.42); c.quadraticCurveTo(hx - HR * 0.5, hcy - HR * 0.3, hx - HR - 0.5, hcy); c.closePath(); fillStroke(c, K.hair, 1.8); }
+  const ex = hx + look * 2.2, ey = hcy + 1.8;
+  c.fillStyle = 'rgba(255,110,110,0.32)'; for (const sx of [-1, 1]) { c.beginPath(); c.arc(ex + sx * 6.6, ey + 3.8, 2.3, 0, 7); c.fill(); }
+  c.lineWidth = 1.6; c.strokeStyle = INK; c.fillStyle = INK;
+  for (const sx of [-1, 1]) { c.beginPath(); if (p.face === 'sleep') { c.arc(ex + sx * 4.2, ey - 0.5, 2.2, 0.2, Math.PI - 0.2); c.stroke(); } else if (p.face === 'sad') { c.arc(ex + sx * 4.2, ey, 1.5, 0, 7); c.fill(); c.beginPath(); c.moveTo(ex + sx * 6.4, ey - 3.2); c.lineTo(ex + sx * 2.4, ey - 4.6); c.stroke(); } else { c.arc(ex + sx * 4.2, ey, 1.6, 0, 7); c.fill(); } }
+  c.beginPath();
+  if (p.face === 'open') { c.ellipse(ex, ey + 5.6, 2.7, 2.3, 0, 0, 7); c.fillStyle = '#c62828'; c.fill(); c.stroke(); }
+  else if (p.face === 'o' || p.face === 'sleep') { c.arc(ex, ey + 5.6, 1.3, 0, 7); c.stroke(); }
+  else if (p.face === 'sad') { c.arc(ex, ey + 8.4, 3.2, Math.PI * 1.2, Math.PI * 1.8); c.stroke(); }
+  else { c.arc(ex, ey + 3.4, 3.5, 0.3, Math.PI - 0.3); c.stroke(); }
+  if (p.tears) { c.fillStyle = '#4fc3f7'; for (const sx of [-1, 1]) { c.beginPath(); c.ellipse(ex + sx * 5.4, ey + 5, 1.5, 2.6, 0, 0, 7); c.fill(); } }
+  if (p.dirty) { c.fillStyle = 'rgba(109,76,65,0.85)'; [[-4, -TH + 10, 3], [3, -6, 3.4], [hx + 5, hcy + 5, 2.2], [-2, -TH + 16, 2]].forEach(([a, b, r]) => { c.beginPath(); c.arc(a, b, r, 0, 7); c.fill(); }); }
+  const hr = arm(aR, TW / 2 - 2.5, sh);
+  if (p.inR) { c.save(); c.translate(hr[0], hr[1]); p.inR(c); c.restore(); }
+  c.restore();
+}
+// a dog (running) or a cat (head down, drinking), drawn facing right; dir -1 turns it round
+function drawAnimal(c, x, y, s, kind, dir) {
+  c.save(); c.translate(x, y); c.scale(s * (dir || 1), s); c.lineCap = 'round'; c.lineJoin = 'round';
+  const dog = kind === 'dog', col = dog ? '#c98a4b' : '#ffa53d', dk = dog ? '#8d5a2b' : '#e07b1a';
+  const leg = (x0, y0, a) => { const x1 = x0 + Math.sin(a) * 13, y1 = y0 + Math.cos(a) * 13; c.beginPath(); c.moveTo(x0, y0); c.lineTo(x1, y1); c.lineWidth = 7; c.strokeStyle = INK; c.stroke(); c.lineWidth = 4.2; c.strokeStyle = col; c.stroke(); };
+  c.beginPath(); c.moveTo(-15, -18); c.quadraticCurveTo(-27, -22, -25, -34); c.lineWidth = 6.5; c.strokeStyle = INK; c.stroke(); c.lineWidth = 3.8; c.strokeStyle = dk; c.stroke();
+  if (dog) { leg(-11, -13, -0.95); leg(-8, -13, -0.4); leg(10, -13, 0.55); leg(13, -13, 1.1); } else { leg(-10, -12, -0.08); leg(-6, -12, 0.1); leg(8, -12, 0.2); leg(12, -12, 0.4); }
+  c.beginPath(); c.ellipse(0, -16, 17, 9.5, dog ? 0 : 0.1, 0, 7); fillStroke(c, col, 2);
+  const hx = dog ? 19 : 19, hy = dog ? -27 : -13;
+  if (dog) { c.beginPath(); c.ellipse(hx + 8, hy + 3, 6.2, 4.3, 0.15, 0, 7); fillStroke(c, col, 2); }
+  else for (const sx of [-1, 1]) { c.beginPath(); c.moveTo(hx + sx * 7 - 1, hy - 4); c.lineTo(hx + sx * 6, hy - 13); c.lineTo(hx + sx * 1.5, hy - 7.5); c.closePath(); fillStroke(c, dk, 1.8); }
+  c.beginPath(); c.arc(hx, hy, 8.6, 0, 7); fillStroke(c, col, 2);
+  if (dog) {
+    c.beginPath(); c.ellipse(hx - 5, hy - 1, 4, 7.6, 0.5, 0, 7); fillStroke(c, dk, 1.8);
+    c.fillStyle = INK; c.beginPath(); c.arc(hx + 13.6, hy + 2, 2, 0, 7); c.fill(); c.beginPath(); c.arc(hx + 3, hy - 2.4, 1.7, 0, 7); c.fill();
+    c.strokeStyle = '#e53935'; c.lineWidth = 2.6; c.beginPath(); c.moveTo(hx + 9, hy + 7); c.lineTo(hx + 10.5, hy + 11.5); c.stroke();
+  } else {
+    c.fillStyle = INK; c.beginPath(); c.arc(hx + 3.4, hy - 1.4, 1.5, 0, 7); c.fill(); c.beginPath(); c.arc(hx + 8.2, hy + 2.4, 1.3, 0, 7); c.fill();
+    c.strokeStyle = dk; c.lineWidth = 1.7; for (const dx of [-7, -2, 3]) { c.beginPath(); c.moveTo(dx, -24.6); c.lineTo(dx + 1, -19); c.stroke(); }
+    c.strokeStyle = '#ff6f91'; c.lineWidth = 2.4; c.beginPath(); c.moveTo(hx + 6.5, hy + 5.5); c.lineTo(hx + 8.5, hy + 9.5); c.stroke();
+  }
+  c.restore();
+}
+const speedLines = (c, pts) => { c.strokeStyle = 'rgba(29,35,64,0.32)'; c.lineWidth = 3; c.lineCap = 'round'; pts.forEach(([a, b, d, e]) => { c.beginPath(); c.moveTo(a, b); c.lineTo(d, e); c.stroke(); }); };
+const pole = (c, x0, y0, x1, y1, w, col) => { c.lineCap = 'round'; c.beginPath(); c.moveTo(x0, y0); c.lineTo(x1, y1); c.lineWidth = w + 3; c.strokeStyle = INK; c.stroke(); c.lineWidth = w; c.strokeStyle = col; c.stroke(); };
+function wateringCan(c) { c.save(); c.rotate(0.35); rrect(c, -4, -2, 20, 15, 3); fillStroke(c, '#4dd0e1', 1.8); c.beginPath(); c.moveTo(16, 3); c.lineTo(28, -5); c.lineWidth = 5.5; c.strokeStyle = INK; c.stroke(); c.lineWidth = 3; c.strokeStyle = '#4dd0e1'; c.stroke(); c.restore(); }
+const drops = (c, x, y, n) => { c.fillStyle = '#4fc3f7'; for (let i = 0; i < n; i++) { c.beginPath(); c.ellipse(x + (i % 3) * 6 - 4, y + i * 7, 1.8, 3, 0, 0, 7); c.fill(); } };
+const flowerPot = (c, x, y, stage) => {
+  c.beginPath(); c.moveTo(x - 20, y - 26); c.lineTo(x + 20, y - 26); c.lineTo(x + 14, y); c.lineTo(x - 14, y); c.closePath(); fillStroke(c, '#d2691e', 2.2); rrect(c, x - 23, y - 32, 46, 8, 3); fillStroke(c, '#e07b39', 2.2);
+  if (stage === 1) { c.strokeStyle = '#43a047'; c.lineWidth = 3.5; c.lineCap = 'round'; c.beginPath(); c.moveTo(x, y - 32); c.lineTo(x, y - 46); c.stroke(); c.fillStyle = '#66bb6a'; c.beginPath(); c.ellipse(x + 6, y - 46, 6, 3.4, -0.5, 0, 7); c.fill(); c.beginPath(); c.ellipse(x - 6, y - 42, 6, 3.4, 0.5, 0, 7); c.fill(); }
+  if (stage === 2) { c.strokeStyle = '#43a047'; c.lineWidth = 4.5; c.lineCap = 'round'; c.beginPath(); c.moveTo(x, y - 32); c.lineTo(x, y - 84); c.stroke(); c.fillStyle = '#66bb6a'; c.beginPath(); c.ellipse(x + 10, y - 54, 10, 5, -0.5, 0, 7); c.fill(); c.beginPath(); c.ellipse(x - 10, y - 62, 10, 5, 0.5, 0, 7); c.fill(); emoji(c, '🌻', x, y - 96, 46); }
+};
+const blocks = (c, x, y, n, sz) => { const cols = ['#ef5350', '#42a5f5', '#ffca28', '#66bb6a', '#ab47bc']; for (let i = 0; i < n; i++) { rrect(c, x - sz / 2 + (i % 2 ? 2 : -2), y - (i + 1) * sz, sz, sz, 3); fillStroke(c, cols[i % cols.length], 2); } };
+
+// ------------------------------------------------------------------ picture stories ("midrash tmuna"): one scene, several people, each doing something
+const KS_W = 400, KS_H = 250;
+const WHO = { boy: 'הילד', girl: 'הילדה', mom: 'אמא', dad: 'אבא', baby: 'התינוק', dog: 'הכלב', cat: 'החתול' };
+const KSCENES = {
+  kitchen: { where: 'הם במטבח.', figs: [
+    { who: 'dad', v: 'מבשל', box: [70, 74, 146, 244] }, { who: 'girl', v: 'שוטפת צלחת', box: [150, 96, 226, 244] },
+    { who: 'boy', v: 'אוכל', box: [286, 104, 384, 200] }, { who: 'cat', v: 'שותה חלב', box: [190, 200, 282, 249] }] },
+  park: { where: 'הם בגן שעשועים.', figs: [
+    { who: 'girl', v: 'מתנדנדת', box: [60, 92, 150, 212] }, { who: 'boy', v: 'מתגלש', box: [256, 76, 346, 190] },
+    { who: 'dog', v: 'רץ', box: [150, 192, 246, 249] }, { who: 'mom', v: 'יושבת', box: [186, 88, 262, 190] }] },
+  room: { where: 'הם בחדר.', figs: [
+    { who: 'baby', v: 'ישן', box: [10, 90, 152, 186] }, { who: 'girl', v: 'קוראת ספר', box: [160, 132, 250, 240] }, { who: 'boy', v: 'בונה מגדל', box: [262, 96, 372, 244] }] },
+  garden: { where: 'הם בגינה.', figs: [
+    { who: 'mom', v: 'תולה כביסה', box: [34, 80, 150, 240] }, { who: 'boy', v: 'בועט בכדור', box: [172, 100, 274, 204] }, { who: 'girl', v: 'משקה פרחים', box: [278, 132, 398, 246] }] },
+};
+const ksSay = f => `${WHO[f.who]} ${f.v}.`, ksAsk = f => `מי ${f.v}?`, ksWhat = f => `מה ${WHO[f.who]} עושה?`;
+function drawKScene(c, key, t) {
+  c.save(); rrect(c, 0, 0, KS_W, KS_H, 16); c.clip(); c.lineJoin = 'round';
+  const sky = (a, b, y) => { const g = c.createLinearGradient(0, 0, 0, y); g.addColorStop(0, a); g.addColorStop(1, b); c.fillStyle = g; c.fillRect(0, 0, KS_W, y); };
+  const grass = y => { c.fillStyle = '#8fd47a'; c.beginPath(); c.moveTo(0, KS_H); c.lineTo(0, y + 8); c.quadraticCurveTo(KS_W / 2, y - 8, KS_W, y + 8); c.lineTo(KS_W, KS_H); c.closePath(); c.fill(); c.fillStyle = '#7cc76a'; for (let x = 14; x < KS_W; x += 52) { c.beginPath(); c.ellipse(x, KS_H - 8 - (x % 3) * 9, 16, 4, 0, 0, 7); c.fill(); } };
+  if (key === 'kitchen') {
+    c.fillStyle = '#fff1d0'; c.fillRect(0, 0, 400, 190); c.fillStyle = '#e8c79c'; c.fillRect(0, 190, 400, 60);
+    c.strokeStyle = 'rgba(120,80,40,0.22)'; c.lineWidth = 1.5; for (let x = -30; x < 460; x += 56) { c.beginPath(); c.moveTo(x + 22, 190); c.lineTo(x, 250); c.stroke(); } c.beginPath(); c.moveTo(0, 216); c.lineTo(400, 216); c.stroke();
+    rrect(c, 250, 22, 84, 64, 6); fillStroke(c, '#bfe6ff', 3); emoji(c, '☀️', 312, 42, 24); c.beginPath(); c.moveTo(292, 22); c.lineTo(292, 86); c.moveTo(250, 54); c.lineTo(334, 54); c.lineWidth = 3; c.strokeStyle = INK; c.stroke();
+    rrect(c, 112, 30, 100, 44, 4); fillStroke(c, '#c98f5e', 2.5); c.beginPath(); c.moveTo(162, 30); c.lineTo(162, 74); c.lineWidth = 2; c.stroke();      // wall cupboard
+    rrect(c, 6, 154, 234, 44, 4); fillStroke(c, '#c98f5e', 2.5); rrect(c, 2, 146, 242, 11, 4); fillStroke(c, '#f6ecdd', 2.5);                       // counter
+    for (const x of [16, 72, 128, 184]) { rrect(c, x, 164, 46, 28, 3); fillStroke(c, '#b57d4f', 1.5); c.beginPath(); c.arc(x + 38, 178, 2, 0, 7); fillStroke(c, '#ffe082', 1); }
+    rrect(c, 14, 140, 66, 8, 2); fillStroke(c, '#455a64', 2);                                                                                       // stove
+    rrect(c, 26, 114, 44, 28, 5); fillStroke(c, '#ef5350', 2.5); rrect(c, 19, 120, 9, 6, 2); fillStroke(c, '#ef5350', 2); rrect(c, 68, 120, 9, 6, 2); fillStroke(c, '#ef5350', 2);
+    c.strokeStyle = 'rgba(120,120,150,0.55)'; c.lineWidth = 2.6; c.lineCap = 'round'; for (const x of [36, 48, 60]) { c.beginPath(); c.moveTo(x, 108); c.quadraticCurveTo(x + 6, 98, x, 90); c.quadraticCurveTo(x - 6, 82, x, 74); c.stroke(); }
+    rrect(c, 172, 141, 60, 8, 3); fillStroke(c, '#b0bec5', 2); c.beginPath(); c.moveTo(224, 142); c.lineTo(224, 122); c.quadraticCurveTo(224, 114, 212, 116); c.lineWidth = 6.5; c.strokeStyle = INK; c.stroke(); c.lineWidth = 3.5; c.strokeStyle = '#cfd8dc'; c.stroke();   // sink and tap
+    drawPerson(c, 112, 240, 1.9, 'dad', { dir: -1, aR: [1.0, 1.75], aL: [0.25, 0.7], look: 0.7, apron: 1, inR: cc => { pole(cc, 0, 0, 11, 9, 1.6, '#8d6e63'); } });
+    rrect(c, 160, 214, 48, 8, 3); fillStroke(c, '#8d6e63', 2); rrect(c, 164, 222, 6, 20, 2); fillStroke(c, '#795548', 2); rrect(c, 198, 222, 6, 20, 2); fillStroke(c, '#795548', 2);    // her stool
+    drawPerson(c, 184, 214, 1.55, 'girl', { aR: [1.35, 1.75], aL: [1.0, 1.55], look: 0.7, face: 'smile', inR: cc => { cc.beginPath(); cc.ellipse(4, -3, 9, 9, 0, 0, 7); fillStroke(cc, '#fff', 1.6); cc.beginPath(); cc.arc(4, -3, 5, 0, 7); cc.lineWidth = 1; cc.strokeStyle = '#90a4ae'; cc.stroke(); } });
+    c.fillStyle = 'rgba(255,255,255,0.95)'; c.strokeStyle = '#7cc8f5'; c.lineWidth = 1.6; [[204, 134, 5], [214, 128, 4], [196, 126, 3.2], [222, 136, 3]].forEach(([a, b, r]) => { c.beginPath(); c.arc(a, b, r, 0, 7); c.fill(); c.stroke(); });
+    rrect(c, 304, 118, 54, 80, 6); fillStroke(c, '#a1887f', 2.5);                                                                                   // chair back
+    drawPerson(c, 331, 192, 1.6, 'boy', { sit: 1, noLegs: 1, aR: [0.9, 2.5], aL: [-0.6, 0.6], face: 'open', inR: cc => { pole(cc, 0, 0, 2, -9, 1.6, '#b0bec5'); cc.beginPath(); cc.ellipse(2, -11, 3, 3.6, 0, 0, 7); fillStroke(cc, '#eceff1', 1.3); } });
+    rrect(c, 262, 188, 132, 12, 5); fillStroke(c, '#d7a86e', 2.5); rrect(c, 272, 200, 9, 46, 3); fillStroke(c, '#b98a55', 2.2); rrect(c, 376, 200, 9, 46, 3); fillStroke(c, '#b98a55', 2.2);   // table
+    emoji(c, '🥣', 316, 181, 24); emoji(c, '🥤', 370, 174, 22);
+    c.beginPath(); c.ellipse(208, 238, 15, 6, 0, 0, 7); fillStroke(c, '#eceff1', 2); c.beginPath(); c.ellipse(208, 236.5, 10, 3.2, 0, 0, 7); c.fillStyle = '#fff'; c.fill(); c.lineWidth = 1; c.strokeStyle = '#b0bec5'; c.stroke();   // milk
+    drawAnimal(c, 248, 244, 1.3, 'cat', -1);
+  } else if (key === 'park') {
+    sky('#8fd0ff', '#e9f8ff', 180); emoji(c, '☀️', 356, 32, 36); emoji(c, '☁️', 110, 26, 40); emoji(c, '☁️', 236, 40, 28);
+    c.fillStyle = '#b6e3a1'; c.beginPath(); c.ellipse(120, 176, 170, 40, 0, Math.PI, 0); c.fill(); c.beginPath(); c.ellipse(340, 176, 130, 30, 0, Math.PI, 0); c.fill();
+    grass(160); emoji(c, '🌳', 226, 92, 92);
+    rrect(c, 184, 160, 80, 8, 3); fillStroke(c, '#a1887f', 2.2); rrect(c, 184, 138, 80, 8, 3); fillStroke(c, '#a1887f', 2.2); rrect(c, 191, 146, 6, 38, 2); fillStroke(c, '#8d6e63', 2); rrect(c, 251, 146, 6, 38, 2); fillStroke(c, '#8d6e63', 2);    // bench
+    drawPerson(c, 226, 158, 1.15, 'mom', { sit: 1, dir: -1, aR: [0.7, 1.5], aL: [0.5, 1.4], look: 0.6 });
+    for (const [a, b] of [[16, 46], [176, 146]]) { pole(c, a, 236, 31 + (a > 100 ? 130 : 0), 50, 6, '#e53935'); pole(c, b, 236, 31 + (a > 100 ? 130 : 0), 50, 6, '#e53935'); }       // swing frame
+    pole(c, 28, 50, 164, 50, 7, '#e53935');
+    pole(c, 78, 52, 100, 166, 1.6, '#90a4ae'); pole(c, 100, 52, 122, 166, 1.6, '#90a4ae'); c.save(); c.translate(111, 168); c.rotate(-0.18); rrect(c, -17, -3, 34, 7, 3); fillStroke(c, '#ffca28', 2); c.restore();
+    speedLines(c, [[52, 120, 70, 132], [46, 142, 68, 150], [50, 166, 70, 168]]);
+    c.save(); c.translate(109, 164); c.rotate(-0.18); drawPerson(c, 0, 0, 1.5, 'girl', { sit: 1, lL: [1.25, 0.9], lR: [1.15, 0.75], aL: [2.2, 2.9], aR: [2.05, 2.75], face: 'open' }); c.restore();
+    pole(c, 362, 238, 362, 80, 5, '#42a5f5'); pole(c, 388, 238, 388, 80, 5, '#42a5f5'); for (let y = 108; y < 232; y += 26) pole(c, 362, y, 388, y, 3, '#42a5f5');        // slide: ladder, deck, chute
+    rrect(c, 334, 84, 60, 10, 3); fillStroke(c, '#42a5f5', 2.2);
+    c.beginPath(); c.moveTo(340, 92); c.quadraticCurveTo(300, 150, 268, 208); c.quadraticCurveTo(262, 220, 238, 220); c.lineWidth = 19; c.strokeStyle = INK; c.lineCap = 'round'; c.stroke(); c.lineWidth = 14; c.strokeStyle = '#ffca28'; c.stroke();
+    c.save(); c.translate(304, 138); c.rotate(-0.42); drawPerson(c, 0, 0, 1.5, 'boy', { sit: 1, dir: -1, lL: [1.55, 1.5], lR: [1.45, 1.4], aL: [2.5, 3.0], aR: [2.7, 3.1], face: 'open' }); c.restore();
+    speedLines(c, [[330, 112, 344, 96], [338, 128, 350, 114]]);
+    drawAnimal(c, 196, 244, 1.45, 'dog', -1); emoji(c, '⚽', 136, 234, 22); speedLines(c, [[232, 212, 250, 212], [236, 224, 256, 224], [232, 236, 248, 236]]);
+  } else if (key === 'room') {
+    c.fillStyle = '#dcefff'; c.fillRect(0, 0, 400, 186); c.fillStyle = '#d9b98c'; c.fillRect(0, 186, 400, 64);
+    c.strokeStyle = 'rgba(120,80,40,0.22)'; c.lineWidth = 1.5; for (let y = 206; y < 250; y += 20) { c.beginPath(); c.moveTo(0, y); c.lineTo(400, y); c.stroke(); }
+    rrect(c, 176, 24, 70, 56, 6); fillStroke(c, '#fff8e1', 3); emoji(c, '🌈', 211, 52, 40);                                                     // a picture on the wall
+    rrect(c, 300, 34, 84, 8, 3); fillStroke(c, '#a1887f', 2); emoji(c, '🧸', 322, 20, 26); emoji(c, '🚗', 362, 22, 24);                           // shelf
+    c.fillStyle = '#f8bbd0'; c.beginPath(); c.ellipse(232, 226, 150, 20, 0, 0, 7); c.fill(); c.lineWidth = 2; c.strokeStyle = '#f48fb1'; c.stroke();
+    rrect(c, 12, 104, 14, 90, 5); fillStroke(c, '#8d6e63', 2.2); rrect(c, 140, 132, 12, 62, 5); fillStroke(c, '#8d6e63', 2.2); rrect(c, 22, 158, 122, 18, 6); fillStroke(c, '#a1887f', 2.2);   // bed
+    rrect(c, 26, 144, 116, 18, 7); fillStroke(c, '#fff', 2); c.beginPath(); c.ellipse(52, 142, 24, 10, 0, 0, 7); fillStroke(c, '#fff', 2);
+    c.save(); c.translate(70, 152); c.rotate(-Math.PI / 2); drawPerson(c, 0, 0, 1.45, 'baby', { sit: 1, noLegs: 1, face: 'sleep', aL: [0.1, 0], aR: [-0.1, 0] }); c.restore();
+    rrect(c, 72, 132, 72, 32, 10); fillStroke(c, '#90caf9', 2.2); emoji(c, '💤', 98, 100, 34);
+    drawPerson(c, 198, 218, 1.55, 'girl', { sit: 1, lL: [1.5, 1.3], lR: [1.35, 0.5], aR: [0.75, 2.0], aL: [0.55, 1.9], look: 0.5 }); emoji(c, '📖', 224, 190, 32);
+    blocks(c, 340, 238, 4, 24);
+    drawPerson(c, 296, 240, 1.55, 'boy', { aR: [1.9, 2.25], aL: [0.4, 1.1], look: 0.7, face: 'smile', inR: cc => { rrect(cc, -3, -20, 20, 20, 3); fillStroke(cc, '#ab47bc', 1.6); } });
+    rrect(c, 372, 222, 18, 18, 3); fillStroke(c, '#66bb6a', 2); rrect(c, 262, 232, 16, 16, 3); fillStroke(c, '#ffca28', 2);
+  } else if (key === 'garden') {
+    sky('#8fd0ff', '#e9f8ff', 170); emoji(c, '☀️', 44, 30, 34); emoji(c, '☁️', 250, 28, 40);
+    rrect(c, 300, 40, 120, 130, 4); fillStroke(c, '#ffe0b2', 2.5); c.beginPath(); c.moveTo(286, 44); c.lineTo(360, 0); c.lineTo(420, 30); c.lineTo(420, 44); c.closePath(); fillStroke(c, '#e57373', 2.5); rrect(c, 330, 70, 40, 40, 4); fillStroke(c, '#bfe6ff', 2.5);   // the house
+    for (let x = 4; x < 300; x += 22) { rrect(c, x, 112, 14, 54, [7, 7, 2, 2]); fillStroke(c, '#fff', 1.8); } c.fillStyle = '#fff'; c.fillRect(0, 128, 300, 6); c.strokeStyle = INK; c.lineWidth = 1.5; c.strokeRect(-2, 128, 302, 6);
+    grass(158);
+    pole(c, 22, 206, 22, 84, 5, '#8d6e63'); pole(c, 166, 206, 166, 84, 5, '#8d6e63'); c.beginPath(); c.moveTo(22, 90); c.quadraticCurveTo(94, 102, 166, 90); c.lineWidth = 2; c.strokeStyle = INK; c.stroke();
+    emoji(c, '👕', 48, 112, 32); emoji(c, '🧦', 152, 110, 24);
+    drawPerson(c, 92, 236, 1.8, 'mom', { aL: [2.2, 2.75], aR: [2.5, 2.9], look: 0.5, inR: cc => { rrect(cc, -8, -1, 15, 17, 2.5); fillStroke(cc, '#ff8a65', 1.5); } });
+    emoji(c, '🧺', 150, 220, 34);
+    drawPerson(c, 206, 198, 1.35, 'boy', { lR: [1.25, 0.9], lL: [-0.35, -0.5], aL: [0.9, 0.6], aR: [-0.8, -0.3], lean: -0.12, look: 0.8, face: 'open' });
+    emoji(c, '⚽', 256, 150, 24); speedLines(c, [[236, 168, 246, 160], [240, 178, 252, 170]]);
+    emoji(c, '🌷', 352, 214, 34); emoji(c, '🌼', 378, 222, 30); emoji(c, '🌷', 332, 228, 28);
+    drawPerson(c, 302, 240, 1.55, 'girl', { aR: [1.15, 1.5], aL: [0.3, 0.9], look: 0.7, inR: cc => wateringCan(cc) }); drops(c, 350, 180, 4);
+  }
+  c.restore(); c.lineWidth = 4; c.strokeStyle = INK; rrect(c, 2, 2, KS_W - 4, KS_H - 4, 15); c.stroke();
+}
+
+// ------------------------------------------------------------------ story frames (220 x 190): three pictures that tell one small story
+function drawKFrame(c, key) {
+  const id = key.slice(0, -1), n = +key.slice(-1);
+  c.save(); rrect(c, 3, 3, 214, 184, 14); c.clip();
+  const out = id === 'fall' || id === 'ice' || id === 'balloon';
+  if (out) { c.fillStyle = '#cdeeff'; c.fillRect(0, 0, 220, 150); c.fillStyle = '#9bdc86'; c.fillRect(0, 150, 220, 40); } else { c.fillStyle = id === 'bath' ? '#d9f1f5' : '#fff3d9'; c.fillRect(0, 0, 220, 156); c.fillStyle = id === 'bath' ? '#b7dfe8' : '#e3c59d'; c.fillRect(0, 156, 220, 34); }
+  const G = 174;
+  if (id === 'plant') {
+    flowerPot(c, 150, G, n - 1);
+    if (n === 1) { drawPerson(c, 86, G, 1.75, 'girl', { aR: [1.3, 1.15], aL: [0.2, 0.5], look: 0.7, inR: cc => { cc.beginPath(); cc.ellipse(3, 2, 3, 2.2, 0, 0, 7); fillStroke(cc, '#6d4c41', 1.2); } }); c.fillStyle = '#6d4c41'; c.beginPath(); c.ellipse(150, G - 44, 3.4, 2.6, 0, 0, 7); c.fill(); speedLines(c, [[150, G - 60, 150, G - 52]]); }
+    else if (n === 2) { drawPerson(c, 78, G, 1.75, 'girl', { aR: [1.45, 1.6], aL: [0.3, 0.9], look: 0.7, inR: cc => wateringCan(cc) }); drops(c, 146, G - 80, 4); }
+    else { drawPerson(c, 70, G, 1.75, 'girl', { aL: [2.6, 2.9], aR: [2.4, 2.8], look: 0.6, face: 'open' }); emoji(c, '✨', 190, 40, 26); }
+  } else if (id === 'fall') {
+    if (n === 1) { drawPerson(c, 116, G, 1.8, 'boy', { lR: [0.95, 0.2], lL: [-0.7, -1.3], aR: [-0.9, -0.2], aL: [1.0, 1.7], lean: 0.14, look: 0.8, face: 'open' }); speedLines(c, [[28, 92, 62, 92], [20, 118, 56, 118], [30, 144, 62, 144]]); emoji(c, '🪨', 196, G - 6, 22); }
+    else if (n === 2) { drawPerson(c, 110, G - 2, 1.8, 'boy', { sit: 1, lL: [1.5, 1.2], lR: [1.3, 0.3], aL: [0.9, 2.3], aR: [1.0, 1.4], face: 'sad', tears: 1 }); c.fillStyle = '#e53935'; c.beginPath(); c.arc(137, G - 22, 4, 0, 7); c.fill(); emoji(c, '💥', 168, G - 34, 26); }
+    else { drawPerson(c, 160, G, 1.5, 'mom', { dir: -1, lean: 0.3, aR: [0.9, 1.1], aL: [0.7, 1.0], look: 0.7 }); drawPerson(c, 78, G - 2, 1.8, 'boy', { sit: 1, lL: [1.5, 1.2], lR: [1.3, 0.3], aL: [0.3, 0.6], aR: [0.5, 0.9], look: 0.6, face: 'smile' }); emoji(c, '🩹', 104, G - 24, 20); emoji(c, '❤️', 110, 40, 22); }
+  } else if (id === 'tower') {
+    if (n === 1) { drawPerson(c, 70, G, 1.75, 'boy', { aR: [0.6, 1.0], aL: [0.1, 0.4], look: 0.7 }); [[120, 0, '#ef5350'], [150, 0, '#42a5f5'], [182, 0, '#ffca28'], [136, -26, '#66bb6a']].forEach(([x, dy, col]) => { rrect(c, x, G - 26 + dy, 26, 26, 3); fillStroke(c, col, 2); }); }
+    else if (n === 2) { blocks(c, 150, G, 4, 26); drawPerson(c, 86, G, 1.75, 'boy', { aR: [1.9, 2.3], aL: [0.3, 0.9], look: 0.7, face: 'smile' }); emoji(c, '✨', 190, 50, 24); }
+    else { [[104, 0, 0.3, '#ef5350'], [140, 0, -0.5, '#42a5f5'], [176, 0, 0.8, '#ffca28'], [158, -34, 0.2, '#66bb6a']].forEach(([x, dy, r, col]) => { c.save(); c.translate(x + 13, G - 13 + dy); c.rotate(r); rrect(c, -13, -13, 26, 26, 3); fillStroke(c, col, 2); c.restore(); }); drawPerson(c, 54, G, 1.75, 'boy', { aL: [2.3, 2.7], aR: [2.2, 2.8], look: 0.7, face: 'o' }); emoji(c, '💥', 150, 84, 34); }
+  } else if (id === 'ice') {
+    if (n === 1) { drawPerson(c, 96, G, 1.85, 'girl', { aR: [1.45, 2.1], aL: [0.1, 0.3], look: 0.4, face: 'open', inR: cc => emoji(cc, '🍦', 9, -15, 30) }); emoji(c, '☀️', 184, 34, 30); }
+    else if (n === 2) { drawPerson(c, 104, G, 1.85, 'girl', { aR: [0.7, 2.7], aL: [0.1, 0.3], look: 0.2, face: 'smile', inR: cc => emoji(cc, '🍦', 1, -9, 22) }); emoji(c, '😋', 178, 40, 28); }
+    else { drawPerson(c, 104, G, 1.85, 'girl', { aR: [1.2, 2.3], aL: [-0.6, -0.9], look: 0.3, face: 'o', inR: cc => { cc.beginPath(); cc.moveTo(-5, -16); cc.lineTo(7, -16); cc.lineTo(1, 2); cc.closePath(); fillStroke(cc, '#e0a45c', 1.5); } }); c.fillStyle = '#f8bbd0'; [[98, 62, 3], [111, 66, 2.4]].forEach(([a, b, r]) => { c.beginPath(); c.arc(a, b, r, 0, 7); c.fill(); }); }
+  } else if (id === 'bath') {
+    if (n === 1) { drawPerson(c, 110, G, 1.9, 'boy', { face: 'sad', dirty: 1, aL: [-0.5, -0.2], aR: [0.5, 0.2] }); c.fillStyle = '#8d6e63'; c.beginPath(); c.ellipse(56, G + 2, 26, 6, 0, 0, 7); c.fill(); }
+    else if (n === 2) { c.save(); c.beginPath(); c.rect(0, 0, 220, 122); c.clip(); drawPerson(c, 110, 176, 1.9, 'boy', { noLegs: 1, face: 'open', aL: [2.3, 2.8], aR: [2.3, 2.8], wear: { top: '#ffd3b0' } }); c.restore(); emoji(c, '🛁', 110, 140, 104); c.fillStyle = 'rgba(255,255,255,0.92)'; c.strokeStyle = '#7cc8f5'; c.lineWidth = 2; [[58, 62, 9], [164, 50, 12], [176, 84, 7], [44, 92, 6]].forEach(([a, b, r]) => { c.beginPath(); c.arc(a, b, r, 0, 7); c.fill(); c.stroke(); }); }
+    else { drawPerson(c, 110, G, 1.9, 'boy', { face: 'open', aL: [2.5, 2.9], aR: [2.5, 2.9], wear: { top: '#fff', bot: '#90caf9' } }); emoji(c, '✨', 46, 60, 34); emoji(c, '✨', 178, 92, 28); }
+  } else if (id === 'balloon') {
+    if (n === 1) { drawPerson(c, 100, G, 1.85, 'girl', { aR: [1.4, 2.6], aL: [0.1, 0.3], face: 'open' }); c.beginPath(); c.moveTo(127, 96); c.quadraticCurveTo(136, 74, 132, 58); c.lineWidth = 1.6; c.strokeStyle = INK; c.stroke(); emoji(c, '🎈', 134, 36, 46); }
+    else if (n === 2) { drawPerson(c, 84, G, 1.85, 'girl', { aR: [2.3, 2.9], aL: [0.2, 0.5], look: 0.6, face: 'o' }); emoji(c, '🎈', 176, 30, 36, 0.3); speedLines(c, [[160, 70, 150, 86], [176, 76, 170, 92]]); emoji(c, '☁️', 60, 30, 34); }
+    else { drawPerson(c, 110, G, 1.85, 'girl', { face: 'sad', tears: 1, aR: [0.6, 2.6], aL: [0.6, 2.6] }); emoji(c, '🎈', 196, 16, 16); emoji(c, '☁️', 150, 30, 40); }
+  }
+  c.restore(); c.lineWidth = 3.5; c.strokeStyle = INK; rrect(c, 3, 3, 214, 184, 13); c.stroke();
+}
+
 // ------------------------------------------------------------------ platformer engine
 const T = 40, LH = 14, GR = 12, PW = 22, PH = 40;       // tile, level rows, ground row, player box
 const GRAV = 1900, JUMP = 700, JUMP2 = 620, RUN = 195, SPRING = 1000;
@@ -3519,7 +3770,8 @@ function pickSkill(slot) {
     let x = acc == null ? 2.6 : acc < 0.6 ? 2 : 1;
     if (boost.includes(k)) x *= 4;
     if (recent.includes(k)) x *= boost.includes(k) ? 0.5 : 0.12;
-    if (k === 'draw') x *= 1.5;
+    if (SKILLS[k].d === 'draw') x *= 1.5;
+    if (GAN_FOCUS.includes(k)) x *= 1.7;                              // what the kindergarten teacher works on
     return x;
   });
   let r = rnd() * sum(w), i = 0;
@@ -3528,7 +3780,17 @@ function pickSkill(slot) {
   return cand[i];
 }
 
+const GAN_FOCUS = ['story', 'seq', 'odd', 'group', 'sort', 'copy'];
 // ------------------------------------------------------------------ pictures
+// plain line figures, as on a "visual perception" sheet: three the same and one that is open or turned round
+const LINE_FIGS = {
+  box: ['M22 22H78V78H22Z', 'M22 78V22H78V78', 'M78 22H22V78H78', 'M22 22V78H78V22'],
+  flag: ['M36 88V14H54a19 19 0 0 1 0 38H36', 'M64 88V14H46a19 19 0 0 0 0 38H64'],
+  ell: ['M26 16V84H78', 'M74 16V84H22', 'M26 84V16H78'],
+  tri: ['M50 14 88 84H12Z', 'M50 14 88 84H36', 'M12 84 50 14 76 62'],
+  ring: ['M50 14a36 36 0 1 0 .1 0Z', 'M50 14a36 36 0 1 0 30 16', 'M50 86a36 36 0 1 0 -30 -16'],
+};
+const lineSVG = (f, i) => `<svg class="shp ln" viewBox="0 0 100 100" fill="none" stroke="${INK}" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"><path d="${LINE_FIGS[f][i]}"/></svg>`;
 function shapeSVG(shape, color) {
   const d = { circle: '<circle cx="50" cy="50" r="38"/>', square: '<rect x="15" y="15" width="70" height="70" rx="4"/>', triangle: '<path d="M50 10 92 86H8z"/>',
     star: '<path d="M50 6l12.6 27.4 30 3.6-22.2 20.4 5.9 29.6L50 72.2 23.7 87l5.9-29.6L7.4 37l30-3.6z"/>', heart: '<path d="M50 88C10 60 4 38 16 24c11-12 27-8 34 6 7-14 23-18 34-6 12 14 6 36-34 64z"/>', diamond: '<path d="M50 6 86 50 50 94 14 50z"/>' }[shape];
@@ -3540,7 +3802,8 @@ function P(s) {
   let inner = '';
   if (s.v) inner = `<span class="em">${V[s.v].e}</span>`;
   else if (s.e) inner = `<span class="em">${s.e}</span>`;
-  else if (s.scene || s.mood || s.need || s.feel || s.opp || s.season) inner = `<canvas class="sc" data-d="${esc(JSON.stringify(s))}"></canvas>`;
+  else if (s.ln) inner = lineSVG(s.ln[0], s.ln[1]);
+  else if (s.scene || s.mood || s.need || s.feel || s.opp || s.season || s.kf) inner = `<canvas class="sc" data-d="${esc(JSON.stringify(s))}"></canvas>`;
   else if (s.num != null) inner = `<b class="dg">${s.num}</b><span class="pips">${'<i></i>'.repeat(s.num)}</span>`;
   else if (s.digit != null) inner = `<b class="dg big">${s.digit}</b>`;
   else if (s.dot) inner = `<i class="dot" style="background:${COLORS[s.dot][1]}"></i>`;
@@ -3556,7 +3819,7 @@ function hydrate(root) {
     if (cvs.dataset.done) return; cvs.dataset.done = 1;
     const d = JSON.parse(cvs.dataset.d); cvs.width = SCENE_W * 2; cvs.height = SCENE_H * 2;
     const c = cvs.getContext('2d'); c.scale(2, 2);
-    if (d.opp) drawOppPic(c, d.opp); else if (d.season) drawSeason(c, d.season); else if (d.scene) drawScene(c, d.scene); else if (d.mood) drawMoodBust(c, d.mood); else if (d.need) drawNeedScene(c, d.need); else if (d.feel) drawNeedScene(c, { mood: 'q', prop: d.feel });
+    if (d.kf) drawKFrame(c, d.kf); else if (d.opp) drawOppPic(c, d.opp); else if (d.season) drawSeason(c, d.season); else if (d.scene) drawScene(c, d.scene); else if (d.mood) drawMoodBust(c, d.mood); else if (d.need) drawNeedScene(c, d.need); else if (d.feel) drawNeedScene(c, { mood: 'q', prop: d.feel });
   });
 }
 const picOpt = (pic, label, cls) => ({ pic, label, cls });
@@ -3574,7 +3837,7 @@ const ZONES = { t_on: 'על השולחן', t_under: 'מתחת לשולחן', t_n
 const PREP_ITEMS = ['ball', 'apple', 'teddy', 'cat', 'star', 'banana', 'shoe', 'book'];
 const FOLLOW_POOL = VOCAB_L[0].concat(VOCAB_L[1].slice(0, 8));
 const SHADOW_POOL = ['dog', 'cat', 'fish', 'bird', 'car', 'bus', 'plane', 'boat', 'tree', 'flower', 'star', 'key', 'umbrella', 'rabbit', 'elephant', 'bike', 'shoe', 'duck', 'house', 'train'];
-const SORT_POOL = c => byCat(c).filter(k => VOCAB_L.slice(0, 3).flat().includes(k));
+const SORT_POOL = c => byCat(c).filter(k => !CAT_BASE.includes(c) || VOCAB_L.slice(0, 3).flat().includes(k));
 const binQ = bins => (bins.length === 2 ? `${CAT[bins[0]][0]} או ${CAT[bins[1]][0]}?` : 'לאיזו קבוצה?');
 
 // ------------------------------------------------------------------ round makers (one per skill, harder with level)
@@ -3649,9 +3912,13 @@ const MAKE = {
     return { skill: 'assoc', item: a, q: `מה מתאים ל${V[a].n}?`, stage: [{ v: a }], options: items.map(k => picOpt({ v: k }, V[k].n)), correct: items.indexOf(b), praise: ['נכון!', `${V[a].n} ו${V[b].n}.`], hint: [`${V[a].n} ו${V[b].n}.`] };
   },
   seq(lv) {
-    if (lv === 3) { const s = pick(SEQS.filter(x => x.s.length === 3)), order = shuffle([0, 1, 2]); return { type: 'tapseq', skill: 'seq', item: 'o_' + s.id, q: 'מה קודם? סדר את הסיפור.', objs: order.map(i => s.s[i]), seq: [0, 1, 2].map(i => order.indexOf(i)), praise: 'סידרת את הסיפור!', big: true }; }
-    const s = pick(lv === 1 ? SEQS : SEQS.filter(x => x.s.length === 3)), k = lv === 1 ? 1 : 2, ans = s.s[k], items = shuffle([ans, ...shuffle(s.d).slice(0, lv)]);
-    return { skill: 'seq', item: s.id, q: 'מה קורה אחר כך?', stage: s.s.slice(0, k).concat([{ q: 1 }]), stageCls: 'ltr story', options: items.map(x => picOpt(x, '', typeof x === 'object' ? 'scn' : '')), correct: items.indexOf(ans), praise: 'נכון! זה מה שקורה אחר כך.', after: async () => { const qm = $('#stage .sitem:last-child'); if (qm) { qm.innerHTML = P(ans); hydrate(qm); } await sleep(900); } };
+    const three = SEQS.filter(x => x.s.length === 3);
+    if (lv === 3) {                                                 // put three pictures in order; then Boti tells the story, then it is his turn
+      const s = pick(three.filter(x => x.id !== MAKE.seq.last)); let order = shuffle([0, 1, 2]); if (order.join() === '0,1,2') order = [1, 2, 0]; MAKE.seq.last = s.id;
+      return { type: 'tapseq', skill: 'seq', item: 'o_' + s.id, q: 'מה קודם? סדר את הסיפור.', objs: order.map(i => s.s[i]), seq: [0, 1, 2].map(i => order.indexOf(i)), praise: 'סידרת את הסיפור!', big: true, after: () => tellStory(s, '#opts .opt', order, true) };
+    }
+    const s = pick(lv === 1 ? SEQS : three), k = lv === 1 ? 1 : 2, ans = s.s[k], items = shuffle([ans, ...shuffle(s.d).slice(0, lv)]);
+    return { skill: 'seq', item: s.id, q: 'מה קורה אחר כך?', stage: s.s.slice(0, k).concat([{ q: 1 }]), stageCls: 'ltr story', options: items.map(x => picOpt(x, '', typeof x === 'object' ? 'scn' : '')), correct: items.indexOf(ans), praise: 'נכון! זה מה שקורה אחר כך.', after: async () => { const qm = $('#stage .sitem:last-child'); if (qm) { qm.innerHTML = P(ans); hydrate(qm); } await sleep(800); if (k === 2) await tellStory(s, '#stage .sitem'); } };
   },
   sort(lv) {
     const cats = lv === 1 ? ['animal', 'food'] : shuffle(Object.keys(CAT)).slice(0, lv === 2 ? 2 : 3);
@@ -3667,7 +3934,7 @@ const MAKE = {
   same(lv) {
     const pool = VOCAB_L.slice(0, 2).flat();
     if (lv === 1) { const t = pick(pool), items = shuffle([t, ...others(pool, [t], 2)]); return { skill: 'same', item: 'match', q: 'איפה עוד אחד כזה?', stage: [{ v: t }], stageCls: 'target', options: items.map(k => picOpt({ v: k })), correct: items.indexOf(t), praise: 'כן! אותו דבר!', say: rnd() < 0.5 ? { key: t, word: V[t].n, pic: { v: t } } : null }; }
-    if (lv === 3) { const cs = shuffle(Object.keys(CAT)), ins = shuffle(byCat(cs[0])).slice(0, 3), out = pick(byCat(cs[1])), items = shuffle([...ins, out]); return { skill: 'same', item: 'cat', q: 'מה לא שייך?', options: items.map(k => picOpt({ v: k })), correct: items.indexOf(out), praise: 'נכון! זה לא שייך.', hint: [SAY.name(out), 'זה לא שייך.'] }; }
+    if (lv === 3) { const f = pick(Object.keys(LINE_FIGS)), [a, b] = others(LINE_FIGS[f].map((_, i) => i), [], 2), odd = ri(0, 3); return { skill: 'same', item: 'line', q: 'מה שונה?', options: Array.from({ length: 4 }, (_, i) => picOpt({ ln: [f, i === odd ? b : a] })), correct: odd, praise: 'נכון! זה שונה.' }; }
     const t = pick(pool), n = lv === 2 ? 3 : 4, odd = ri(0, n - 1), d = lv === 2 ? { v: others(pool, [t], 1)[0] } : pick([{ v: t, fx: 'flip' }, { v: t, fx: 'rot' }, { v: t, sz: 0.6 }]);
     return { skill: 'same', item: lv === 2 ? 'odd' : 'subtle', q: 'מה שונה?', options: Array.from({ length: n }, (_, i) => picOpt(i === odd ? d : { v: t })), correct: odd, praise: 'נכון! זה שונה.' };
   },
@@ -3689,14 +3956,8 @@ const MAKE = {
   missing(lv) {
     const n = lv + 1, ks = others(VOCAB_L[0].concat(VOCAB_L[1]), [], n + 2), shown = ks.slice(0, n), gone = pick(shown), items = shuffle([gone, ...ks.slice(n, n + (lv === 1 ? 1 : 2))]);
     return {
-      skill: 'missing', item: 'n' + n, q: 'מה נעלם?', stage: shown.map(k => ({ v: k })), options: items.map(k => picOpt({ v: k }, V[k].n)), correct: items.indexOf(gone), praise: ['נכון!', SAY.the(gone)], hint: [SAY.the(gone)],
-      pre: async (api, stage, opts) => {
-        opts.style.visibility = 'hidden'; $('#qText').textContent = 'תסתכל טוב!';
-        await Voice.say(['תסתכל טוב!'].concat(shown.map(SAY.nameDot))); await sleep(900 + n * 500);
-        stage.classList.add('curtain'); Snd.sfx.pop(); await sleep(700);
-        stage.innerHTML = shown.filter(k => k !== gone).map(k => `<div class="sitem">${P({ v: k })}</div>`).join(''); stage.classList.remove('curtain');
-        $('#qText').textContent = 'מה נעלם?'; opts.style.visibility = '';
-      },
+      skill: 'missing', item: 'n' + n, q: 'מה נעלם?', stage: shown.map(k => ({ v: k })), stageCls: n > 4 ? 'many5' : '', options: items.map(k => picOpt({ v: k }, V[k].n)), correct: items.indexOf(gone), praise: ['נכון!', SAY.the(gone)], hint: [SAY.the(gone)],
+      pre: missingPre(shown, gone),
     };
   },
   color(lv) {
@@ -3748,6 +4009,36 @@ const MAKE = {
     };
   },
   draw(lv) { return { type: 'draw', skill: 'draw', item: 'face' + lv, lv, q: 'בוא נצייר פרצוף!', praise: 'איזה פרצוף יפה ציירת!' }; },
+  // a picture with several people: "who is cooking?" (touch), "what is the girl doing?" (room to say it), then the whole story
+  story(lv) {
+    const key = pick(Object.keys(KSCENES).filter(k => k !== MAKE.story.last)), S = KSCENES[key], idx = shuffle(S.figs.map((_, i) => i)), nq = Math.min(lv, S.figs.length), targets = idx.slice(0, nq);
+    MAKE.story.last = key;
+    const whatIdx = idx.slice(nq).concat(targets.slice().reverse()).slice(0, lv === 1 ? 0 : lv === 2 ? 1 : 2), f0 = S.figs[targets[0]];
+    return { type: 'kscene', skill: 'story', item: key + '_' + f0.who, key, targets, whatIdx, free: lv === 3, q: ksAsk(f0), asks: targets.map(i => ksAsk(S.figs[i])), praise: ['כן!', ksSay(S.figs[targets[nq - 1]])] };
+  },
+  // odd one out by group: three (later four) of one group and one that is not; the praise names the group
+  odd(lv) {
+    const far = [['animal', 'vehicle'], ['food', 'clothes'], ['animal', 'clothes'], ['vehicle', 'food'], ['animal', 'furniture'], ['clothes', 'vehicle']];
+    const near = [['kitchen', 'toy'], ['music', 'toy'], ['food', 'kitchen'], ['animal', 'food'], ['clothes', 'toy'], ['vehicle', 'toy'], ['music', 'kitchen'], ['toy', 'furniture'], ['kitchen', 'food']];
+    const nIn = lv === 3 ? 4 : 3, [a, b] = pick((lv === 1 ? far : lv === 2 ? far.concat(near) : near.concat(near, far)).filter(p => byCat(p[0]).length >= nIn));
+    const ins = shuffle(byCat(a)).slice(0, nIn), out = pick(byCat(b)), items = shuffle([...ins, out]);
+    return { skill: 'odd', item: a + '/' + b, q: 'מה לא שייך?', options: items.map(k => picOpt({ v: k }, V[k].n)), correct: items.indexOf(out), praise: ['כן!', SAY.nameDot(out), `זה לא ${CAT[a][2]}.`, `כל השאר ${CAT[a][0]}.`], hint: [`כאן יש ${CAT[a][0]}.`, 'מה לא שייך?'], wrong: i => [SAY.nameDot(items[i]), `זה ${CAT[a][2]}.`, 'מה לא שייך?'] };
+  },
+  // groups: "where is an animal?"; later "what else belongs here?" and the name of the group ("they are all...")
+  group(lv) {
+    const cats = lv === 1 ? CAT_BASE : Object.keys(CAT), c = pick(cats.filter(x => lv < 3 || byCat(x).length >= 4)), pool = shuffle(byCat(c)), t = pool[0];
+    const foils = shuffle(cats.filter(x => x !== c)).slice(0, lv === 1 ? 2 : lv === 2 ? 3 : 2).map(x => pick(byCat(x))), items = shuffle([t, ...foils]);
+    const ask = lv === 3 ? 'מה עוד שייך לכאן?' : `איפה יש ${CAT[c][2]}?`, base = { skill: 'group', options: items.map(k => picOpt({ v: k }, V[k].n)), correct: items.indexOf(t), wrong: i => [SAY.nameDot(items[i]), `זה ${CAT[V[items[i]].c][2]}.`, ask] };
+    if (lv < 3) return Object.assign(base, { item: c, q: ask, praise: ['כן!', SAY.nameDot(t), `זה ${CAT[c][2]}.`], hint: [SAY.nameDot(t), `זה ${CAT[c][2]}.`] });
+    const shown = pool.slice(1, 4);
+    return Object.assign(base, { item: 'g_' + c, q: ask, qs: shown.map(SAY.nameDot).concat([ask]), stage: shown.map(k => ({ v: k })), stageCls: 'target', praise: ['כן!', SAY.nameDot(t)], hint: [SAY.nameDot(t)],
+      after: async () => { const W = CAT[c][0]; if (!Ear.usable) { await Voice.say(`כולם ${W}.`); return; } await Voice.say('כולם...'); const r = await kHear(W.split(' ').pop(), 'grp_' + c, 4500); await Voice.say(r === 'good' ? ['כן!', `כולם ${W}.`] : [`כולם ${W}.`]); } });
+  },
+  // copying shapes with a finger: over dots first, later from a model
+  copy(lv) {
+    const k = pick([['v', 'h'], ['o', 'plus'], ['v', 'h', 'o'], ['plus', 'sq', 'd1', 'd2'], ['x', 'tri', 'sq']][lv - 1].filter(x => x !== MAKE.copy.last)), S = COPY_SHAPES[k]; MAKE.copy.last = k;
+    return { type: 'copy', skill: 'copy', item: k, k, trace: lv < 3, lv, q: S.q, qs: S.say, praise: ['יופי!', S.done] };
+  },
 };
 // where each pair of opposites stands: stage 0 = first word only, 1 = second word only (from another day on), 2 = both together
 function oppState() { return Store.d.opp || (Store.d.opp = {}); }
@@ -3772,6 +4063,36 @@ function comboRound(skill) {
   const [c1, c2] = others(Object.keys(COLORS), [], 2), [s1, s2] = others(COMBO_SHAPES, [], 2);
   const items = shuffle([[s1, c1], [s1, c2], [s2, c1], [s2, c2]]), ti = ri(0, 3), [ts, tc] = items[ti];
   return { skill, item: 'combo', q: `איפה ה${SHAPES[ts]} ה${COLORS[tc][0]}?`, options: items.map(([s, c]) => picOpt({ shape: s, color: c })), correct: ti, praise: ['נכון!', `${SAY.shapeColor(ts, tc)}.`], wrong: i => [`זה ${SAY.shapeColor(items[i][0], items[i][1])}.`, `איפה ה${SHAPES[ts]} ה${COLORS[tc][0]}?`] };
+}
+function missingPre(shown, gone) {
+  return async (api, stage, opts) => {
+    const n = shown.length;
+    opts.style.visibility = 'hidden'; $('#qText').textContent = 'תסתכל טוב!';
+    await Voice.say(['תסתכל טוב!'].concat(shown.map(SAY.nameDot))); await sleep(900 + n * 500);
+    stage.classList.add('curtain'); Snd.sfx.pop(); await sleep(700);
+    stage.innerHTML = shown.filter(k => k !== gone).map(k => `<div class="sitem">${P({ v: k })}</div>`).join(''); stage.classList.remove('curtain');
+    $('#qText').textContent = 'מה נעלם?'; opts.style.visibility = '';
+  };
+}
+// room for a spoken answer inside a picture round: nothing is demanded and nothing counts against him; what was heard is kept for the parent
+async function kHear(word, key, ms) {
+  if (!Ear.usable) { await sleep(900); return 'nomic'; }
+  const mic = $('#btnMicAns'); mic.hidden = false; mic.classList.add('live');
+  const r = await Ear.hear(ms);
+  mic.classList.remove('live'); mic.hidden = true;
+  const cls = r.heard ? (!word || heardParts(r.alts, word).level === 'full' ? 'good' : 'other') : r.voice ? 'voice' : 'silent';
+  ensureSession().said.push({ t: Date.now(), w: key, k: word ? 'pic' : 'tell', r: !word && cls === 'good' ? 'tell' : cls, c: 'wait', h: r.text || '' });
+  return cls;
+}
+// Boti tells a three-picture story, pointing at each picture: "first... then... in the end..."; after that the child may tell it
+async function tellStory(s, sel, order, free) {
+  if (!s.tell) return;
+  const els = $$(sel).slice(0, 3); if (els.length < 3) return;
+  let row = els;
+  if (order) { row = [0, 1, 2].map(i => els[order.indexOf(i)]); const par = els[0].parentElement; row.forEach(e => { e.classList.remove('good', 'picked'); const nb = e.querySelector('.num'); if (nb) nb.remove(); par.appendChild(e); }); row.forEach((e, i) => tapBadge(e, i + 1)); await sleep(500); }
+  for (let i = 0; i < 3; i++) { row.forEach(e => e.classList.remove('glow')); row[i].classList.add('glow'); await Voice.say(s.tell[i]); await sleep(150); }
+  row.forEach(e => e.classList.remove('glow'));
+  if (free && Ear.usable) { $('#qText').textContent = 'עכשיו אתה!'; await Voice.say(['עכשיו אתה.', 'ספר את הסיפור.']); const r = await kHear(null, 'tell_' + s.id, 8000); if (r !== 'silent') await Voice.say('סיפרת יפה!'); }
 }
 function makeRound(skill) { const r = MAKE[skill](sk(skill).lv); r.lv = sk(skill).lv; return r; }
 
@@ -3890,7 +4211,7 @@ const ENG = {
     let pos = 0;
     opts.classList.add('n' + rd.objs.length, 'free'); if (rd.big) opts.classList.add('bigger');
     rd.objs.forEach((o, i) => {
-      const b = document.createElement('button'); b.className = 'opt' + (typeof o === 'object' && o.scene ? ' scn' : ''); b.innerHTML = P(o);
+      const b = document.createElement('button'); b.className = 'opt' + (typeof o === 'object' && (o.scene || o.kf) ? ' scn' : ''); b.innerHTML = P(o);
       b.onclick = () => {
         Snd.init(); if (api.R.busy || api.R.over || b.classList.contains('picked')) return;
         if (i === rd.seq[pos]) { pos++; b.classList.add('picked'); b.classList.remove('hint'); if (rd.seq.length > 1) tapBadge(b, pos); Snd.sfx.note(pos); if (pos >= rd.seq.length) api.success(b); }
@@ -4001,6 +4322,38 @@ const ENG = {
       } else { b.classList.add('glow'); rd.praise = ['כן!', `הוא ${VERBS[rd.figs[i].v]}.`]; api.success(b); }
     });
   },
+  // a picture with several people, a touch area over each
+  kscene(rd, api, stage, opts) {
+    const S = KSCENES[rd.key]; let step = 0;
+    opts.classList.add('zoneswrap');
+    opts.innerHTML = `<div class="busy ks" style="aspect-ratio:${KS_W} / ${KS_H}"><canvas id="busyCv"></canvas>${S.figs.map((f, i) => { const [x0, y0, x1, y1] = f.box; return `<button class="bfig" data-i="${i}" style="left:${x0 / KS_W * 100}%;top:${y0 / KS_H * 100}%;width:${(x1 - x0) / KS_W * 100}%;height:${(y1 - y0) / KS_H * 100}%" aria-label="${WHO[f.who]}"></button>`; }).join('')}</div>`;
+    const cvs = $('#busyCv'); cvs.width = KS_W * 2; cvs.height = KS_H * 2; const c = cvs.getContext('2d'); c.scale(2, 2); drawKScene(c, rd.key, 0.4);
+    const btn = i => $(`.bfig[data-i="${i}"]`, opts), light = i => { $$('.bfig', opts).forEach(b => b.classList.remove('good', 'glow', 'hint', 'bad')); if (i != null) btn(i).classList.add('glow'); };
+    rd.replay = () => Voice.say(rd.asks[step]);
+    rd.after = async () => {
+      for (const i of rd.whatIdx) {                                   // "what is she doing?": five seconds for him, then the sentence either way
+        const f = S.figs[i]; light(i); $('#qText').textContent = ksWhat(f);
+        await Voice.say(ksWhat(f));
+        const r = await kHear(f.v.split(' ')[0], 'ks_' + rd.key + '_' + i, 5000);
+        await Voice.say(r === 'good' ? ['כן!', ksSay(f)] : [ksSay(f)]);
+      }
+      $('#qText').textContent = 'מה קורה בתמונה?'; light(null); await Voice.say(S.where);
+      for (let i = 0; i < S.figs.length; i++) { light(i); await Voice.say(ksSay(S.figs[i])); await sleep(120); }
+      light(null);
+      if (rd.free && Ear.usable) { $('#qText').textContent = 'עכשיו אתה!'; await Voice.say(['עכשיו אתה.', 'מה קורה בתמונה?']); const r = await kHear(null, 'tell_' + rd.key, 8000); if (r !== 'silent') await Voice.say('סיפרת יפה!'); }
+    };
+    opts.firstElementChild.addEventListener('click', async e => {
+      Snd.init(); const b = e.target.closest('.bfig'); if (!b || api.R.busy || api.R.over) return;
+      const i = +b.dataset.i, want = rd.targets[step];
+      if (i !== want) { api.fail(b, [ksSay(S.figs[i]), rd.asks[step]], btn(want)); return; }
+      if (step < rd.targets.length - 1) {
+        api.R.busy = true; light(i); Snd.sfx.good();
+        await Voice.say(['כן!', ksSay(S.figs[i])]);
+        light(null); step++; $('#qText').textContent = rd.asks[step]; api.R.busy = false; Voice.say(rd.asks[step]);
+      } else { light(i); api.success(b); }
+    });
+  },
+  copy(rd, api, stage, opts) { copyStation(rd, api, stage, opts); },
   zones(rd, api, stage, opts) {
     opts.classList.add('zoneswrap');
     if (rd.face) opts.innerHTML = faceSVG();
@@ -4027,6 +4380,95 @@ function faceSVG() {
    <g data-p="eyes"><ellipse cx="76" cy="93" rx="11" ry="13" fill="#fff"/><ellipse cx="124" cy="93" rx="11" ry="13" fill="#fff"/><circle cx="78" cy="96" r="6" fill="${INK}" stroke="none"/><circle cx="122" cy="96" r="6" fill="${INK}" stroke="none"/><rect class="hit" x="56" y="74" width="88" height="36" stroke="none"/></g>
    <g data-p="nose"><path d="M100,106 Q90,122 104,124" fill="none"/><circle class="hit" cx="100" cy="116" r="15" stroke="none"/></g>
    <g data-p="mouth"><path d="M74,136 Q100,158 126,136" fill="none"/><rect class="hit" x="66" y="130" width="68" height="28" stroke="none"/></g></g></svg>`;
+}
+
+// ------------------------------------------------------------------ copying shapes with a finger
+// Every shape is a list of strokes in a square of one unit (centre 0,0). Level 1-2: go over the dots. From level 3: the
+// model is shown beside an empty page, and the drawing is compared with the model stretched over what was drawn.
+const COPY_SHAPES = {
+  v: { q: 'בוא נצייר קו.', say: ['בוא נצייר קו.', 'מלמעלה למטה.'], done: 'ציירת קו!', st: [[[0, -0.48], [0, 0.48]]] },
+  h: { q: 'בוא נצייר קו.', say: ['בוא נצייר קו.', 'מצד לצד.'], done: 'ציירת קו!', st: [[[0.48, 0], [-0.48, 0]]] },
+  o: { q: 'בוא נצייר עיגול.', say: ['בוא נצייר עיגול.'], done: 'ציירת עיגול!', st: [Array.from({ length: 33 }, (_, i) => { const a = -Math.PI / 2 - i / 32 * Math.PI * 2; return [Math.cos(a) * 0.45, Math.sin(a) * 0.45]; })] },
+  plus: { q: 'בוא נצייר פלוס.', say: ['בוא נצייר פלוס.', 'קו למטה, וקו לצד.'], done: 'ציירת פלוס!', st: [[[0, -0.48], [0, 0.48]], [[0.48, 0], [-0.48, 0]]] },
+  sq: { q: 'בוא נצייר ריבוע.', say: ['בוא נצייר ריבוע.'], done: 'ציירת ריבוע!', st: [[[0.44, -0.44], [-0.44, -0.44], [-0.44, 0.44], [0.44, 0.44], [0.44, -0.44]]] },
+  d1: { q: 'בוא נצייר קו באלכסון.', say: ['בוא נצייר קו באלכסון.'], done: 'ציירת קו!', st: [[[0.42, -0.42], [-0.42, 0.42]]] },
+  d2: { q: 'בוא נצייר קו באלכסון.', say: ['בוא נצייר קו באלכסון.'], done: 'ציירת קו!', st: [[[-0.42, -0.42], [0.42, 0.42]]] },
+  x: { q: 'בוא נצייר איקס.', say: ['בוא נצייר איקס.'], done: 'ציירת איקס!', st: [[[0.42, -0.42], [-0.42, 0.42]], [[-0.42, -0.42], [0.42, 0.42]]] },
+  tri: { q: 'בוא נצייר משולש.', say: ['בוא נצייר משולש.'], done: 'ציירת משולש!', st: [[[0, -0.44], [-0.46, 0.4], [0.46, 0.4], [0, -0.44]]] },
+};
+const COPY_SAY = { trace: 'עוברים עם האצבע על הנקודות.', own: 'עכשיו אתה. תצייר כאן.', look: 'תסתכל. ככה.', dots: 'בוא ננסה על הנקודות.' };
+// points every 0.04 of a unit along the strokes
+function copyPoints(st) { const out = []; for (const s of st) for (let i = 1; i < s.length; i++) { const [ax, ay] = s[i - 1], [bx, by] = s[i], n = Math.max(1, Math.round(Math.hypot(bx - ax, by - ay) / 0.04)); for (let j = i === 1 ? 0 : 1; j <= n; j++) out.push([ax + (bx - ax) * j / n, ay + (by - ay) * j / n]); } return out; }
+const copyLen = st => sum(st.map(s => s.slice(1).reduce((a, p, i) => a + Math.hypot(p[0] - s[i][0], p[1] - s[i][1]), 0)));
+// how well a drawing matches: cover = how much of the model was drawn, clean = how much of the drawing lies on the model
+function copyScore(tp, pts, cx, cy, sx, sy, tol) {
+  const near = (ax, ay, list) => { for (const [x, y] of list) if (Math.hypot(ax - x, ay - y) < tol) return true; return false; };
+  const T = tp.map(([x, y]) => [cx + x * sx, cy + y * sy]);
+  return { cover: T.filter(([x, y]) => near(x, y, pts)).length / T.length, clean: pts.length ? pts.filter(([x, y]) => near(x, y, T)).length / pts.length : 0 };
+}
+// the drawing against the model: over the dots the model has a fixed place; a free copy is compared with the model
+// stretched over whatever was drawn, so place and size do not matter
+function copyCheck(tp, need, strokes, trace) {
+  const pts = strokes.flat(); if (pts.length < 4) return null;
+  const drawn = sum(strokes.map(s => s.slice(1).reduce((a, p, i) => a + Math.hypot(p[0] - s[i][0], p[1] - s[i][1]), 0))), done = (r, unit) => Object.assign(r, { ink: drawn / (need * unit) });
+  const xs = pts.map(p => p[0]), ys = pts.map(p => p[1]), x0 = Math.min(...xs), x1 = Math.max(...xs), y0 = Math.min(...ys), y1 = Math.max(...ys);
+  if (trace) return done(copyScore(tp, pts, 150, 150, 210, 210, 34), 210);
+  const tw = Math.max(...tp.map(p => p[0])) - Math.min(...tp.map(p => p[0])), th = Math.max(...tp.map(p => p[1])) - Math.min(...tp.map(p => p[1])), bw = x1 - x0, bh = y1 - y0, big = Math.max(bw, bh);
+  if (big < 70) return { cover: 0, clean: 0, ink: 0, small: true };
+  let sx = big / Math.max(tw, th), sy = sx;
+  if (tw > 0.3 && th > 0.3 && Math.min(bw, bh) / big > 0.45) { sx = bw / tw; sy = bh / th; }      // an oval is a fine circle, an oblong a fine square
+  return done(copyScore(tp, pts, (x0 + x1) / 2, (y0 + y1) / 2, sx, sy, Math.max(22, big * 0.16)), (sx + sy) / 2);
+}
+// it counts when nearly all of the model was drawn, the ink lies on the model, and it is not a scribble (too much ink)
+const copyPass = (r, trace) => !!r && r.cover >= 0.86 && r.clean >= (trace ? 0.6 : 0.7) && r.ink <= (trace ? 2.8 : 2.2);
+function copyStation(rd, api, stage, opts) {
+  const S = COPY_SHAPES[rd.k], SZ = 300, tp = copyPoints(S.st), need = copyLen(S.st);
+  let trace = rd.trace, strokes = [], cur = null, alive = true, T = 0, demoT = -1, helped = false;
+  opts.classList.add('drawwrap');
+  opts.innerHTML = `<div class="drawbox"><canvas id="dc" width="${SZ * 2}" height="${SZ * 2}"></canvas></div><div class="drawside"><div class="copymodel"><canvas id="cm" width="240" height="240"></canvas></div><button class="big skip small" id="dHelp">עזרה</button></div>`;
+  const cvs = $('#dc'), c = cvs.getContext('2d'); c.scale(2, 2);
+  const mc = $('#cm').getContext('2d'); mc.scale(2, 2);
+  const path = (g, cx, cy, sc, upTo) => { let left = upTo == null ? 1e9 : upTo * need, tip = null; for (const s of S.st) { g.beginPath(); g.moveTo(cx + s[0][0] * sc, cy + s[0][1] * sc); for (let i = 1; i < s.length && left > 0; i++) { const d = Math.hypot(s[i][0] - s[i - 1][0], s[i][1] - s[i - 1][1]), u = Math.min(1, left / d); tip = [cx + (s[i - 1][0] + (s[i][0] - s[i - 1][0]) * u) * sc, cy + (s[i - 1][1] + (s[i][1] - s[i - 1][1]) * u) * sc]; g.lineTo(tip[0], tip[1]); left -= d; } g.stroke(); if (left <= 0) break; } return tip; };
+  function paint() {
+    c.clearRect(0, 0, SZ, SZ); c.fillStyle = '#fffdf5'; c.fillRect(0, 0, SZ, SZ); c.lineCap = 'round'; c.lineJoin = 'round';
+    if (trace) {                                                    // the dotted model on the page, and a green dot where to start
+      c.strokeStyle = 'rgba(63,169,245,0.8)'; c.lineWidth = 6; c.setLineDash([1, 14]); path(c, 150, 150, 210); c.setLineDash([]);
+      const first = S.st[strokes.length < S.st.length ? strokes.length : 0][0], pulse = 0.5 + 0.5 * Math.sin(T * 5);
+      c.fillStyle = '#43a047'; c.beginPath(); c.arc(150 + first[0] * 210, 150 + first[1] * 210, 9 + pulse * 3, 0, 7); c.fill();
+    }
+    c.strokeStyle = INK; c.lineWidth = 10;
+    for (const s of strokes) { c.beginPath(); s.forEach((p, i) => (i ? c.lineTo(p[0], p[1]) : c.moveTo(p[0], p[1]))); if (s.length === 1) c.lineTo(s[0][0] + 0.1, s[0][1]); c.stroke(); }
+    // the model beside the page; during a demonstration a finger draws it
+    mc.clearRect(0, 0, 120, 120); mc.fillStyle = '#fff'; mc.fillRect(0, 0, 120, 120); mc.lineCap = 'round'; mc.lineJoin = 'round'; mc.lineWidth = 6;
+    if (demoT >= 0) { mc.strokeStyle = 'rgba(29,35,64,0.18)'; path(mc, 60, 60, 92); mc.strokeStyle = '#e53935'; const tip = path(mc, 60, 60, 92, Math.min(1, demoT)); if (tip) { mc.fillStyle = '#e53935'; mc.beginPath(); mc.arc(tip[0], tip[1], 7, 0, 7); mc.fill(); } }
+    else { mc.strokeStyle = INK; path(mc, 60, 60, 92); }
+  }
+  const demo = async () => { demoT = 0; const t0 = now(), dur = 900 + need * 700; while (alive && demoT < 1) { demoT = (now() - t0) / dur; await sleep(30); } await sleep(350); demoT = -1; };
+  const check = () => copyCheck(tp, need, strokes, trace);
+  function finish() {
+    alive = false; paint();
+    try { const sm = document.createElement('canvas'); sm.width = sm.height = 120; sm.getContext('2d').drawImage(cvs, 0, 0, 120, 120); const ds = Store.d.drawings || (Store.d.drawings = []); ds.push({ t: Date.now(), lv: rd.lv, u: sm.toDataURL('image/jpeg', 0.6), helped, k: rd.k }); if (ds.length > 12) ds.shift(); Store.save(true); } catch (e) { /* canvas export blocked */ }
+    api.success(cvs, { assisted: helped });
+  }
+  async function judge() {
+    const r = check(); if (!r) return;
+    if (copyPass(r, trace)) { finish(); return; }
+    if (r.small && strokes.length < 3) return;
+    if (strokes.length < S.st.length && r.ink < 1.4) return;                     // another stroke is still to come
+    if (r.ink < 0.8 && strokes.length <= S.st.length + 1 && r.clean >= 0.6) return;   // a good beginning: let him go on
+    // not it: clear the page, show how, and after two tries give the dots
+    await api.fail(null, [COPY_SAY.look]); strokes = []; await demo();
+    if (!trace && api.R.tries >= 2) { trace = true; helped = true; Voice.say(COPY_SAY.dots); } else Voice.say(trace ? COPY_SAY.trace : COPY_SAY.own);
+  }
+  const pt = e => { const r = cvs.getBoundingClientRect(); return [(e.clientX - r.left) / r.width * SZ, (e.clientY - r.top) / r.height * SZ]; };
+  cvs.addEventListener('pointerdown', e => { e.preventDefault(); Snd.init(); if (!alive || api.R.over || api.R.busy) return; api.mark(); cur = [pt(e)]; strokes.push(cur); try { cvs.setPointerCapture(e.pointerId); } catch (x) { /* ignore */ } });
+  cvs.addEventListener('pointermove', e => { if (!cur || !alive) return; const p = pt(e), l = cur[cur.length - 1]; if (Math.hypot(p[0] - l[0], p[1] - l[1]) > 3) cur.push(p); });
+  const up = () => { if (!cur) return; cur = null; if (alive) judge(); };
+  cvs.addEventListener('pointerup', up); cvs.addEventListener('pointercancel', up);
+  $('#dHelp').onclick = async () => { Snd.init(); if (!alive || api.R.busy) return; api.R.busy = true; strokes = []; helped = true; trace = true; await demo(); api.R.busy = false; Voice.say(COPY_SAY.trace); };
+  (function loop() { if (!document.body.contains(cvs)) { alive = false; return; } T += 0.016; if (alive) paint(); requestAnimationFrame(loop); })();
+  rd.selfSpeak = true; rd.replay = () => { Voice.say(S.say); if (demoT < 0) demo(); };
+  (async () => { api.R.busy = true; await Voice.say(S.say); await demo(); api.R.busy = false; api.R.t0 = now(); Voice.say(trace ? COPY_SAY.trace : COPY_SAY.own); })();
 }
 
 // ------------------------------------------------------------------ drawing a face with a finger
@@ -4518,6 +4960,7 @@ const UI = {
   show(id) {
     SCREENS.forEach(s => { $('#' + s).hidden = s !== id; });
     this.screen = id;
+    if ((id === 'scHub' || id === 'scTitle') && typeof Updater !== 'undefined') { Updater.apply(); Updater.check(); }
     const playing = !id && G.mode !== 'menu';
     $('#hud').hidden = !playing; $('#ctl').hidden = !playing;
     this.fit(); requestAnimationFrame(() => this.fit());
@@ -4746,6 +5189,9 @@ const STATUS_COLOR = { s: '#2ec4a6', m: '#ffc83d', w: '#ff7a59', n: '#c5cbe0' };
 function statusOf(n, acc) { return n < 4 ? ['n', 'מעט נתונים'] : acc >= 0.8 ? ['s', 'חזק'] : acc >= 0.55 ? ['m', 'בדרך'] : ['w', 'לתרגל']; }
 function itemLabel(key) {
   if (V[key]) return V[key].n;
+  if (key.startsWith('tell_')) { const k = key.slice(5); return 'סיפר לבד' + (KSCENES[k] ? ' (' + KSCENES[k].where.replace(/^הם |\.$/g, '') + ')' : ''); }
+  if (key.startsWith('ks_')) { const [, k, i] = key.split('_'), f = KSCENES[k] && KSCENES[k].figs[+i]; return f ? f.v : key; }
+  if (key.startsWith('grp_')) return CAT[key.slice(4)] ? CAT[key.slice(4)][0] : key;
   if (SEASONS[key.replace('_thing', '')]) return SEASONS[key.replace('_thing', '')].n;
   const [p, k] = [key.slice(0, 2), key.slice(2)];
   if (p === 'v_') return VERBS[k] || key; if (p === 'e_') return MOODS[k] || key; if (p === 'b_') return PARTS[k] || key;
@@ -4755,7 +5201,7 @@ function itemLabel(key) {
   if (/^n\d+$/.test(key)) return key.slice(1);
   return key;
 }
-const CUES = { good: 'אמר את המילה', close: 'אמר כמעט', partial: 'אמר חלק ממנה', other: 'אמר משהו אחר', voice: 'השמיע קול', silent: 'שתק', nomic: 'בלי מיקרופון' };
+const CUES = { good: 'אמר את המילה', close: 'אמר כמעט', partial: 'אמר חלק ממנה', other: 'אמר משהו אחר', voice: 'השמיע קול', silent: 'שתק', nomic: 'בלי מיקרופון' , tell: 'סיפר במילים שלו' };
 const OLD_CUE = { spont: 'good', choice: 'good', imit: 'good', parent: 'good', attempt: 'partial', none: 'silent', skip: 'silent' };       // results saved by earlier versions
 function analyze(sessions) {
   const ev = sessions.flatMap(s => s.events || []).sort((a, b) => a.t - b.t), said = sessions.flatMap(s => s.said || []).sort((a, b) => a.t - b.t), heard = sessions.flatMap(s => s.heard || []).sort((a, b) => a.t - b.t);
@@ -4859,6 +5305,7 @@ function renderInsights(A) {
     <div class="prow"><span class="plabel">הפסקה אחרי:</span>${seg('sLimit', [[10, '10 דק׳'], [15, '15'], [20, '20'], [30, '30']], set.limit || 15)}</div>
     <p class="note">קול: ${{ clips: 'הקלטות (אדם)', robot: 'קריין הטלפון', none: 'אין' }[Voice.engine]}. מיקרופון: ${{ web: 'מקשיב לבד בעברית', tap: 'בלחיצה', none: 'לא זמין כאן' }[Ear.mode]}${Ear.denied ? ' (נחסם)' : ''}.${miss.length ? ` משפטים בלי הקלטה: ${miss.length}.` : ''}</p>
     ${miss.length ? `<div class="words">${miss.slice(0, 30).map(m => `<span>${esc(m)}</span>`).join('')}</div>` : ''}
+    <div class="prow" style="margin-top:.6rem"><span class="plabel">גרסה:</span><b dir="ltr">${buildLabel()}</b><button class="big skip small" id="bUpd">בדיקת עדכון</button><span class="note" id="updMsg">המשחק מתעדכן לבד כשיש גרסה חדשה.</span></div>
     <div class="prow" style="margin-top:.6rem"><button class="danger" id="bReset">איפוס כל ההתקדמות</button><span class="note" id="resetMsg"></span></div></div>`;
   const testCard = `<div class="pcard"><h3>מצב בדיקה</h3>
     <p class="note">${Store.test ? 'מצב בדיקה פעיל: המשחק רץ על העתק. שום דבר ממה שנעשה עכשיו לא נשמר להתקדמות של הילד. כל השלבים פתוחים, ובמסך הדיבור רואים מה הטלפון שמע.' : 'רוצה לנסות את המשחק בעצמך? במצב בדיקה המשחק רץ על העתק: כוכבים, מטבעות, מילים ונתונים של הילד לא משתנים. כל השלבים פתוחים, ובמסך הדיבור רואים מה הטלפון שמע.'}</p>
@@ -4915,6 +5362,7 @@ async function openParent() {
   $('#pBody').innerHTML = renderInsights(A);
   const set = Store.d.set, bo = Store.d.boost, again = () => Store.save(true);
   const tog = (id, get, put) => { const b = $('#' + id); if (b) b.onclick = () => { put(!get()); b.setAttribute('aria-pressed', get()); again(); }; };
+  { const bu = $('#bUpd'); if (bu) bu.onclick = async () => { Snd.sfx.tap(); $('#updMsg').textContent = 'בודק...'; const st = await Updater.check(true); $('#updMsg').textContent = st === 'new' ? 'יש גרסה חדשה. מתעדכן...' : st === 'ok' ? 'זו הגרסה האחרונה.' : 'אין חיבור, או שהמשחק לא רץ מהקישור.'; }; }
   { const bt = $('#bTest'); if (bt) bt.onclick = () => { Snd.sfx.tap(); if (Store.test) Store.exitTest(); else Store.enterTest(); }; }
   tog('tSound', () => set.sound, v => { set.sound = v; Snd.duck(false); }); tog('tMusic', () => set.music, v => { set.music = v; Snd.duck(false); }); tog('tMic', () => set.mic, v => { set.mic = v; }); tog('tRobot', () => set.robot, v => { set.robot = v; }); tog('tStrict', () => set.strict !== false, v => { set.strict = v; });
   tog('fNum', () => set.focus.num !== false, v => { set.focus.num = v; }); tog('fLang', () => set.focus.lang !== false, v => { set.focus.lang = v; }); tog('fThink', () => set.focus.think !== false, v => { set.focus.think = v; });
@@ -4948,6 +5396,42 @@ function frame() {
   render();
   requestAnimationFrame(frame);
 }
+// ------------------------------------------------------------------ auto update
+// The installed app can stay open in the background for days, so "a new page on the next launch" is not enough: ask the
+// server for its build number when the app starts, when it comes back to the front and on every visit to the map, and
+// reload when a newer build is out - only on the title screen or the map, never in the middle of a level.
+const Updater = {
+  last: 0, pending: null, busy: false, state: '',
+  get can() { return STANDALONE && location.protocol === 'https:'; },
+  async check(force) {
+    if (!this.can || this.busy || (!force && Date.now() - this.last < 4 * 60e3)) return this.state;
+    this.last = Date.now(); this.busy = true;
+    try {
+      const r = await fetch('version.json?t=' + Date.now(), { cache: 'no-store' }), v = r.ok ? await r.json() : null;
+      if (v && v.b && String(v.b) > BUILD) { this.pending = String(v.b); this.state = 'new'; } else if (v) this.state = 'ok';
+    } catch (e) { this.state = 'off'; }
+    this.busy = false; this.apply(force);
+    return this.state;
+  },
+  apply(force) {
+    if (!this.pending || !(UI.screen === 'scTitle' || UI.screen === 'scHub' || (force && UI.screen === 'scParent'))) return;
+    let tried = ''; try { tried = sessionStorage.getItem('botiUpd') || ''; } catch (e) { /* storage blocked */ }
+    if (tried === this.pending && !force) return;                    // this build was already tried in this run: no reload loop
+    try { sessionStorage.setItem('botiUpd', this.pending); } catch (e) { /* storage blocked */ }
+    Store.save(); syncSession();
+    const el = $('#updToast'); if (el) el.hidden = false;
+    const q = new URLSearchParams(location.search); q.set('u', this.pending);
+    const go = () => location.replace(location.pathname + '?' + q.toString());       // a new address: no old copy can answer it
+    const reg = navigator.serviceWorker && navigator.serviceWorker.getRegistration ? navigator.serviceWorker.getRegistration().then(r => r && r.update()).catch(() => {}) : Promise.resolve();
+    Promise.race([reg, sleep(2500)]).then(() => setTimeout(go, 500));
+  },
+  init() {
+    if (!this.can) return;
+    setTimeout(() => this.check(), 2500);
+    document.addEventListener('visibilitychange', () => { if (!document.hidden) this.check(); });
+  },
+};
+const buildLabel = () => (/^\d{12}$/.test(BUILD) ? `${BUILD.slice(6, 8)}.${BUILD.slice(4, 6)} ${BUILD.slice(8, 10)}:${BUILD.slice(10, 12)}` : BUILD);
 (function boot() {
   Store.load();
   keepStorage();
@@ -4960,6 +5444,7 @@ function frame() {
   UI.show('scTitle');
   initCaps();
   if (STANDALONE && 'serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(() => {});
+  Updater.init();
   requestAnimationFrame(frame);
 })();
 </script>
