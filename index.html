@@ -617,8 +617,8 @@ body.portrait .hubtop .tbtn span { display: none; } body.portrait .hubtop .tbtn 
   </section>
 </div>
 
-<script>/* build 202611131823 */
-const BUILD = '202611131823';
+<script>/* build 202611131825 */
+const BUILD = '202611131825';
 'use strict';
 /* בוטי והכוכבים האבודים – platformer + learning stations for a 3-year-old gamer.
    File order (see build.py): core → audio/voice → data → art → engine → stations → ui → parent → boot. */
@@ -3226,7 +3226,7 @@ function doJump(v) {
 }
 function hurt(fromX) {
   const p = G.p;
-  if (p.inv > 0 || p.pow.giant > 0) return false;
+  if (p.inv > 0 || p.pow.giant > 0 || G.hold) return false;                // nothing can hurt him while he is held for a question
   if (p.pow.shield > 0) { p.pow.shield = 0; p.inv = 1; Snd.sfx.pop(); burst(p.x, p.y - 24, 16, ['#bfe9ff', '#fff'], 160, 0.5, 4, 0); UI.setPower(); return false; }
   p.vx = (p.x < fromX ? -1 : 1) * 230; p.vy = -360; p.onGround = false; p.ground = null; p.hurtT = 0.35; p.inv = 1.4;
   G.stats.bumps++; G.shake = 0.7; Snd.sfx.bump();
